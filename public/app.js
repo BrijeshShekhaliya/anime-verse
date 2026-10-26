@@ -734,7 +734,11 @@
       </div>
     `;
 
-    const a = await api(`/anime/${encodeURIComponent(id)}`, 30 * 60 * 1000);
+    const initialSeasonGuess = Number(params.get('season') || localStorage.getItem(`animeverse_season_${id}`) || 1);
+    const [a, initialEpData] = await Promise.all([
+      api(`/anime/${encodeURIComponent(id)}`, 30 * 60 * 1000),
+      api(`/anime/${encodeURIComponent(id)}/episodes?season=${initialSeasonGuess}`, 60 * 60 * 1000).catch(() => null),
+    ]);
     const alId = a.anilistId || (String(a.id).startsWith('al') ? Number(a.id.slice(2)) : a.id);
     const availableEp = getAvailableEpisodes(a);
 
@@ -756,8 +760,10 @@
     let viewingSeason = currentSeason;
     let currentEp = Number(params.get('ep') || localStorage.getItem(`animeverse_ep_${a.id}`) || 1);
 
-    // Fetch TMDB / Structured episodes metadata
-    let epData = await api(`/anime/${encodeURIComponent(id)}/episodes?season=${currentSeason}`, 60 * 60 * 1000).catch(() => null);
+    // Reuse prefetched episodes metadata if season matches, else fetch
+    let epData = (currentSeason === initialSeasonGuess && initialEpData)
+      ? initialEpData
+      : await api(`/anime/${encodeURIComponent(id)}/episodes?season=${currentSeason}`, 60 * 60 * 1000).catch(() => null);
 
     const tmdbId = epData?.tmdbId || null;
     let seasons = (epData?.seasons && epData.seasons.length > 0) ? epData.seasons : [{ season_number: currentSeason, name: `Season ${currentSeason}`, episode_count: availableEp }];
@@ -802,6 +808,7 @@
     } catch {}
 
     const storageKeyProgress = (ep, s = currentSeason) => `animeverse_prog_${a.id}_s${s}_e${ep}`;
+    const storageKeyExactTime = (ep, s = currentSeason) => `animeverse_time_${a.id}_s${s}_e${ep}`;
     let currentEpPct = Number(localStorage.getItem(storageKeyProgress(currentEp, currentSeason)) || (watched.has(currentEp) ? 100 : 0));
 
     function getActiveServer() {
@@ -1423,17 +1430,24 @@
 
     let resolveGen = 0;
 
-    async function reloadStream() {
+    async function reloadStream(explicitResumeTime = null) {
       const thisGen = ++resolveGen;
       const s = getActiveServer();
+
+      // Read exact resume timestamp in seconds (explicitly passed or from storage)
+      const targetResumeSec = explicitResumeTime !== null
+        ? explicitResumeTime
+        : Number(localStorage.getItem(storageKeyExactTime(currentEp)) || 0);
 
       if (loader) loader.classList.remove('hidden');
       if (wrap) wrap.classList.add('is-loading');
       if (playerCenterPlayBtn) playerCenterPlayBtn.classList.remove('playing');
 
-      // Reset seekbar visually
-      if (playerTimelinePlayed) playerTimelinePlayed.style.width = '0%';
-      if (timeCurrent) timeCurrent.textContent = '0:00';
+      // Only reset visually if starting from beginning
+      if (!targetResumeSec || targetResumeSec < 1) {
+        if (playerTimelinePlayed) playerTimelinePlayed.style.width = '0%';
+        if (timeCurrent) timeCurrent.textContent = '0:00';
+      }
 
       if (s.isNative) {
         if (iframe) {
@@ -1519,26 +1533,24 @@
             }
           }
 
-          const savedPct = Number(localStorage.getItem(storageKeyProgress(currentEp)) || 0);
-
           if (window.Hls && Hls.isSupported()) {
             const hls = new Hls({
               autoStartLoad: true,
               enableWorker: true,
-              startFragPrefetch: false,
+              startFragPrefetch: true,
               progressive: false,
               lowLatencyMode: false,
               maxBufferLength: 60,
               maxMaxBufferLength: 120,
-              backBufferLength: 30,
+              backBufferLength: 60,
               maxBufferSize: 60 * 1024 * 1024,
-              maxBufferHole: 0.5,
-              highBufferWatchdogPeriod: 2,
+              maxBufferHole: 0.1,
+              highBufferWatchdogPeriod: 1,
               nudgeOffset: 0.1,
               nudgeMaxRetry: 5,
               abrEwmaDefaultEstimate: 5000000,
-              abrBandWidthFactor: 0.85,
-              abrBandWidthUpFactor: 0.7,
+              abrBandWidthFactor: 0.9,
+              abrBandWidthUpFactor: 0.8,
               capLevelToPlayerSize: false,
               manifestLoadingTimeOut: 20000,
               manifestLoadingMaxRetry: 4,
@@ -1552,12 +1564,28 @@
             hls.loadSource(res.streamUrl);
             hls.attachMedia(video);
 
+            let positionRestored = false;
+            const applySavedPosition = () => {
+              if (positionRestored) return;
+              if (targetResumeSec > 1.5) {
+                if (!video.duration || isNaN(video.duration) || targetResumeSec < video.duration - 5) {
+                  try {
+                    video.currentTime = targetResumeSec;
+                    positionRestored = true;
+                    updatePlayerTimeAndProgress();
+                  } catch (e) {}
+                }
+              }
+            };
+
+            video.addEventListener('loadedmetadata', applySavedPosition, { once: true });
+            video.addEventListener('canplay', applySavedPosition, { once: true });
+            hls.once(Hls.Events.LEVEL_LOADED, applySavedPosition);
+
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
               if (thisGen !== resolveGen) return;
 
-              if (savedPct > 0 && savedPct < 95 && video.duration) {
-                video.currentTime = (savedPct / 100) * video.duration;
-              }
+              applySavedPosition();
 
               // Reveal player and hide loader
               if (loader) loader.classList.add('hidden');
@@ -1569,27 +1597,39 @@
               const playPromise = video.play();
               if (playPromise && typeof playPromise.catch === 'function') {
                 playPromise.then(() => {
+                  applySavedPosition();
                   if (typeof syncPlayState === 'function') syncPlayState();
                 }).catch(() => {
-                  // Browser blocked unmuted autoplay (typical in Chrome when user hasn't clicked yet)
-                  // Show the big center play button so the user can easily tap to start
                   if (playerCenterPlayBtn) playerCenterPlayBtn.classList.remove('playing');
                   if (typeof syncPlayState === 'function') syncPlayState();
                 });
               }
 
+              // Auto-restore preferred quality if previously selected
+              const prefQ = localStorage.getItem('animeverse_preferred_quality');
+              if (prefQ && hls.levels && hls.levels.length > 0) {
+                const targetQ = Number(prefQ);
+                const matchingIdx = hls.levels.findIndex((l) => (l.height || 0) === targetQ);
+                if (matchingIdx !== -1) {
+                  hls.currentLevel = matchingIdx;
+                  if (playerQualityLabel) playerQualityLabel.textContent = `${targetQ}p`;
+                }
+              }
+
               // Populate Quality column in settings menu
               if (playerQualityList && hls.levels && hls.levels.length > 0) {
+                const currentPrefQ = localStorage.getItem('animeverse_preferred_quality');
                 let qHtml = `
-                  <button type="button" class="player-popup-item active" data-quality="-1">
+                  <button type="button" class="player-popup-item${!currentPrefQ ? ' active' : ''}" data-quality="-1">
                     <span>Auto</span><span class="player-popup-check">✓</span>
                   </button>
                 `;
                 const sorted = hls.levels.map((lvl, idx) => ({ lvl, idx })).sort((a, b) => (b.lvl.height || 0) - (a.lvl.height || 0));
                 sorted.forEach(({ lvl, idx }) => {
                   const h = lvl.height || 1080;
+                  const isAct = currentPrefQ && Number(currentPrefQ) === h;
                   qHtml += `
-                    <button type="button" class="player-popup-item" data-quality="${idx}">
+                    <button type="button" class="player-popup-item${isAct ? ' active' : ''}" data-quality="${idx}" data-height="${h}">
                       <span>${h}p</span><span class="player-popup-check">✓</span>
                     </button>
                   `;
@@ -1600,22 +1640,20 @@
                   qBtn.addEventListener('click', () => {
                     const qIdx = Number(qBtn.dataset.quality);
                     if (!hls) return;
-                    const wasPlaying = !video.paused;
 
-                    // Show loader spinner on player during transition
-                    if (loader) loader.classList.remove('hidden');
-                    if (wrap) wrap.classList.add('is-loading');
-
+                    // Seamless background level switch: NO blocking loader!
                     if (qIdx === -1) {
                       hls.currentLevel = -1;
+                      localStorage.removeItem('animeverse_preferred_quality');
                       if (playerQualityLabel) {
                         const cur = hls.levels[hls.currentLevel];
                         playerQualityLabel.textContent = cur?.height ? `AUTO (${cur.height}p)` : 'AUTO';
                       }
                     } else {
                       hls.currentLevel = qIdx;
+                      const h = Number(qBtn.dataset.height || hls.levels[qIdx]?.height || 1080);
+                      localStorage.setItem('animeverse_preferred_quality', String(h));
                       if (playerQualityLabel) {
-                        const h = hls.levels[qIdx]?.height || 1080;
                         playerQualityLabel.textContent = `${h}p`;
                       }
                     }
@@ -1623,28 +1661,6 @@
                     $$('[data-quality]', playerQualityList).forEach((b) => {
                       b.classList.toggle('active', Number(b.dataset.quality) === qIdx);
                     });
-
-                    const resumePlayback = () => {
-                      if (loader) loader.classList.add('hidden');
-                      if (wrap) {
-                        wrap.classList.remove('is-loading');
-                        wrap.classList.remove('initial-loading');
-                      }
-                      if (wasPlaying && video.paused) {
-                        video.play().catch(() => {});
-                      }
-                      if (typeof syncPlayState === 'function') syncPlayState();
-                    };
-
-                    const switchTimer = setTimeout(resumePlayback, 450);
-                    const cleanResume = () => {
-                      clearTimeout(switchTimer);
-                      resumePlayback();
-                    };
-
-                    hls.once(Hls.Events.LEVEL_SWITCHED, cleanResume);
-                    video.addEventListener('canplay', cleanResume, { once: true });
-                    video.addEventListener('playing', cleanResume, { once: true });
                   });
                 });
               }
@@ -1923,11 +1939,12 @@
           updateProgressUI(roundPct);
         }
 
-        // Throttle disk I/O to at most once every 4 seconds to prevent main-thread stutter
+        // Save exact second position & percentage progress
         const now = Date.now();
-        if (now - lastSavedProgressTime > 4000) {
+        if (now - lastSavedProgressTime > 2000) {
           lastSavedProgressTime = now;
           try {
+            localStorage.setItem(storageKeyExactTime(currentEp), cur.toFixed(2));
             localStorage.setItem(storageKeyProgress(currentEp), String(roundPct));
           } catch {}
         }
@@ -1951,6 +1968,11 @@
       video.addEventListener('timeupdate', updatePlayerTimeAndProgress);
       video.addEventListener('pause', () => {
         syncPlayState();
+        if (video.currentTime > 1) {
+          try {
+            localStorage.setItem(storageKeyExactTime(currentEp), video.currentTime.toFixed(2));
+          } catch {}
+        }
         if (video.duration && !isNaN(video.duration)) {
           const pct = Math.min(100, Math.floor((video.currentTime / video.duration) * 100));
           if (pct > 0) {
@@ -2146,7 +2168,8 @@
           if (activeSourceLabel) activeSourceLabel.textContent = sBtn.querySelector('span')?.textContent || sid;
           if (playerSettingsMenu) playerSettingsMenu.hidden = true;
           if (playerQualityBtn) playerQualityBtn.classList.remove('active');
-          reloadStream();
+          const currentPos = (video && video.currentTime > 1) ? video.currentTime : null;
+          reloadStream(currentPos);
         });
       });
     }
@@ -2158,6 +2181,7 @@
         aBtn.addEventListener('click', () => {
           const lang = aBtn.dataset.audioLang;
           if (lang === currentLang) return;
+          const currentPos = (video && video.currentTime > 1) ? video.currentTime : null;
           currentLang = lang;
           localStorage.setItem('animeverse_lang', currentLang);
           $$('[data-audio-lang]').forEach((b) => {
@@ -2167,7 +2191,7 @@
           if (playerAudioSubsMenu) playerAudioSubsMenu.hidden = true;
           if (playerQualityBtn) playerQualityBtn.classList.remove('active');
           if (playerAudioSubsBtn) playerAudioSubsBtn.classList.remove('active');
-          reloadStream();
+          reloadStream(currentPos);
         });
       });
     }
@@ -2417,6 +2441,11 @@
     }
 
     function switchEpisode(epNum) {
+      if (video && video.currentTime > 1) {
+        try {
+          localStorage.setItem(storageKeyExactTime(currentEp), video.currentTime.toFixed(2));
+        } catch {}
+      }
       currentEp = epNum;
       viewingSeason = currentSeason;
       try {

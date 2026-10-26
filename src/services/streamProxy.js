@@ -132,6 +132,10 @@ async function handleProxy(req, res, hops = 0) {
 
       // Media chunk or subtitle or direct binary stream
       const passHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+        'Access-Control-Allow-Headers': 'Range, Accept, Origin, Content-Type',
+        'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
         'Cache-Control': 'public, max-age=86400, s-maxage=86400, immutable',
         'X-Content-Type-Options': 'nosniff',
       };
