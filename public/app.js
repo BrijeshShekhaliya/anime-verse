@@ -1,0 +1,3413 @@
+/* AnimeVerse — single-page anime discovery app (no build step). */
+(() => {
+  'use strict';
+
+  const app = document.getElementById('app');
+  const nav = document.getElementById('nav');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- Helpers ----------
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
+  const esc = (v) =>
+    String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const fmtNum = (n) => (n == null ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n));
+  const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+  // Custom icon set: soft filled shapes with a duotone accent layer (class "ic").
+  const svg = (body, cls = '') => `<svg class="ic${cls ? ` ${cls}` : ''}" viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+  const tint = 'fill="currentColor" stroke="none" opacity=".2"';
+  const solid = 'fill="currentColor" stroke="none"';
+  const icon = {
+    star: svg(`<path ${solid} d="M12 2.8c.4 0 .7.2.9.6l2.3 4.7 5.1.8c.8.1 1.1 1.1.5 1.7l-3.7 3.6.9 5.1c.1.8-.7 1.4-1.4 1l-4.6-2.4-4.6 2.4c-.7.4-1.6-.2-1.4-1l.9-5.1-3.7-3.6c-.6-.6-.3-1.6.5-1.7l5.1-.8 2.3-4.7c.2-.4.5-.6.9-.6z"/>`),
+    play: svg(`<path ${solid} d="M8 5.6v12.8c0 .9 1 1.5 1.8 1l10-6.4c.7-.5.7-1.5 0-2l-10-6.4C9 4.1 8 4.7 8 5.6z"/>`),
+    info: svg(`<rect ${tint} x="3" y="3" width="18" height="18" rx="6"/><rect x="3" y="3" width="18" height="18" rx="6"/><path d="M12 11.5v5"/><circle ${solid} cx="12" cy="7.8" r="1.3"/>`),
+    left: svg('<path d="M14.5 6.5L9 12l5.5 5.5" stroke-width="2.6"/>'),
+    right: svg('<path d="M9.5 6.5L15 12l-5.5 5.5" stroke-width="2.6"/>'),
+    chevron: svg('<path d="M7 10l5 4.5 5-4.5" stroke-width="2.4"/>', 'cs-chev'),
+    ext: svg(`<rect ${tint} x="3.5" y="6.5" width="14" height="14" rx="4"/><path d="M13 3.5h7.5V11M20.5 3.5L11 13"/><path d="M17.5 14v2.5a4 4 0 01-4 4h-6a4 4 0 01-4-4v-6a4 4 0 014-4H10"/>`),
+    check: svg('<path d="M5 12.5l4.2 4.2L19 7" stroke-width="2.8"/>'),
+    mic: svg(`<rect ${tint} x="8" y="2.5" width="8" height="12.5" rx="4"/><rect x="8" y="2.5" width="8" height="12.5" rx="4"/><path d="M4.5 11.5a7.5 7.5 0 0015 0M12 19v2.5"/>`),
+    cc: svg(`<rect ${tint} x="2.5" y="4.5" width="19" height="15" rx="5"/><rect x="2.5" y="4.5" width="19" height="15" rx="5"/><path d="M10.5 10.2a2.2 2.2 0 100 3.6M16.5 10.2a2.2 2.2 0 100 3.6"/>`),
+    clock: svg(`<circle ${tint} cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 2"/>`),
+    x: svg('<path d="M7 7l10 10M17 7L7 17" stroke-width="2.4"/>'),
+    search: svg(`<circle ${tint} cx="10.5" cy="10.5" r="7"/><circle cx="10.5" cy="10.5" r="7"/><path d="M16 16l4.5 4.5" stroke-width="2.8"/>`),
+    globe: svg(`<circle ${tint} cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.8 3.8 6 3.8 9.5s-1.2 6.7-3.8 9.5c-2.6-2.8-3.8-6-3.8-9.5s1.2-6.7 3.8-9.5z"/>`),
+    spark: svg(`<path ${solid} d="M12 2l2.2 6.3L20.5 10.5l-6.3 2.2L12 19l-2.2-6.3L3.5 10.5l6.3-2.2z"/>`),
+    shield: svg(`<path ${tint} d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.4-7.5 9.8-4.4-1.4-7.5-5.2-7.5-9.8V5.8z"/><path d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.4-7.5 9.8-4.4-1.4-7.5-5.2-7.5-9.8V5.8z"/>`),
+  };
+
+  // Detect season number from anime title or romaji (e.g. "Season 2", "2nd Season", "Part 3")
+  function detectSeasonNumber(title, romaji = '') {
+    const combined = `${title || ''} ${romaji || ''}`;
+    const m1 = combined.match(/\b(?:Season|Part|Cour)\s*(\d+)\b/i);
+    if (m1) return parseInt(m1[1], 10);
+    const m2 = combined.match(/\b(\d+)(?:st|nd|rd|th)\s+Season\b/i);
+    if (m2) return parseInt(m2[1], 10);
+    const m3 = combined.match(/\b(?:Season|Part)\s*(II|III|IV|V|VI)\b/i);
+    if (m3) {
+      const roman = { II: 2, III: 3, IV: 4, V: 5, VI: 6 };
+      return roman[m3[1].toUpperCase()] || 1;
+    }
+    return 1;
+  }
+
+  // Small client cache so going back and forth is instant.
+  const memo = new Map();
+  // Every page asks for data through here: one request per URL at a time (two
+  // parts of the page asking for the same thing share it), a short memory so
+  // going back and forth doesn't re-download, one quiet retry on a network
+  // blip or 5xx, and the last good copy if the server can't answer.
+  const inflightApi = new Map();
+  async function api(path, ttlMs = 5 * 60 * 1000) {
+    const hit = memo.get(path);
+    if (hit && Date.now() - hit.t < ttlMs) return hit.data;
+    if (inflightApi.has(path)) return inflightApi.get(path);
+
+    const attempt = async () => {
+      const res = await fetch(`/api${path}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.error || `Request failed (${res.status})`);
+        err.status = res.status;
+        throw err;
+      }
+      return res.json();
+    };
+    const promise = (async () => {
+      try {
+        let data;
+        try {
+          data = await attempt();
+        } catch (err) {
+          if (err.status && err.status < 500) throw err; // 404 etc: a real answer
+          await new Promise((r) => setTimeout(r, 800));
+          data = await attempt();
+        }
+        memo.set(path, { t: Date.now(), data });
+        return data;
+      } catch (err) {
+        if (hit) return hit.data; // stale beats an error page
+        throw err;
+      } finally {
+        inflightApi.delete(path);
+      }
+    })();
+    inflightApi.set(path, promise);
+    return promise;
+  }
+
+  function toast(msg) {
+    let el = $('.toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'toast';
+      el.setAttribute('role', 'status');
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  // ---------- Custom dropdown ----------
+  // Replaces a native <select> with an animated listbox while keeping the select
+  // as the source of truth, so forms and "change" listeners keep working.
+  let openDropdown = null;
+  function customSelect(select) {
+    const wrap = select.parentElement;
+    wrap.classList.add('cs');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cs-btn';
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', select.getAttribute('aria-label') || '');
+    const menu = document.createElement('div');
+    menu.className = 'cs-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.hidden = true;
+    select.tabIndex = -1;
+    select.setAttribute('aria-hidden', 'true');
+    wrap.append(btn, menu);
+
+    let active = -1;
+    let filter = '';
+    const options = () => [...select.options];
+    const visible = () => $$('.cs-opt', menu);
+
+    const syncButton = () => {
+      const o = select.selectedOptions[0];
+      btn.innerHTML = `<span class="cs-label">${esc(o ? o.textContent : '')}</span>${icon.chevron}`;
+      wrap.classList.toggle('has-value', Boolean(select.value));
+    };
+
+    const renderMenu = () => {
+      const opts = options().filter((o) => !filter || o.textContent.toLowerCase().includes(filter));
+      const searchable = options().length > 12;
+      menu.innerHTML = `
+        ${searchable ? `<div class="cs-search">${icon.search}<input type="text" placeholder="Type to filter…" value="${esc(filter)}" aria-label="Filter options"></div>` : ''}
+        <div class="cs-list">${opts.map((o, i) => `
+          <button type="button" class="cs-opt${o.selected ? ' on' : ''}" role="option" aria-selected="${o.selected}" data-value="${esc(o.value)}" style="--i:${Math.min(i, 12)}">
+            <span>${esc(o.textContent)}</span>${icon.check}
+          </button>`).join('') || '<p class="cs-empty">No matches</p>'}
+        </div>`;
+      const input = $('.cs-search input', menu);
+      if (input) {
+        input.addEventListener('input', () => {
+          filter = input.value.trim().toLowerCase();
+          const pos = input.selectionStart;
+          renderMenu();
+          const next = $('.cs-search input', menu);
+          next.focus();
+          next.setSelectionRange(pos, pos);
+        });
+        input.addEventListener('keydown', onMenuKey);
+      }
+    };
+
+    const highlight = (i) => {
+      const items = visible();
+      if (!items.length) return;
+      active = (i + items.length) % items.length;
+      items.forEach((el, j) => el.classList.toggle('kb', j === active));
+      items[active].scrollIntoView({ block: 'nearest' });
+    };
+
+    const open = () => {
+      if (openDropdown && openDropdown !== api) openDropdown.close();
+      filter = '';
+      renderMenu();
+      menu.hidden = false;
+      wrap.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      // Flip upward if there's no room below.
+      const r = btn.getBoundingClientRect();
+      wrap.classList.toggle('up', window.innerHeight - r.bottom < 280 && r.top > 320);
+      openDropdown = api;
+      const items = visible();
+      active = items.findIndex((el) => el.classList.contains('on'));
+      if (active >= 0) items[active].scrollIntoView({ block: 'nearest' });
+      ($('.cs-search input', menu) || items[Math.max(active, 0)])?.focus({ preventScroll: true });
+    };
+
+    const close = (focusBtn = false) => {
+      if (menu.hidden) return;
+      wrap.classList.remove('open');
+      wrap.classList.add('closing');
+      btn.setAttribute('aria-expanded', 'false');
+      setTimeout(() => { menu.hidden = true; wrap.classList.remove('closing'); }, reduceMotion ? 0 : 140);
+      if (openDropdown === api) openDropdown = null;
+      if (focusBtn) btn.focus();
+    };
+
+    const pick = (value) => {
+      const changed = select.value !== value;
+      select.value = value;
+      syncButton();
+      close(true);
+      if (changed) select.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    function onMenuKey(e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); highlight(active + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(active - 1); }
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        const el = visible()[active] || visible()[0];
+        if (el) pick(el.dataset.value);
+      } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(true); }
+      else if (e.key === 'Tab') close();
+    }
+
+    btn.addEventListener('click', () => (menu.hidden ? open() : close()));
+    btn.addEventListener('keydown', (e) => {
+      if (['ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); open(); }
+    });
+    menu.addEventListener('click', (e) => {
+      const opt = e.target.closest('.cs-opt');
+      if (opt) pick(opt.dataset.value);
+    });
+    menu.addEventListener('keydown', (e) => { if (!e.target.closest('.cs-search')) onMenuKey(e); });
+    menu.addEventListener('mousemove', (e) => {
+      const opt = e.target.closest('.cs-opt');
+      if (opt) highlight(visible().indexOf(opt));
+    });
+    select.addEventListener('change', syncButton);
+
+    const api = { open, close, refresh: syncButton, wrap };
+    select._cs = api;
+    syncButton();
+    return api;
+  }
+  document.addEventListener('pointerdown', (e) => {
+    if (openDropdown && !openDropdown.wrap.contains(e.target)) openDropdown.close();
+  });
+
+  // ---------- Shared fragments ----------
+  const scoreLabel = (a) => (a.source === 'jikan' ? 'MAL' : 'AniList');
+
+  function scoreHtml(a) {
+    return a.score ? `<span class="score" title="${scoreLabel(a)} score">${icon.star}${a.score.toFixed(1)}</span>` : '';
+  }
+
+  function langHtml(a) {
+    const l = a.languages || {};
+    const parts = [];
+    if (l.sub !== false) parts.push('<span class="s" title="Japanese audio with subtitles">SUB</span>');
+    if (l.dub === 'full') parts.push('<span class="d" title="English dub available">DUB</span>');
+    if (l.dub === 'partial') parts.push('<span class="d partial" title="English dub in progress">DUB*</span>');
+    return `<span class="lang">${parts.join('')}</span>`;
+  }
+
+  // Only the languages that are actually available, nothing else.
+  function languagesHtml(a) {
+    const l = a.languages || {};
+    const audio = (l.audio || ['Japanese']).map((lang) =>
+      lang === 'English' && l.dub === 'partial' ? { lang, note: 'some episodes' } : { lang });
+    const subs = l.subtitles || ['English'];
+    const chip = (ic, { lang, note }) =>
+      `<span class="av-chip">${ic}${esc(lang)}${note ? `<small>${esc(note)}</small>` : ''}</span>`;
+    return `
+      <section class="section reveal">
+        <div class="av-langs">
+          <div class="av-group"><h3>Audio</h3><div class="av-list">${audio.map((x) => chip(icon.mic, x)).join('')}</div></div>
+          <div class="av-group"><h3>Subtitles</h3><div class="av-list">${subs.map((lang) => chip(icon.cc, { lang })).join('')}</div></div>
+        </div>
+      </section>`;
+  }
+
+  function factsOf(a, { long = false } = {}) {
+    const eps = (n) => `${n} ${long ? 'Episodes' : 'eps'}`;
+    if (a.seasonCount) {
+      return [a.year, `${a.seasonCount} ${a.seasonCount === 1 ? 'Season' : 'Seasons'}`, a.episodeCount ? eps(a.episodeCount) : null].filter(Boolean);
+    }
+    // Series totals still loading: show nothing that could contradict them.
+    if (a.factsPending) return [a.type, a.year].filter(Boolean);
+    return [a.type, a.year, a.episodes ? eps(a.episodes) : null].filter(Boolean);
+  }
+
+  function cardHtml(a, i = 0) {
+    const meta = factsOf(a);
+    return `
+      <a class="card" href="/anime/${esc(a.id)}" data-link style="--i:${i}" aria-label="${esc(a.title)}">
+        <div class="card-poster${a.image ? '' : ' no-img'}" data-title="${esc(a.title)}">
+          ${a.airing ? '<span class="pill card-tag airing">Airing</span>' : ''}
+          ${a.image ? `<img src="${esc(a.image)}"${a.image2x && a.image2x !== a.image ? ` srcset="${esc(a.image)} 1x, ${esc(a.image2x)} 2x"` : ''} alt="" loading="${i < 8 ? 'eager' : 'lazy'}" decoding="async"${i < 4 ? ' fetchpriority="high"' : ''}>` : ''}
+          <div class="card-hover" aria-hidden="true">
+            <h4>${esc(a.title)}</h4>
+            <div class="meta">${scoreHtml(a)}${meta.map(esc).join('<i class="sep"></i>')}</div>
+            ${langHtml(a)}
+            <p class="syn">${esc(a.synopsis || 'No synopsis yet.')}</p>
+            <span class="go">Details ${icon.right}</span>
+          </div>
+        </div>
+        <h3 class="card-title">${esc(a.title)}</h3>
+        <p class="card-sub">${langHtml(a)}${a.score ? scoreHtml(a) : ''}</p>
+      </a>`;
+  }
+
+  const skeletonCards = (n) =>
+    Array.from({ length: n }, () => '<div><div class="sk sk-poster"></div><div class="sk sk-line"></div></div>').join('');
+
+  function rowHtml({ title, sub, items, more, ranked }) {
+    if (!items?.length) return '';
+    const cards = ranked
+      ? items.slice(0, 10).map((a, i) => `<div class="ranked-item"><span class="rank-num${i >= 9 ? ' two' : ''}" aria-hidden="true">${i + 1}</span>${cardHtml(a, i)}</div>`).join('')
+      : items.map((a, i) => cardHtml(a, i)).join('');
+    return `
+      <section class="row reveal">
+        <div class="row-head">
+          <div><h2>${esc(title)}</h2>${sub ? `<p>${esc(sub)}</p>` : ''}</div>
+          ${more ? `<a class="row-more" href="${esc(more)}" data-link>View all ${icon.right}</a>` : ''}
+        </div>
+        <div class="track-wrap">
+          <button class="track-btn prev" aria-label="Scroll left" disabled>${icon.left}</button>
+          <div class="track${ranked ? ' ranked' : ''}">${cards}</div>
+          <button class="track-btn next" aria-label="Scroll right">${icon.right}</button>
+        </div>
+      </section>`;
+  }
+
+  // Safety net for every image on the page, including ones added without
+  // enhance(): show it as soon as it loads, swap in a placeholder if it breaks.
+  document.addEventListener('load', (e) => {
+    if (e.target.tagName === 'IMG') e.target.classList.add('loaded');
+  }, true);
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (img.tagName !== 'IMG' || img.closest('.detail-poster')) return;
+    const box = img.parentElement;
+    if (box && (box.classList.contains('card-poster') || box.classList.contains('result-img') || box.classList.contains('slot-img'))) {
+      box.classList.add('no-img');
+      img.remove();
+    }
+  }, true);
+
+  // ---------- Behaviours wired after each render ----------
+  function enhance(root) {
+    // If the browser never started the entrance animation (some embedded or
+    // throttled views freeze animations), show the cards anyway.
+    setTimeout(() => {
+      $$('.card', root).forEach((c) => c.getAnimations().forEach((a) => {
+        try { if (!a.currentTime) a.finish(); } catch { /* infinite animations can't finish */ }
+      }));
+    }, 1500);
+    // Fade images in once they load.
+    $$('img', root).forEach((img) => {
+      const done = () => img.classList.add('loaded');
+      if (img.complete) {
+        if (img.naturalWidth) done();
+        else {
+          img.parentElement?.classList.add('no-img');
+          img.remove();
+        }
+      } else {
+        img.addEventListener('load', done, { once: true });
+        // Broken artwork falls back to a branded placeholder instead of a blank box.
+        img.addEventListener('error', () => {
+          img.parentElement?.classList.add('no-img');
+          img.remove();
+        }, { once: true });
+      }
+    });
+
+    // Horizontal row arrows.
+    $$('.track-wrap', root).forEach((wrap) => {
+      const track = $('.track', wrap);
+      const prev = $('.prev', wrap);
+      const next = $('.next', wrap);
+      const update = () => {
+        prev.disabled = track.scrollLeft < 8;
+        next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 8;
+      };
+      const go = (dir) => track.scrollBy({ left: dir * track.clientWidth * 0.85, behavior: reduceMotion ? 'auto' : 'smooth' });
+      prev.addEventListener('click', () => go(-1));
+      next.addEventListener('click', () => go(1));
+      track.addEventListener('scroll', update, { passive: true });
+      requestAnimationFrame(update);
+    });
+
+    // Scroll-triggered reveals.
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      }),
+      { rootMargin: '0px 0px -8% 0px' }
+    );
+    $$('.reveal', root).forEach((el) => io.observe(el));
+  }
+
+  // Live countdowns for "next episode" labels.
+  function formatCountdown(sec) {
+    if (sec <= 0) return 'Out now';
+    const d = Math.floor(sec / 86400);
+    const h = Math.floor((sec % 86400) / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    return d ? `${d}d ${h}h ${m}m` : `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
+  }
+  setInterval(() => {
+    const now = Date.now() / 1000;
+    $$('[data-countdown]').forEach((el) => { el.textContent = formatCountdown(Number(el.dataset.countdown) - now); });
+  }, 1000);
+
+  // ---------- Trailer modal ----------
+  const modal = document.getElementById('trailerModal');
+  const frame = document.getElementById('trailerFrame');
+  let lastFocus = null;
+  function openTrailer(id) {
+    if (!/^[\w-]{11}$/.test(id)) return;
+    lastFocus = document.activeElement;
+    frame.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="Trailer" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+    modal.hidden = false;
+    $('.modal-close', modal).focus();
+    heroCtl?.pause();
+  }
+  function closeTrailer() {
+    modal.hidden = true;
+    frame.innerHTML = '';
+    lastFocus?.focus();
+    heroCtl?.resume();
+  }
+  modal.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeTrailer(); });
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-trailer]');
+    if (btn) { e.preventDefault(); openTrailer(btn.dataset.trailer); }
+  });
+
+  // ---------- Hero carousel ----------
+  let heroCtl = null;
+  const HERO_MS = 5000;
+
+  // Backdrop: TMDB w1280 on small screens, original resolution on large ones.
+  function artVars(a) {
+    const sm = a.backdrop || a.banner || a.image;
+    const lg = a.backdropHd || sm;
+    return `--bg-sm:url('${esc(sm)}');--bg-lg:url('${esc(lg)}')`;
+  }
+
+  // Official title logo when TMDB has one, plain text otherwise.
+  function titleHtml(a) {
+    if (!a.logo) return `<h1>${esc(a.title)}</h1>`;
+    const wide = (a.logoAspect || 3) >= 2.2;
+    // The logo shows the series name, so say which season or film this page is.
+    const cur = a.series?.seasons.find((x) => x.id === String(a.id));
+    const extra = !cur && a.series?.extras.find((x) => x.id === String(a.id));
+    const label = cur && a.series.seasons.length > 1
+      ? `Season ${cur.number} of ${a.series.seasons.length}${/part\s*\d/i.test(a.title) ? ` · ${a.title.match(/part\s*\d+/i)[0]}` : ''}`
+      : extra ? `${extra.format} · ${a.title}`
+      : (a.title.match(/(season\s*\d+|\d+(st|nd|rd|th)\s*season|part\s*\d+|final season)/i)?.[0] || '');
+    return `<h1 class="title-logo-wrap"><img class="title-logo${wide ? ' wide' : ''}" src="${esc(a.logo)}" alt="${esc(a.title)}" onerror="this.parentNode.textContent=this.alt"></h1>${label ? `<p class="logo-sub">${esc(label)}</p>` : ''}`;
+  }
+
+  function heroHtml(items) {
+    if (!items.length) return '';
+    const slides = items.map((a, i) => {
+      const meta = [a.type, a.year, a.episodes ? `${a.episodes} episodes` : null, ...(a.genres || []).slice(0, 2)].filter(Boolean);
+      return `
+        <div class="hero-slide${i === 0 ? ' active' : ''}" aria-hidden="${i !== 0}" role="group" aria-roledescription="slide" aria-label="${i + 1} of ${items.length}">
+          <div class="hero-bg${a.backdrop ? ' hd' : ''}" style="${artVars(a)}"></div>
+          <div class="hero-content">
+            <span class="hero-kicker"><span class="dot"></span>${a.airing ? 'Trending · Airing now' : 'Spotlight'}</span>
+            ${titleHtml(a)}
+            <div class="hero-meta">${scoreHtml(a)}${langHtml(a)}${meta.map((m) => `<span>${esc(m)}</span>`).join('<i class="sep"></i>')}</div>
+            <p class="hero-synopsis">${esc(a.synopsis)}</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="/anime/${esc(a.id)}" data-link>${icon.info}View details</a>
+              ${a.trailer ? `<button class="btn btn-ghost" data-trailer="${esc(a.trailer)}">${icon.play}Trailer</button>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+    const dots = items.map((a, i) => `<button class="hero-dot${i === 0 ? ' active' : ''}" aria-label="Show ${esc(a.title)}"><span></span></button>`).join('');
+    return `
+      <section class="hero" aria-roledescription="carousel" aria-label="Spotlight" style="--hero-ms:${HERO_MS}ms">
+        ${slides}
+        <div class="hero-dots">${dots}</div>
+        <div class="hero-arrows">
+          <button data-dir="-1" aria-label="Previous slide">${icon.left}</button>
+          <button data-dir="1" aria-label="Next slide">${icon.right}</button>
+        </div>
+      </section>`;
+  }
+
+  function startHero(root) {
+    const hero = $('.hero', root);
+    if (!hero) return null;
+    const slides = $$('.hero-slide', hero);
+    const dots = $$('.hero-dot', hero);
+    let index = 0;
+    let timer = null;
+    let remaining = HERO_MS;
+    let startedAt = 0;
+    let paused = false;
+
+    const show = (i) => {
+      index = (i + slides.length) % slides.length;
+      slides.forEach((s, j) => {
+        s.classList.toggle('active', j === index);
+        s.setAttribute('aria-hidden', String(j !== index));
+        $$('a,button', s).forEach((el) => (el.tabIndex = j === index ? 0 : -1));
+      });
+      dots.forEach((d, j) => {
+        d.classList.remove('active', 'done');
+        if (j < index) d.classList.add('done');
+      });
+      void dots[index].offsetWidth; // restart the progress animation
+      dots[index].classList.add('active');
+      remaining = HERO_MS;
+      schedule();
+    };
+    const schedule = () => {
+      clearTimeout(timer);
+      if (paused || reduceMotion) return;
+      startedAt = Date.now();
+      timer = setTimeout(() => show(index + 1), remaining);
+    };
+    const pause = () => {
+      if (paused) return;
+      paused = true;
+      hero.classList.add('paused');
+      clearTimeout(timer);
+      remaining -= Date.now() - startedAt;
+    };
+    const resume = () => {
+      if (!paused) return;
+      paused = false;
+      hero.classList.remove('paused');
+      schedule();
+    };
+
+    dots.forEach((d, i) => d.addEventListener('click', () => show(i)));
+    $$('.hero-arrows button', hero).forEach((b) => b.addEventListener('click', () => show(index + Number(b.dataset.dir))));
+    hero.addEventListener('mouseenter', pause);
+    hero.addEventListener('mouseleave', resume);
+    hero.addEventListener('focusin', pause);
+    hero.addEventListener('focusout', resume);
+
+    // Swipe on touch screens.
+    let x0 = null;
+    hero.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    hero.addEventListener('touchend', (e) => {
+      if (x0 == null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 50) show(index + (dx < 0 ? 1 : -1));
+      x0 = null;
+    });
+
+    const onVisibility = () => (document.hidden ? pause() : resume());
+    document.addEventListener('visibilitychange', onVisibility);
+
+    show(0);
+    return {
+      pause,
+      resume,
+      destroy() {
+        clearTimeout(timer);
+        document.removeEventListener('visibilitychange', onVisibility);
+      },
+    };
+  }
+
+  // ---------- Pages ----------
+  async function homePage(view) {
+    view.innerHTML = `<div class="sk sk-hero"></div><div class="rows" style="margin-top:24px">${[0, 1].map(() => `
+      <section class="row"><div class="row-head"><div class="sk" style="height:22px;width:200px"></div></div>
+      <div class="track">${skeletonCards(8)}</div></section>`).join('')}</div>`;
+
+    const data = await api('/home', 10 * 60 * 1000);
+    const season = data.seasonNow?.[0]?.season;
+    const seasonYear = data.seasonNow?.[0]?.year;
+    view.innerHTML = `
+      ${heroHtml(data.spotlight)}
+      <div class="rows"${data.spotlight.length ? '' : ' style="margin-top:calc(var(--nav-h) + 24px)"'}>
+        ${rowHtml({ title: 'Top 10 Airing Right Now', sub: 'Updated automatically every 30 minutes', items: data.trending, ranked: true, more: '/browse?status=airing&order=popularity' })}
+        ${rowHtml({ title: season ? `${cap(season)} ${seasonYear || ''} Season` : 'This Season', sub: 'Everything airing this season', items: data.seasonNow, more: '/browse?status=airing' })}
+        ${rowHtml({ title: 'Dubbed in English', sub: 'Popular titles you can watch with English audio', items: [...data.popular, ...data.topRated].filter((a, i, arr) => a.languages?.dub && arr.findIndex((b) => b.id === a.id) === i), more: '/browse?dub=1' })}
+        ${rowHtml({ title: 'Highest Rated of All Time', items: data.topRated, more: '/browse?order=score' })}
+        ${rowHtml({ title: 'Most Popular', items: data.popular, more: '/browse?order=popularity' })}
+        ${rowHtml({ title: 'Coming Next Season', sub: 'Most anticipated upcoming anime', items: data.upcoming, more: '/browse?status=upcoming' })}
+        ${rowHtml({ title: 'Top Anime Movies', items: data.movies, more: '/browse?type=movie&order=score' })}
+      </div>`;
+    enhance(view);
+    heroCtl = startHero(view);
+    return `AnimeVerse — Discover Anime`;
+  }
+
+  // ---------- Detail page sections ----------
+  // Prefer the big subscription platforms for the main "Watch on" button.
+  const PLATFORM_ORDER = ['crunchyroll', 'netflix', 'hidive', 'amazon prime video', 'prime video', 'disney plus', 'hulu', 'max', 'bilibili tv', 'muse asia', 'ani-one asia', 'youtube'];
+  function primaryStream(a) {
+    const list = (a.links || []).filter((l) => l.type === 'STREAMING');
+    const pool = list.length ? list : a.streaming || [];
+    const rank = (n) => { const i = PLATFORM_ORDER.indexOf(String(n).toLowerCase()); return i < 0 ? 50 : i; };
+    return [...pool].sort((x, y) => rank(x.name) - rank(y.name))[0] || null;
+  }
+
+  // ---------- Streambert OTT Style Watch Engine (Ad-Shielded) ----------
+  const STREAM_SERVERS = [
+    {
+      id: 'hianime',
+      name: 'HiAnime (Native)',
+      tag: '1080p • 0 Ads',
+      supportsDub: true,
+      isNative: true,
+      getUrl: () => '',
+    },
+    {
+      id: 'vidlink',
+      name: 'VidLink',
+      tag: 'Fast • Ad-Free',
+      supportsDub: true,
+      isNative: false,
+      getUrl: (alId, ep, lang, tmdbId, season) => `https://vidlink.pro/anime/${alId}/${ep}/${lang}`,
+    },
+    {
+      id: 'vidsrc',
+      name: 'VidSrc',
+      tag: 'Multi Audio',
+      supportsDub: true,
+      isNative: false,
+      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId ? `https://vsembed.su/embed/tv/${tmdbId}/${season}/${ep}` : `https://vsembed.su/embed/anime/${alId}/${ep}/${lang}`,
+    },
+    {
+      id: 'vidfast',
+      name: 'Vidfast',
+      tag: 'HD Stream',
+      supportsDub: false,
+      isNative: false,
+      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId ? `https://vidfast.vc/tv/${tmdbId}/${season}/${ep}` : `https://vidlink.pro/anime/${alId}/${ep}/${lang}`,
+    },
+    {
+      id: 'vidnest',
+      name: 'Vidnest',
+      tag: 'Anime Sub/Dub',
+      supportsDub: true,
+      isNative: false,
+      getUrl: (alId, ep, lang, tmdbId, season) => `https://vidnest.fun/anime/${alId}/${ep}/${lang}`,
+    },
+    {
+      id: 'aether',
+      name: 'Aether',
+      tag: 'Multi Lang',
+      supportsDub: false,
+      isNative: false,
+      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId ? `https://aether.ist/media/tmdb-tv-${tmdbId}/${season}/${ep}` : `https://vidlink.pro/anime/${alId}/${ep}/${lang}`,
+    },
+    {
+      id: 'vidrift',
+      name: 'Vidrift',
+      tag: 'Anime ✓',
+      supportsDub: true,
+      isNative: false,
+      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId ? `https://embed.vidrift.net/embed/tv/${tmdbId}/${season}/${ep}` : `https://vidlink.pro/anime/${alId}/${ep}/${lang}`,
+    },
+    {
+      id: 'autoembed',
+      name: 'AutoEmbed',
+      tag: 'Fallback',
+      supportsDub: false,
+      isNative: false,
+      getUrl: (alId, ep) => `https://anime.autoembed.cc/embed/${alId}/${ep}`,
+    },
+  ];
+
+  // Accurately calculates only genuinely available / aired episodes
+  function getAvailableEpisodes(a) {
+    if (a.status === 'Not yet aired') return 0;
+    if (a.type === 'Movie') return 1;
+
+    // Currently airing anime: nextEpisode tells what airs next (e.g., ep 5 next means 1..4 are out)
+    if (a.nextEpisode?.episode && Number(a.nextEpisode.episode) > 1) {
+      return Number(a.nextEpisode.episode) - 1;
+    }
+
+    // Finished airing anime: all episodes are out
+    if (a.status === 'Finished Airing' && a.episodes && Number(a.episodes) > 0) {
+      return Number(a.episodes);
+    }
+
+    // Airing ongoing without nextEpisode: estimate based on start date
+    if (a.airing) {
+      if (a.aired) {
+        const match = a.aired.match(/([A-Za-z]+)\s+(\d{1,2}),\s+(\d{4})/);
+        if (match) {
+          const startDate = new Date(`${match[1]} ${match[2]}, ${match[3]}`);
+          const diffWeeks = Math.floor((Date.now() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+          if (diffWeeks > 0) {
+            return a.episodes ? Math.min(diffWeeks, Number(a.episodes)) : diffWeeks;
+          }
+        }
+      }
+      return 1;
+    }
+
+    if (a.episodes && Number(a.episodes) > 0) {
+      return Number(a.episodes);
+    }
+
+    return 1;
+  }
+
+  async function watchPage(view, id, params) {
+    view.innerHTML = `
+      <div class="watch-page">
+        <div class="player-top-header">
+          <div class="sk" style="height:28px;width:340px;border-radius:6px;"></div>
+        </div>
+        <div class="player-wrap">
+          <div class="player-loader">
+            <div class="spinner"></div>
+            <p>Loading episode stream…</p>
+          </div>
+        </div>
+        <div class="episodes-section" style="margin-top:36px;">
+          <div class="sk" style="height:24px;width:140px;margin-bottom:18px;"></div>
+          <div class="episodes-grid">
+            ${Array.from({ length: 8 }, () => '<div class="sk" style="height:110px;border-radius:8px;"></div>').join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const a = await api(`/anime/${encodeURIComponent(id)}`, 30 * 60 * 1000);
+    const alId = a.anilistId || (String(a.id).startsWith('al') ? Number(a.id.slice(2)) : a.id);
+    const availableEp = getAvailableEpisodes(a);
+
+    if (availableEp === 0) {
+      view.innerHTML = `
+        <div class="watch-page" style="text-align:center;padding:80px 20px;">
+          <h2>Not Yet Available</h2>
+          <p style="color:var(--muted);margin:12px auto 24px;max-width:500px;">
+            ${esc(a.title)} has not started airing yet. Please check back when episode 1 releases.
+          </p>
+          <a href="/anime/${esc(a.id)}" class="btn btn-primary" data-link>Back to Anime Details</a>
+        </div>
+      `;
+      return `${a.title} — AnimeVerse`;
+    }
+
+    const detectedSeason = detectSeasonNumber(a.title, a.titleRomaji);
+    let currentSeason = Number(params.get('season') || (detectedSeason > 1 ? detectedSeason : (localStorage.getItem(`animeverse_season_${a.id}`) || 1)));
+    let viewingSeason = currentSeason;
+    let currentEp = Number(params.get('ep') || localStorage.getItem(`animeverse_ep_${a.id}`) || 1);
+
+    // Fetch TMDB / Structured episodes metadata
+    let epData = await api(`/anime/${encodeURIComponent(id)}/episodes?season=${currentSeason}`, 60 * 60 * 1000).catch(() => null);
+
+    const tmdbId = epData?.tmdbId || null;
+    let seasons = (epData?.seasons && epData.seasons.length > 0) ? epData.seasons : [{ season_number: currentSeason, name: `Season ${currentSeason}`, episode_count: availableEp }];
+    let episodes = (epData?.episodes && epData.episodes.length > 0) ? epData.episodes : [];
+
+    // Fallback if episodes empty
+    if (!episodes.length) {
+      for (let i = 1; i <= availableEp; i++) {
+        episodes.push({
+          episode_number: i,
+          season_number: currentSeason,
+          name: `Episode ${i}`,
+          overview: a.synopsis || '',
+          still_path: a.banner || a.image,
+          air_date: a.aired || null,
+        });
+      }
+    }
+
+    // Only filter to available episodes if this season is the currently airing one
+    if (currentSeason === detectedSeason && a.airing && availableEp < episodes.length) {
+      episodes = episodes.filter((e) => e.episode_number <= availableEp);
+    }
+
+    if (currentEp < 1) currentEp = 1;
+    if (currentEp > episodes.length) currentEp = episodes.length;
+
+    let currentServer = 'hianime';
+    const savedServer = sessionStorage.getItem('animeverse_server_session');
+    if (savedServer && ['hianime', 'vidlink', 'vidsrc', 'vidfast'].includes(savedServer)) {
+      currentServer = savedServer;
+    } else {
+      localStorage.setItem('animeverse_server', 'hianime');
+    }
+    let currentLang = localStorage.getItem('animeverse_lang') || 'sub';
+
+    const storageKeyWatched = `animeverse_watched_${a.id}`;
+    let watched = new Set();
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKeyWatched) || '[]');
+      if (Array.isArray(saved)) watched = new Set(saved);
+    } catch {}
+
+    const storageKeyProgress = (ep, s = currentSeason) => `animeverse_prog_${a.id}_s${s}_e${ep}`;
+    let currentEpPct = Number(localStorage.getItem(storageKeyProgress(currentEp, currentSeason)) || (watched.has(currentEp) ? 100 : 0));
+
+    function getActiveServer() {
+      return STREAM_SERVERS.find((srv) => srv.id === currentServer) || STREAM_SERVERS[0];
+    }
+
+    function getServerUrl(ep = currentEp) {
+      const s = getActiveServer();
+      return s.getUrl(alId, ep, currentLang, tmdbId, currentSeason);
+    }
+
+    const currentEpObj = episodes.find((e) => e.episode_number === currentEp) || {
+      episode_number: currentEp,
+      name: `Episode ${currentEp}`,
+      overview: a.synopsis,
+      still_path: a.banner || a.image,
+    };
+
+    function renderEpisodeCardsHtml(list = episodes, cur = currentEp, isSeasonActive = true, sNum = currentSeason) {
+      return list.map((ep) => {
+        const isCur = isSeasonActive && ep.episode_number === cur;
+        const isWatched = watched.has(ep.episode_number);
+        const epProgress = Number(localStorage.getItem(storageKeyProgress(ep.episode_number, sNum)) || (isWatched ? 100 : 0));
+        const thumb = ep.still_path || a.banner || a.image;
+        const overview = ep.overview || a.synopsis || 'No episode description available.';
+
+        return `
+          <div class="episode-card${isCur ? ' playing' : ''}${isWatched ? ' ep-watched' : ''}" data-ep-card="${ep.episode_number}">
+            <div class="episode-thumb">
+              <img src="${esc(thumb)}" alt="Episode ${ep.episode_number}" loading="lazy">
+              ${isCur ? `
+                <div class="episode-playing-badge">
+                  <span class="episode-playing-dot"></span> Playing
+                </div>
+              ` : `
+                <div class="episode-thumb-play">${icon.play}</div>
+              `}
+            </div>
+            <div class="episode-info">
+              <div class="episode-num">
+                <span>E${ep.episode_number}</span>
+                ${isWatched ? '<span class="episode-watched-check">✓</span>' : ''}
+              </div>
+              <div class="episode-name">${esc(ep.name || `Episode ${ep.episode_number}`)}</div>
+              <div class="episode-desc-wrap">
+                <p class="episode-desc clamped" id="epDesc_${ep.episode_number}">
+                  ${esc(overview)}
+                </p>
+                ${overview.length > 90 ? `
+                  <button type="button" class="episode-desc-toggle" data-desc-toggle="${ep.episode_number}">MORE</button>
+                ` : ''}
+              </div>
+              ${epProgress > 0 && !isWatched ? `
+                <div class="episode-progress-bar">
+                  <div class="episode-progress-fill" style="width: ${Math.min(epProgress, 100)}%"></div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    view.innerHTML = `
+      <div class="watch-page" id="watchPageContainer">
+        <!-- Top Header Above Player -->
+        <div class="player-top-header">
+          <div class="player-title-row">
+            <span class="tag tag-red" id="seasonEpTag">Season ${currentSeason} · E${currentEp}</span>
+            <span class="player-ep-title" id="playerEpTitle">${esc(currentEpObj.name || `Episode ${currentEp}`)}</span>
+            <button type="button" class="mark-watched-btn${watched.has(currentEp) ? ' watched' : ''}" id="markWatchedBtn">
+              ${watched.has(currentEp) ? '✓ Watched' : '✓ Mark Watched'}
+            </button>
+          </div>
+        </div>
+
+        <!-- Cinema Video Player Container -->
+        <div class="player-wrap is-loading initial-loading" id="playerWrap">
+          <div class="player-loader" id="playerLoader">
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Native Ad-Free HTML5 Video Player -->
+          <video
+            id="nativeVideoPlayer"
+            class="native-video-player"
+            playsinline
+            preload="auto"
+            crossorigin="anonymous"
+            style="display:none;"
+          ></video>
+
+          <!-- Fallback Embed Player (sandboxed against popups/redirects) -->
+          <iframe
+            id="watchIframe"
+            src=""
+            style="display:none;"
+            title="${esc(a.title)} - Season ${currentSeason} Episode ${currentEp}"
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            sandbox="allow-scripts allow-same-origin allow-forms"
+            referrerpolicy="no-referrer"
+            allowfullscreen
+          ></iframe>
+
+          <!-- Center Big Play Button -->
+          <button type="button" class="player-center-play" id="playerCenterPlayBtn" aria-label="Play video">
+            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+          </button>
+
+          <!-- Floating Unlock Pill (shows only when controls are locked) -->
+          <button type="button" class="player-unlock-pill" id="playerUnlockFloatingBtn" hidden>
+            <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            Controls Locked — Click to Unlock
+          </button>
+
+          <!-- Custom Player Top Bar -->
+          <div class="player-top-bar" id="playerTopBar">
+            <div class="player-top-left">
+              <!-- Server Selector Pill -->
+              <button type="button" class="player-pill-btn" id="sourceSelectorBtn" title="Select Server">
+                <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                <span id="activeSourceLabel">${esc(getActiveServer().name)}</span>
+                <svg class="ic" viewBox="0 0 24 24" style="width:10px;height:10px;"><path d="M7 10l5 5 5-5" stroke-width="2.4"/></svg>
+              </button>
+
+              <!-- AdShield Badge Pill -->
+              <button type="button" class="player-pill-btn" id="adShieldBtn" title="AdShield Protection Active">
+                <svg class="ic" viewBox="0 0 24 24"><path d="M12 2l7 3.5v6.5c0 5-3.5 9-7 10-3.5-1-7-5-7-10V5.5L12 2z"/></svg>
+                <span class="player-blocked-badge" id="adShieldBadge">${window.__adShieldBlockedCount || 0}</span>
+              </button>
+
+              <!-- Brand Title & Tag -->
+              <div class="player-brand-info">
+                <span class="player-brand-title">${esc(a.title)}</span>
+                <span class="player-brand-tag">${a.type || 'ANIME'}</span>
+              </div>
+            </div>
+
+            <div class="player-top-right">
+              <!-- Quality & Settings Button (matching user's screenshot) -->
+              <button type="button" class="player-pill-btn" id="playerQualityBtn" title="Video Quality & Settings">
+                <svg class="ic" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                <span>Quality <strong id="playerQualityLabel">AUTO</strong></span>
+              </button>
+
+              <!-- Audio & Subtitles Button (matching user's screenshot) -->
+              <button type="button" class="player-pill-btn" id="playerAudioSubsBtn" title="Audio & Subtitles">
+                <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 15h3M14 15h3M7 11h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <span>Audio &amp; Subtitles</span>
+              </button>
+
+              <!-- Theater Mode Button -->
+              <button type="button" class="player-pill-btn" id="theaterToggleBtn" title="Toggle Theater Mode">
+                <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quality & Settings Dropdown Popover (matching screenshot 1) -->
+          <div class="player-popup-menu" id="playerSettingsMenu" hidden>
+            <div class="player-popup-columns">
+              <!-- QUALITY Column -->
+              <div class="player-popup-col">
+                <div class="player-popup-heading">QUALITY</div>
+                <div id="playerQualityList">
+                  <button type="button" class="player-popup-item active" data-quality="-1">
+                    <span>Auto</span><span class="player-popup-check">✓</span>
+                  </button>
+                  <button type="button" class="player-popup-item" data-quality="1080">
+                    <span>1080p</span><span class="player-popup-check">✓</span>
+                  </button>
+                  <button type="button" class="player-popup-item" data-quality="720">
+                    <span>720p</span><span class="player-popup-check">✓</span>
+                  </button>
+                  <button type="button" class="player-popup-item" data-quality="480">
+                    <span>480p</span><span class="player-popup-check">✓</span>
+                  </button>
+                  <button type="button" class="player-popup-item" data-quality="360">
+                    <span>360p</span><span class="player-popup-check">✓</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- SERVER Column -->
+              <div class="player-popup-col">
+                <div class="player-popup-heading">SERVER</div>
+                <div id="playerServerList">
+                  ${STREAM_SERVERS.map((s) => `
+                    <button type="button" class="player-popup-item${s.id === currentServer ? ' active' : ''}" data-server-id="${s.id}">
+                      <span>${esc(s.name)}</span>
+                      <span class="player-popup-check">✓</span>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <!-- SOURCE / DUB AUDIO Section -->
+            <div class="player-popup-heading">SOURCE / AUDIO</div>
+            <div id="playerAudioSourceList" style="margin-bottom:8px;">
+              <button type="button" class="player-popup-item${currentLang === 'sub' ? ' active' : ''}" data-audio-lang="sub">
+                <span>Original (Japanese)</span>
+                <span class="player-popup-check">✓</span>
+              </button>
+              <button type="button" class="player-popup-item${currentLang === 'dub' ? ' active' : ''}" data-audio-lang="dub">
+                <span>English Dub</span>
+                <span class="player-popup-check">✓</span>
+              </button>
+            </div>
+
+            <div class="player-popup-divider"></div>
+
+            <!-- Settings Options: Speed, Skip Interval, Volume Boost, Video Fit -->
+            <div class="player-setting-row" id="settingSpeedRow">
+              <span>Speed</span>
+              <span class="player-setting-val"><span id="speedValLabel">Normal</span> &gt;</span>
+            </div>
+            <div class="player-setting-row" id="settingSkipRow">
+              <span>Skip interval</span>
+              <span class="player-setting-val"><span id="skipValLabel">10s</span> &gt;</span>
+            </div>
+            <div class="player-setting-row" id="settingBoostRow">
+              <span>Volume boost</span>
+              <span class="player-setting-val"><span id="boostValLabel">Off</span> &gt;</span>
+            </div>
+            <div class="player-setting-row" id="settingVideoFitRow">
+              <span>Video</span>
+              <span class="player-setting-val"><span id="videoFitValLabel">Fit</span> &gt;</span>
+            </div>
+          </div>
+
+          <!-- Audio & Subtitles Dropdown Popover -->
+          <div class="player-popup-menu" id="playerAudioSubsMenu" hidden>
+            <div class="player-popup-heading">AUDIO TRACKS</div>
+            <div id="audioTracksList" style="margin-bottom:12px;">
+              <button type="button" class="player-popup-item${currentLang === 'sub' ? ' active' : ''}" data-audio-lang="sub">
+                <span>Original (Japanese)</span>
+                <span class="player-popup-check">✓</span>
+              </button>
+              <button type="button" class="player-popup-item${currentLang === 'dub' ? ' active' : ''}" data-audio-lang="dub">
+                <span>English Dub</span>
+                <span class="player-popup-check">✓</span>
+              </button>
+            </div>
+
+            <div class="player-popup-divider"></div>
+
+            <div class="player-popup-heading">SUBTITLES</div>
+            <div id="subtitleTracksList" style="max-height:160px;overflow-y:auto;">
+              <button type="button" class="player-popup-item active" data-sub-idx="-1">
+                <span>Off</span>
+                <span class="player-popup-check">✓</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Player Bottom Control Bar (matching screenshots 2 & 3) -->
+          <div class="player-bottom-bar" id="playerBottomBar">
+            <!-- Scrubber Timeline -->
+            <div class="player-timeline-wrap" id="playerTimeline">
+              <div class="player-timeline-rail">
+                <div class="player-timeline-buffered" id="playerTimelineBuffered"></div>
+                <div class="player-timeline-played" id="playerTimelinePlayed"></div>
+                <div class="player-timeline-thumb" id="playerTimelineThumb"></div>
+              </div>
+              <div class="player-timeline-tooltip" id="playerTimelineTooltip">0:00</div>
+            </div>
+
+            <!-- Controls Row -->
+            <div class="player-controls-row">
+              <div class="player-controls-left">
+                <!-- Play / Pause -->
+                <button type="button" class="player-ctrl-btn" id="playerPlayBtn" title="Play/Pause (Space)" aria-label="Play/Pause">
+                  <svg class="ic play-ic" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>
+                  <svg class="ic pause-ic" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg>
+                </button>
+
+                <!-- Skip Back 10s -->
+                <button type="button" class="player-ctrl-btn" id="playerRewindBtn" title="Rewind 10s (← / J)" aria-label="Rewind 10s">
+                  <svg class="ic player-skip-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                    <text x="12" y="15" text-anchor="middle">10</text>
+                  </svg>
+                </button>
+
+                <!-- Skip Forward 10s -->
+                <button type="button" class="player-ctrl-btn" id="playerFwdBtn" title="Forward 10s (→ / L)" aria-label="Forward 10s">
+                  <svg class="ic player-skip-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                    <path d="M21 3v5h-5"/>
+                    <text x="12" y="15" text-anchor="middle">10</text>
+                  </svg>
+                </button>
+
+                <!-- Volume Group -->
+                <div class="player-volume-group">
+                  <button type="button" class="player-ctrl-btn" id="playerVolBtn" title="Mute/Unmute (M)">
+                    <svg class="ic" viewBox="0 0 24 24" id="volHighIcon"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                    <svg class="ic" viewBox="0 0 24 24" id="volMuteIcon" hidden><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2"/><line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="2"/></svg>
+                  </button>
+                  <input type="range" class="player-volume-slider" id="playerVolSlider" min="0" max="1" step="0.05" value="1">
+                </div>
+
+                <!-- Time Display: 0:01 / 24:12 • Ends at 6:05 PM -->
+                <div class="player-time-display" id="playerTimeDisplay">
+                  <span class="player-time-current" id="timeCurrent">0:00</span> / <span id="timeDuration">0:00</span>
+                  <span class="player-time-ends" id="timeEndsAt">• Ends at --:--</span>
+                </div>
+              </div>
+
+              <div class="player-controls-right">
+                <!-- Lock Controls Button -->
+                <button type="button" class="player-ctrl-btn" id="playerLockBtn" title="Lock controls">
+                  <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                </button>
+
+                <!-- Picture in Picture -->
+                <button type="button" class="player-ctrl-btn" id="playerPipBtn" title="Picture in Picture">
+                  <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="12" y="11" width="8" height="7" rx="1" fill="currentColor"/></svg>
+                </button>
+
+                <!-- Fullscreen -->
+                <button type="button" class="player-ctrl-btn" id="playerFsBtn" title="Fullscreen (F)">
+                  <svg class="ic" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rich OTT Episodes Section (Matching Streambert) -->
+        <div class="episodes-section">
+          <div class="episodes-section-header">
+            <h2 class="episodes-section-title">EPISODES</h2>
+            <span class="episodes-count-badge" id="episodesCountBadge">${episodes.length} Episodes</span>
+          </div>
+
+          <!-- Season Selector Tabs -->
+          <div class="season-selector" id="seasonSelector">
+            ${seasons.map((s) => `
+              <button type="button" class="season-btn${s.season_number === viewingSeason ? ' active' : ''}" data-season-num="${s.season_number}">
+                ${esc(s.name || `Season ${s.season_number}`)}
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Episodes Grid -->
+          <div class="episodes-grid" id="episodesGrid">
+            ${renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason)}
+          </div>
+        </div>
+
+        <!-- AdShield Info Modal (Hidden by default) -->
+        <div class="adshield-modal-backdrop" id="adShieldModal" hidden>
+          <div class="adshield-modal-card">
+            <div class="adshield-modal-header">
+              <h3>
+                <svg class="ic" viewBox="0 0 24 24" style="color:var(--red);"><path d="M12 2l7 3.5v6.5c0 5-3.5 9-7 10-3.5-1-7-5-7-10V5.5L12 2z"/></svg>
+                Streambert AdShield Active
+              </h3>
+              <button type="button" class="icon-btn" id="closeAdShieldModal">${icon.x}</button>
+            </div>
+            <div class="adshield-stats-grid">
+              <div class="adshield-stat-box">
+                <div class="adshield-stat-num" id="modalBlockCount">${window.__adShieldBlockedCount || 0}</div>
+                <div class="adshield-stat-label">Redirects & Popups Blocked</div>
+              </div>
+              <div class="adshield-stat-box">
+                <div class="adshield-stat-num" style="color:#48c774;">Active</div>
+                <div class="adshield-stat-label">Sandbox Stream Shield</div>
+              </div>
+            </div>
+            <p class="adshield-note">
+              AdShield automatically intercepts and destroys rogue ad redirects, tracking popups, and clickjacking scripts so your viewing experience remains clean, isolated, and safe.
+            </p>
+            <button type="button" class="btn btn-primary" style="width:100%;" id="dismissAdShieldBtn">Done</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    setupWatchPageInteractions({
+      view,
+      a,
+      alId,
+      tmdbId,
+      currentSeason,
+      viewingSeason,
+      detectedSeason,
+      availableEp,
+      currentEp,
+      episodes,
+      seasons,
+      currentServer,
+      currentLang,
+      watched,
+      storageKeyWatched,
+      renderEpisodeCardsHtml,
+    });
+
+    return `Watch E${currentEp}: ${a.title} — AnimeVerse`;
+  }
+
+  function setupWatchPageInteractions(ctx) {
+    const {
+      view,
+      a,
+      alId,
+      tmdbId,
+      seasons,
+      watched,
+      storageKeyWatched,
+      renderEpisodeCardsHtml,
+      detectedSeason,
+      availableEp,
+    } = ctx;
+
+    let currentSeason = ctx.currentSeason;
+    let viewingSeason = ctx.viewingSeason || currentSeason;
+    let currentEp = ctx.currentEp;
+    let currentServer = ctx.currentServer;
+    let currentLang = ctx.currentLang;
+    let episodes = ctx.episodes;
+
+    const storageKeyProgress = (ep, s = currentSeason) => `animeverse_prog_${a.id}_s${s}_e${ep}`;
+
+    function getActiveServer() {
+      return STREAM_SERVERS.find((srv) => srv.id === currentServer) || STREAM_SERVERS[0];
+    }
+
+    function getServerUrl(ep = currentEp) {
+      const s = getActiveServer();
+      return s.getUrl(alId, ep, currentLang, tmdbId, currentSeason);
+    }
+
+    const video = $('#nativeVideoPlayer', view);
+    const iframe = $('#watchIframe', view);
+    const loader = $('#playerLoader', view);
+    const loaderText = $('#playerLoaderText', view);
+    const wrap = $('#playerWrap', view);
+    const seasonEpTag = $('#seasonEpTag', view);
+    const playerEpTitle = $('#playerEpTitle', view);
+    const markWatchedBtn = $('#markWatchedBtn', view);
+    const sourceSelectorBtn = $('#sourceSelectorBtn', view);
+    const activeSourceLabel = $('#activeSourceLabel', view);
+    const adShieldBtn = $('#adShieldBtn', view);
+    const adShieldBadge = $('#adShieldBadge', view);
+    const adShieldModal = $('#adShieldModal', view);
+    const closeAdShieldModal = $('#closeAdShieldModal', view);
+    const dismissAdShieldBtn = $('#dismissAdShieldBtn', view);
+    const modalBlockCount = $('#modalBlockCount', view);
+    const theaterToggleBtn = $('#theaterToggleBtn', view);
+    const progressBarFill = $('#progressBarFill', view);
+    const progressPctLabel = $('#progressPctLabel', view);
+    const episodesGrid = $('#episodesGrid', view);
+    const seasonSelector = $('#seasonSelector', view);
+    const episodesCountBadge = $('#episodesCountBadge', view);
+
+    // Custom Player Elements (matching user's screenshots)
+    const playerCenterPlayBtn = $('#playerCenterPlayBtn', view);
+    const playerUnlockFloatingBtn = $('#playerUnlockFloatingBtn', view);
+    const playerTopBar = $('#playerTopBar', view);
+    const playerQualityBtn = $('#playerQualityBtn', view);
+    const playerQualityLabel = $('#playerQualityLabel', view);
+    const playerAudioSubsBtn = $('#playerAudioSubsBtn', view);
+    const playerSettingsMenu = $('#playerSettingsMenu', view);
+    const playerQualityList = $('#playerQualityList', view);
+    const playerServerList = $('#playerServerList', view);
+    const playerAudioSourceList = $('#playerAudioSourceList', view);
+    const playerAudioSubsMenu = $('#playerAudioSubsMenu', view);
+    const audioTracksList = $('#audioTracksList', view);
+    const subtitleTracksList = $('#subtitleTracksList', view);
+    const settingSpeedRow = $('#settingSpeedRow', view);
+    const speedValLabel = $('#speedValLabel', view);
+    const settingSkipRow = $('#settingSkipRow', view);
+    const skipValLabel = $('#skipValLabel', view);
+    const settingBoostRow = $('#settingBoostRow', view);
+    const boostValLabel = $('#boostValLabel', view);
+    const settingVideoFitRow = $('#settingVideoFitRow', view);
+    const videoFitValLabel = $('#videoFitValLabel', view);
+
+    const playerBottomBar = $('#playerBottomBar', view);
+    const playerTimeline = $('#playerTimeline', view);
+    const playerTimelineBuffered = $('#playerTimelineBuffered', view);
+    const playerTimelinePlayed = $('#playerTimelinePlayed', view);
+    const playerTimelineThumb = $('#playerTimelineThumb', view);
+    const playerTimelineTooltip = $('#playerTimelineTooltip', view);
+    const playerPlayBtn = $('#playerPlayBtn', view);
+    const playIcon = $('#playIcon', view);
+    const pauseIcon = $('#pauseIcon', view);
+    const playerRewindBtn = $('#playerRewindBtn', view);
+    const playerFwdBtn = $('#playerFwdBtn', view);
+    const playerVolBtn = $('#playerVolBtn', view);
+    const volHighIcon = $('#volHighIcon', view);
+    const volMuteIcon = $('#volMuteIcon', view);
+    const playerVolSlider = $('#playerVolSlider', view);
+    const timeCurrent = $('#timeCurrent', view);
+    const timeDuration = $('#timeDuration', view);
+    const timeEndsAt = $('#timeEndsAt', view);
+    const playerLockBtn = $('#playerLockBtn', view);
+    const playerPipBtn = $('#playerPipBtn', view);
+    const playerFsBtn = $('#playerFsBtn', view);
+
+    let currentHls = null;
+    let audioCtx = null;
+    let gainNode = null;
+    let audioSource = null;
+    let hideControlsTimer = null;
+    let currentSkipInterval = Number(localStorage.getItem('animeverse_skip') || 10);
+    let currentSpeed = Number(localStorage.getItem('animeverse_speed') || 1.0);
+    let currentBoost = Number(localStorage.getItem('animeverse_boost') || 1.0);
+    let currentVideoFit = localStorage.getItem('animeverse_fit') || 'contain';
+
+    function formatTime(sec) {
+      if (!sec || isNaN(sec) || sec < 0) return '0:00';
+      const s = Math.floor(sec);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const remainingS = s % 60;
+      const paddedS = remainingS < 10 ? '0' + remainingS : remainingS;
+      if (h > 0) {
+        const paddedM = m < 10 ? '0' + m : m;
+        return `${h}:${paddedM}:${paddedS}`;
+      }
+      return `${m}:${paddedS}`;
+    }
+
+    function formatEndsAt(secRemaining) {
+      if (!secRemaining || isNaN(secRemaining) || secRemaining <= 0) return '• Ends at --:--';
+      const end = new Date(Date.now() + secRemaining * 1000);
+      let hours = end.getHours();
+      const minutes = end.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const paddedM = minutes < 10 ? '0' + minutes : minutes;
+      return `• Ends at ${hours}:${paddedM} ${ampm}`;
+    }
+
+    function applyVolumeBoost(mult) {
+      currentBoost = mult;
+      localStorage.setItem('animeverse_boost', String(mult));
+      if (boostValLabel) boostValLabel.textContent = mult === 1.0 ? 'Off' : `${Math.round(mult * 100)}%`;
+      if (mult <= 1.0) {
+        if (gainNode) gainNode.gain.value = 1.0;
+        return;
+      }
+      try {
+        if (!audioCtx) {
+          const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtxClass && video) {
+            audioCtx = new AudioCtxClass();
+            audioSource = audioCtx.createMediaElementSource(video);
+            gainNode = audioCtx.createGain();
+            audioSource.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        if (gainNode) {
+          gainNode.gain.value = mult;
+        }
+      } catch (e) {
+        console.warn('Volume boost error:', e);
+      }
+    }
+
+    function resetControlsTimer() {
+      if (!wrap || wrap.classList.contains('is-locked')) return;
+      wrap.classList.remove('controls-hidden');
+      clearTimeout(hideControlsTimer);
+      if (video && !video.paused) {
+        hideControlsTimer = setTimeout(() => {
+          if (playerSettingsMenu && !playerSettingsMenu.hidden) return;
+          if (playerAudioSubsMenu && !playerAudioSubsMenu.hidden) return;
+          wrap.classList.add('controls-hidden');
+        }, 3200);
+      }
+    }
+
+    if (wrap) {
+      wrap.addEventListener('mousemove', resetControlsTimer);
+      wrap.addEventListener('click', resetControlsTimer);
+      wrap.addEventListener('mouseleave', () => {
+        if (video && !video.paused && !wrap.classList.contains('is-locked')) {
+          wrap.classList.add('controls-hidden');
+        }
+      });
+    }
+
+    cleanup.push(() => {
+      clearTimeout(hideControlsTimer);
+      if (currentHls) {
+        currentHls.destroy();
+        currentHls = null;
+      }
+      if (audioCtx) {
+        try { audioCtx.close(); } catch {}
+        audioCtx = null;
+      }
+      if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+      }
+    });
+
+    if (iframe && loader) {
+      iframe.onload = () => {
+        const s = getActiveServer();
+        if (!s.isNative) {
+          loader.classList.add('hidden');
+        }
+      };
+    }
+
+    let resolveGen = 0;
+
+    async function reloadStream() {
+      const thisGen = ++resolveGen;
+      const s = getActiveServer();
+
+      if (loader) loader.classList.remove('hidden');
+      if (wrap) wrap.classList.add('is-loading');
+      if (playerCenterPlayBtn) playerCenterPlayBtn.classList.remove('playing');
+
+      // Reset seekbar visually
+      if (playerTimelinePlayed) playerTimelinePlayed.style.width = '0%';
+      if (timeCurrent) timeCurrent.textContent = '0:00';
+
+      if (s.isNative) {
+        if (iframe) {
+          iframe.style.display = 'none';
+          iframe.src = 'about:blank';
+        }
+        if (video) {
+          video.style.display = 'block';
+          video.style.objectFit = currentVideoFit;
+          video.playbackRate = currentSpeed;
+        }
+        if (playerCenterPlayBtn) playerCenterPlayBtn.style.display = '';
+        if (playerBottomBar) playerBottomBar.style.display = '';
+
+        if (currentHls) {
+          currentHls.destroy();
+          currentHls = null;
+        }
+        if (video) {
+          video.pause();
+          video.removeAttribute('src');
+          while (video.firstChild) {
+            video.removeChild(video.firstChild);
+          }
+          video.load();
+        }
+
+        try {
+          const res = await api(
+            `/stream/resolve?title=${encodeURIComponent(a.title)}&romaji=${encodeURIComponent(a.titleRomaji || '')}&season=${currentSeason}&episode=${currentEp}&mode=${currentLang}`,
+            30 * 60 * 1000
+          );
+
+          if (thisGen !== resolveGen) return;
+
+          if (!res || !res.streamUrl) {
+            throw new Error('No stream URL available');
+          }
+
+          // Subtitle tracks
+          if (res.subtitles && res.subtitles.length > 0 && video) {
+            res.subtitles.forEach((sub, idx) => {
+              const track = document.createElement('track');
+              track.kind = 'subtitles';
+              track.label = sub.label || sub.lang || `Track ${idx + 1}`;
+              track.srclang = sub.lang || 'en';
+              track.src = sub.src;
+              if (sub.default) track.default = true;
+              video.appendChild(track);
+            });
+
+            // Populate Subtitles Popup
+            if (subtitleTracksList) {
+              let subHtml = `
+                <button type="button" class="player-popup-item" data-sub-idx="-1">
+                  <span>Off</span><span class="player-popup-check">✓</span>
+                </button>
+              `;
+              res.subtitles.forEach((sub, idx) => {
+                const isDef = sub.default || idx === 0;
+                subHtml += `
+                  <button type="button" class="player-popup-item${isDef ? ' active' : ''}" data-sub-idx="${idx}">
+                    <span>${esc(sub.label || sub.lang || `Track ${idx + 1}`)}</span>
+                    <span class="player-popup-check">✓</span>
+                  </button>
+                `;
+              });
+              subtitleTracksList.innerHTML = subHtml;
+
+              $$('[data-sub-idx]', subtitleTracksList).forEach((subBtn) => {
+                subBtn.addEventListener('click', () => {
+                  const subIdx = Number(subBtn.dataset.subIdx);
+                  $$('[data-sub-idx]', subtitleTracksList).forEach((b) => {
+                    b.classList.toggle('active', Number(b.dataset.subIdx) === subIdx);
+                  });
+                  if (video && video.textTracks) {
+                    for (let i = 0; i < video.textTracks.length; i++) {
+                      video.textTracks[i].mode = (i === subIdx) ? 'showing' : 'hidden';
+                    }
+                  }
+                });
+              });
+            }
+          }
+
+          const savedPct = Number(localStorage.getItem(storageKeyProgress(currentEp)) || 0);
+
+          if (window.Hls && Hls.isSupported()) {
+            const hls = new Hls({
+              autoStartLoad: true,
+              enableWorker: true,
+              startFragPrefetch: false,
+              progressive: false,
+              lowLatencyMode: false,
+              maxBufferLength: 60,
+              maxMaxBufferLength: 120,
+              backBufferLength: 30,
+              maxBufferSize: 60 * 1024 * 1024,
+              maxBufferHole: 0.5,
+              highBufferWatchdogPeriod: 2,
+              nudgeOffset: 0.1,
+              nudgeMaxRetry: 5,
+              abrEwmaDefaultEstimate: 5000000,
+              abrBandWidthFactor: 0.85,
+              abrBandWidthUpFactor: 0.7,
+              capLevelToPlayerSize: false,
+            });
+            currentHls = hls;
+            hls.loadSource(res.streamUrl);
+            hls.attachMedia(video);
+
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+              if (thisGen !== resolveGen) return;
+
+              if (savedPct > 0 && savedPct < 95 && video.duration) {
+                video.currentTime = (savedPct / 100) * video.duration;
+              }
+
+              // Reveal player and hide loader
+              if (loader) loader.classList.add('hidden');
+              if (wrap) {
+                wrap.classList.remove('is-loading');
+                wrap.classList.remove('initial-loading');
+              }
+
+              const playPromise = video.play();
+              if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.then(() => {
+                  if (typeof syncPlayState === 'function') syncPlayState();
+                }).catch(() => {
+                  // Browser blocked unmuted autoplay (typical in Chrome when user hasn't clicked yet)
+                  // Show the big center play button so the user can easily tap to start
+                  if (playerCenterPlayBtn) playerCenterPlayBtn.classList.remove('playing');
+                  if (typeof syncPlayState === 'function') syncPlayState();
+                });
+              }
+
+              // Populate Quality column in settings menu
+              if (playerQualityList && hls.levels && hls.levels.length > 0) {
+                let qHtml = `
+                  <button type="button" class="player-popup-item active" data-quality="-1">
+                    <span>Auto</span><span class="player-popup-check">✓</span>
+                  </button>
+                `;
+                const sorted = hls.levels.map((lvl, idx) => ({ lvl, idx })).sort((a, b) => (b.lvl.height || 0) - (a.lvl.height || 0));
+                sorted.forEach(({ lvl, idx }) => {
+                  const h = lvl.height || 1080;
+                  qHtml += `
+                    <button type="button" class="player-popup-item" data-quality="${idx}">
+                      <span>${h}p</span><span class="player-popup-check">✓</span>
+                    </button>
+                  `;
+                });
+                playerQualityList.innerHTML = qHtml;
+
+                $$('[data-quality]', playerQualityList).forEach((qBtn) => {
+                  qBtn.addEventListener('click', () => {
+                    const qIdx = Number(qBtn.dataset.quality);
+                    if (!hls) return;
+                    const wasPlaying = !video.paused;
+
+                    // Show loader spinner on player during transition
+                    if (loader) loader.classList.remove('hidden');
+                    if (wrap) wrap.classList.add('is-loading');
+
+                    if (qIdx === -1) {
+                      hls.currentLevel = -1;
+                      if (playerQualityLabel) {
+                        const cur = hls.levels[hls.currentLevel];
+                        playerQualityLabel.textContent = cur?.height ? `AUTO (${cur.height}p)` : 'AUTO';
+                      }
+                    } else {
+                      hls.currentLevel = qIdx;
+                      if (playerQualityLabel) {
+                        const h = hls.levels[qIdx]?.height || 1080;
+                        playerQualityLabel.textContent = `${h}p`;
+                      }
+                    }
+
+                    $$('[data-quality]', playerQualityList).forEach((b) => {
+                      b.classList.toggle('active', Number(b.dataset.quality) === qIdx);
+                    });
+
+                    const resumePlayback = () => {
+                      if (loader) loader.classList.add('hidden');
+                      if (wrap) {
+                        wrap.classList.remove('is-loading');
+                        wrap.classList.remove('initial-loading');
+                      }
+                      if (wasPlaying && video.paused) {
+                        video.play().catch(() => {});
+                      }
+                      if (typeof syncPlayState === 'function') syncPlayState();
+                    };
+
+                    const switchTimer = setTimeout(resumePlayback, 450);
+                    const cleanResume = () => {
+                      clearTimeout(switchTimer);
+                      resumePlayback();
+                    };
+
+                    hls.once(Hls.Events.LEVEL_SWITCHED, cleanResume);
+                    video.addEventListener('canplay', cleanResume, { once: true });
+                    video.addEventListener('playing', cleanResume, { once: true });
+                  });
+                });
+              }
+
+              // Multi-audio tracks from HLS if available
+              if (hls.audioTracks && hls.audioTracks.length > 1 && audioTracksList) {
+                let aHtml = '';
+                hls.audioTracks.forEach((t, idx) => {
+                  const isAct = hls.audioTrack === idx;
+                  aHtml += `
+                    <button type="button" class="player-popup-item${isAct ? ' active' : ''}" data-hls-audio="${idx}">
+                      <span>${esc(t.name || t.lang || `Audio ${idx + 1}`)}</span>
+                      <span class="player-popup-check">✓</span>
+                    </button>
+                  `;
+                });
+                audioTracksList.innerHTML = aHtml;
+                $$('[data-hls-audio]', audioTracksList).forEach((aBtn) => {
+                  aBtn.addEventListener('click', () => {
+                    const aIdx = Number(aBtn.dataset.hlsAudio);
+                    if (!hls) return;
+                    const wasPlaying = !video.paused;
+                    if (loader) loader.classList.remove('hidden');
+                    if (wrap) wrap.classList.add('is-loading');
+
+                    hls.audioTrack = aIdx;
+                    $$('[data-hls-audio]', audioTracksList).forEach((b) => {
+                      b.classList.toggle('active', Number(b.dataset.hlsAudio) === aIdx);
+                    });
+
+                    const resumeAudio = () => {
+                      if (loader) loader.classList.add('hidden');
+                      if (wrap) {
+                        wrap.classList.remove('is-loading');
+                        wrap.classList.remove('initial-loading');
+                      }
+                      if (wasPlaying && video.paused) {
+                        video.play().catch(() => {});
+                      }
+                      if (typeof syncPlayState === 'function') syncPlayState();
+                    };
+
+                    const audioTimer = setTimeout(resumeAudio, 450);
+                    const cleanAudioResume = () => {
+                      clearTimeout(audioTimer);
+                      resumeAudio();
+                    };
+
+                    hls.once(Hls.Events.AUDIO_TRACK_SWITCHED, cleanAudioResume);
+                    video.addEventListener('canplay', cleanAudioResume, { once: true });
+                  });
+                });
+              }
+            });
+
+            hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
+              const currentLvl = hls.levels[data.level];
+              if (playerQualityLabel) {
+                if (hls.autoLevelEnabled) {
+                  playerQualityLabel.textContent = currentLvl?.height ? `AUTO (${currentLvl.height}p)` : 'AUTO';
+                } else {
+                  playerQualityLabel.textContent = currentLvl?.height ? `${currentLvl.height}p` : 'HD';
+                }
+              }
+              if (loader) loader.classList.add('hidden');
+              if (wrap) {
+                wrap.classList.remove('is-loading');
+                wrap.classList.remove('initial-loading');
+              }
+              if (typeof syncPlayState === 'function') syncPlayState();
+            });
+
+            hls.on(Hls.Events.ERROR, (evt, errData) => {
+              if (errData.fatal) {
+                switch (errData.type) {
+                  case Hls.ErrorTypes.NETWORK_ERROR:
+                    hls.startLoad();
+                    break;
+                  case Hls.ErrorTypes.MEDIA_ERROR:
+                    hls.recoverMediaError();
+                    break;
+                  default:
+                    hls.destroy();
+                    break;
+                }
+              }
+            });
+          } else if (video && video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = res.streamUrl;
+            video.addEventListener('loadedmetadata', () => {
+              if (thisGen !== resolveGen) return;
+              if (loader) loader.classList.add('hidden');
+              if (wrap) wrap.classList.remove('is-loading');
+              if (savedPct > 0 && savedPct < 95 && video.duration) {
+                video.currentTime = (savedPct / 100) * video.duration;
+              }
+              video.play().catch(() => {});
+            }, { once: true });
+          } else {
+            throw new Error('HLS playback is not supported by your browser.');
+          }
+        } catch (err) {
+          if (thisGen !== resolveGen) return;
+          console.warn('[Player] Native stream resolution failed:', err.message);
+          if (loader) loader.classList.add('hidden');
+          if (wrap) {
+            wrap.classList.remove('is-loading');
+            wrap.classList.remove('initial-loading');
+            const prevErr = wrap.querySelector('.player-error-overlay');
+            if (prevErr) prevErr.remove();
+            const errOverlay = document.createElement('div');
+            errOverlay.className = 'player-error-overlay';
+            errOverlay.innerHTML = `
+              <div class="player-error-box">
+                <p style="font-size:15px;font-weight:700;margin-bottom:6px;">Stream currently unavailable</p>
+                <p style="font-size:12px;color:#aaa;margin-bottom:14px;">${esc(err.message || 'Could not load native stream.')}</p>
+                <div style="display:flex;gap:10px;justify-content:center;">
+                  <button type="button" class="btn btn-red" id="retryStreamBtn">Retry</button>
+                  <button type="button" class="btn btn-ghost" id="tryVidLinkBtn">Try VidLink</button>
+                </div>
+              </div>
+            `;
+            wrap.appendChild(errOverlay);
+            $('#retryStreamBtn', errOverlay)?.addEventListener('click', () => reloadStream());
+            $('#tryVidLinkBtn', errOverlay)?.addEventListener('click', () => {
+              currentServer = 'vidlink';
+              sessionStorage.setItem('animeverse_server_session', 'vidlink');
+              reloadStream();
+            });
+          }
+        }
+      } else {
+        // Fallback iframe
+        if (currentHls) {
+          currentHls.destroy();
+          currentHls = null;
+        }
+        if (video) {
+          video.pause();
+          video.style.display = 'none';
+        }
+        if (playerCenterPlayBtn) playerCenterPlayBtn.style.display = 'none';
+        if (playerBottomBar) playerBottomBar.style.display = 'none';
+
+        if (iframe) {
+          iframe.style.display = 'block';
+          iframe.src = s.getUrl(alId, currentEp, currentLang, tmdbId, currentSeason);
+          const hideLoader = () => {
+            if (thisGen !== resolveGen) return;
+            if (loader) loader.classList.add('hidden');
+            if (wrap) wrap.classList.remove('is-loading');
+          };
+          iframe.onload = hideLoader;
+          setTimeout(hideLoader, 2000);
+        }
+      }
+    }
+
+    // Centralized Play/Pause Sync
+    function syncPlayState() {
+      if (!video) return;
+      const isPlaying = !video.paused && !video.ended && video.readyState > 1;
+      if (playerPlayBtn) {
+        if (isPlaying) {
+          playerPlayBtn.classList.add('is-playing');
+          playerPlayBtn.setAttribute('title', 'Pause (Space)');
+          playerPlayBtn.setAttribute('aria-label', 'Pause');
+        } else {
+          playerPlayBtn.classList.remove('is-playing');
+          playerPlayBtn.setAttribute('title', 'Play (Space)');
+          playerPlayBtn.setAttribute('aria-label', 'Play');
+        }
+      }
+      if (playerCenterPlayBtn) {
+        if (isPlaying) {
+          playerCenterPlayBtn.classList.add('playing');
+        } else {
+          playerCenterPlayBtn.classList.remove('playing');
+        }
+      }
+    }
+
+    // Play / Pause Toggle
+    function togglePlay() {
+      if (!video) return;
+      if (video.paused) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    }
+
+    if (playerCenterPlayBtn) playerCenterPlayBtn.addEventListener('click', togglePlay);
+    if (playerPlayBtn) playerPlayBtn.addEventListener('click', togglePlay);
+    if (video) {
+      video.addEventListener('click', (e) => {
+        if (e.target === video) togglePlay();
+      });
+      video.addEventListener('play', () => {
+        syncPlayState();
+        resetControlsTimer();
+      });
+      video.addEventListener('playing', () => {
+        syncPlayState();
+        if (loader) loader.classList.add('hidden');
+        if (wrap) {
+          wrap.classList.remove('is-loading');
+          wrap.classList.remove('initial-loading');
+        }
+      });
+      video.addEventListener('pause', () => {
+        syncPlayState();
+        showControls();
+      });
+      video.addEventListener('waiting', () => {
+        if (loader) loader.classList.remove('hidden');
+        if (wrap) wrap.classList.add('is-loading');
+      });
+      video.addEventListener('canplay', () => {
+        if (loader) loader.classList.add('hidden');
+        if (wrap) {
+          wrap.classList.remove('is-loading');
+          wrap.classList.remove('initial-loading');
+        }
+        syncPlayState();
+      });
+      video.addEventListener('loadedmetadata', () => {
+        updatePlayerTimeAndProgress();
+        syncPlayState();
+      });
+    }
+
+    // Progress, Scrubber, and Time display updates
+    let isSeeking = false;
+    let seekTargetPct = 0;
+    let lastSavedProgressTime = 0;
+    let lastReportedPct = -1;
+
+    function updatePlayerTimeAndProgress() {
+      if (isSeeking) return;
+      if (!video || !video.duration || isNaN(video.duration)) return;
+      const cur = video.currentTime;
+      const dur = video.duration;
+      const pct = (cur / dur) * 100;
+
+      if (playerTimelinePlayed) playerTimelinePlayed.style.width = `${pct}%`;
+      if (playerTimelineThumb) playerTimelineThumb.style.left = `${pct}%`;
+
+      if (video.buffered && video.buffered.length > 0) {
+        let bufEnd = 0;
+        for (let i = 0; i < video.buffered.length; i++) {
+          if (video.buffered.start(i) <= cur + 1 && video.buffered.end(i) >= cur) {
+            bufEnd = video.buffered.end(i);
+            break;
+          }
+        }
+        if (bufEnd === 0) {
+          bufEnd = video.buffered.end(video.buffered.length - 1);
+        }
+        const bufPct = Math.min(100, (bufEnd / dur) * 100);
+        if (playerTimelineBuffered) playerTimelineBuffered.style.width = `${bufPct}%`;
+      }
+
+      if (timeCurrent) timeCurrent.textContent = formatTime(cur);
+      if (timeDuration) timeDuration.textContent = formatTime(dur);
+      if (timeEndsAt) timeEndsAt.textContent = formatEndsAt(dur - cur);
+
+      if (!video.paused && playerPlayBtn && !playerPlayBtn.classList.contains('is-playing')) {
+        syncPlayState();
+      }
+
+      const roundPct = Math.min(100, Math.floor(pct));
+      if (roundPct > 0) {
+        if (roundPct !== lastReportedPct) {
+          lastReportedPct = roundPct;
+          updateProgressUI(roundPct);
+        }
+
+        // Throttle disk I/O to at most once every 4 seconds to prevent main-thread stutter
+        const now = Date.now();
+        if (now - lastSavedProgressTime > 4000) {
+          lastSavedProgressTime = now;
+          try {
+            localStorage.setItem(storageKeyProgress(currentEp), String(roundPct));
+          } catch {}
+        }
+
+        if (roundPct >= 85 && !watched.has(currentEp)) {
+          watched.add(currentEp);
+          saveWatched();
+          if (markWatchedBtn) {
+            markWatchedBtn.classList.add('watched');
+            markWatchedBtn.textContent = '✓ Watched';
+          }
+          if (episodesGrid && viewingSeason === currentSeason) {
+            episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
+            attachCardListeners(episodes, currentSeason);
+          }
+        }
+      }
+    }
+
+    if (video) {
+      video.addEventListener('timeupdate', updatePlayerTimeAndProgress);
+      video.addEventListener('pause', () => {
+        syncPlayState();
+        if (video.duration && !isNaN(video.duration)) {
+          const pct = Math.min(100, Math.floor((video.currentTime / video.duration) * 100));
+          if (pct > 0) {
+            try {
+              localStorage.setItem(storageKeyProgress(currentEp), String(pct));
+            } catch {}
+          }
+        }
+      });
+      video.addEventListener('ended', () => {
+        watched.add(currentEp);
+        saveWatched();
+        localStorage.setItem(storageKeyProgress(currentEp), '100');
+        updateProgressUI(100);
+        if (markWatchedBtn) {
+          markWatchedBtn.classList.add('watched');
+          markWatchedBtn.textContent = '✓ Watched';
+        }
+        if (episodesGrid && viewingSeason === currentSeason) {
+          episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
+          attachCardListeners(episodes, currentSeason);
+        }
+        if (currentEp < episodes.length) {
+          switchEpisode(currentEp + 1);
+        }
+      });
+    }
+
+    // Interactive timeline scrubber
+    if (playerTimeline) {
+      function calculatePos(e) {
+        const rect = playerTimeline.getBoundingClientRect();
+        if (!rect.width) return 0;
+        return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      }
+
+      function updateScrubberVisual(pos) {
+        const pct = pos * 100;
+        if (playerTimelinePlayed) playerTimelinePlayed.style.width = `${pct}%`;
+        if (playerTimelineThumb) playerTimelineThumb.style.left = `${pct}%`;
+        if (video && video.duration) {
+          const targetTime = pos * video.duration;
+          if (timeCurrent) timeCurrent.textContent = formatTime(targetTime);
+          if (timeEndsAt) timeEndsAt.textContent = formatEndsAt(video.duration - targetTime);
+          if (playerTimelineTooltip) {
+            playerTimelineTooltip.textContent = formatTime(targetTime);
+            playerTimelineTooltip.style.left = `${pct}%`;
+            playerTimelineTooltip.style.opacity = '1';
+          }
+        }
+      }
+
+      playerTimeline.addEventListener('mousedown', (e) => {
+        if (!video || !video.duration) return;
+        isSeeking = true;
+        playerTimeline.classList.add('is-seeking');
+        const pos = calculatePos(e);
+        seekTargetPct = pos;
+        updateScrubberVisual(pos);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isSeeking) return;
+        const pos = calculatePos(e);
+        seekTargetPct = pos;
+        updateScrubberVisual(pos);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (!isSeeking) return;
+        isSeeking = false;
+        if (playerTimeline) playerTimeline.classList.remove('is-seeking');
+        if (video && video.duration) {
+          video.currentTime = seekTargetPct * video.duration;
+          updatePlayerTimeAndProgress();
+        }
+      });
+
+      playerTimeline.addEventListener('mousemove', (e) => {
+        if (isSeeking || !video || !video.duration || !playerTimelineTooltip) return;
+        const pos = calculatePos(e);
+        const hoverTime = pos * video.duration;
+        playerTimelineTooltip.textContent = formatTime(hoverTime);
+        playerTimelineTooltip.style.left = `${pos * 100}%`;
+        playerTimelineTooltip.style.opacity = '1';
+      });
+
+      playerTimeline.addEventListener('mouseleave', () => {
+        if (!isSeeking && playerTimelineTooltip) {
+          playerTimelineTooltip.style.opacity = '0';
+        }
+      });
+    }
+
+    // Skip Back / Skip Forward
+    function updateSkipIcons(sec) {
+      const rwText = $('#playerRewindBtn text', view);
+      const fwText = $('#playerFwdBtn text', view);
+      if (rwText) rwText.textContent = String(sec);
+      if (fwText) fwText.textContent = String(sec);
+      if (playerRewindBtn) playerRewindBtn.setAttribute('title', `Rewind ${sec}s (← / J)`);
+      if (playerFwdBtn) playerFwdBtn.setAttribute('title', `Forward ${sec}s (→ / L)`);
+    }
+    updateSkipIcons(currentSkipInterval);
+
+    if (playerRewindBtn) {
+      playerRewindBtn.addEventListener('click', () => {
+        if (video) video.currentTime = Math.max(0, video.currentTime - currentSkipInterval);
+      });
+    }
+    if (playerFwdBtn) {
+      playerFwdBtn.addEventListener('click', () => {
+        if (video) video.currentTime = Math.min(video.duration, video.currentTime + currentSkipInterval);
+      });
+    }
+
+    // Volume & Mute Slider
+    let lastVolume = 1;
+    if (playerVolBtn) {
+      playerVolBtn.addEventListener('click', () => {
+        if (!video) return;
+        if (video.muted || video.volume === 0) {
+          video.muted = false;
+          video.volume = lastVolume || 1;
+          if (playerVolSlider) playerVolSlider.value = String(video.volume);
+          if (volHighIcon) volHighIcon.hidden = false;
+          if (volMuteIcon) volMuteIcon.hidden = true;
+        } else {
+          lastVolume = video.volume;
+          video.muted = true;
+          if (playerVolSlider) playerVolSlider.value = '0';
+          if (volHighIcon) volHighIcon.hidden = true;
+          if (volMuteIcon) volMuteIcon.hidden = false;
+        }
+      });
+    }
+    if (playerVolSlider) {
+      playerVolSlider.addEventListener('input', () => {
+        if (!video) return;
+        video.volume = Number(playerVolSlider.value);
+        video.muted = video.volume === 0;
+        if (volHighIcon) volHighIcon.hidden = video.muted;
+        if (volMuteIcon) volMuteIcon.hidden = !video.muted;
+        if (video.volume > 0) lastVolume = video.volume;
+      });
+    }
+
+    // Settings & Quality Popover Toggle
+    if (playerQualityBtn && playerSettingsMenu) {
+      playerQualityBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (playerAudioSubsMenu) playerAudioSubsMenu.hidden = true;
+        const willShow = playerSettingsMenu.hidden;
+        playerSettingsMenu.hidden = !willShow;
+        playerQualityBtn.classList.toggle('active', willShow);
+      });
+    }
+
+    // Audio & Subtitles Popover Toggle
+    if (playerAudioSubsBtn && playerAudioSubsMenu) {
+      playerAudioSubsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (playerSettingsMenu) playerSettingsMenu.hidden = true;
+        const willShow = playerAudioSubsMenu.hidden;
+        playerAudioSubsMenu.hidden = !willShow;
+        playerAudioSubsBtn.classList.toggle('active', willShow);
+      });
+    }
+
+    // Close popups on click outside
+    document.addEventListener('click', (e) => {
+      if (playerSettingsMenu && !playerSettingsMenu.contains(e.target) && e.target !== playerQualityBtn) {
+        playerSettingsMenu.hidden = true;
+        if (playerQualityBtn) playerQualityBtn.classList.remove('active');
+      }
+      if (playerAudioSubsMenu && !playerAudioSubsMenu.contains(e.target) && e.target !== playerAudioSubsBtn) {
+        playerAudioSubsMenu.hidden = true;
+        if (playerAudioSubsBtn) playerAudioSubsBtn.classList.remove('active');
+      }
+    });
+
+    // Server list in settings popover
+    if (playerServerList) {
+      $$('[data-server-id]', playerServerList).forEach((sBtn) => {
+        sBtn.addEventListener('click', () => {
+          const sid = sBtn.dataset.serverId;
+          currentServer = sid;
+          localStorage.setItem('animeverse_server', currentServer);
+          sessionStorage.setItem('animeverse_server_session', currentServer);
+          $$('[data-server-id]', playerServerList).forEach((b) => {
+            b.classList.toggle('active', b.dataset.serverId === sid);
+          });
+          if (activeSourceLabel) activeSourceLabel.textContent = sBtn.querySelector('span')?.textContent || sid;
+          if (playerSettingsMenu) playerSettingsMenu.hidden = true;
+          if (playerQualityBtn) playerQualityBtn.classList.remove('active');
+          reloadStream();
+        });
+      });
+    }
+
+    // Source / Audio Track list in popups
+    function wireAudioLanguageButtons(container) {
+      if (!container) return;
+      $$('[data-audio-lang]', container).forEach((aBtn) => {
+        aBtn.addEventListener('click', () => {
+          const lang = aBtn.dataset.audioLang;
+          if (lang === currentLang) return;
+          currentLang = lang;
+          localStorage.setItem('animeverse_lang', currentLang);
+          $$('[data-audio-lang]').forEach((b) => {
+            b.classList.toggle('active', b.dataset.audioLang === currentLang);
+          });
+          if (playerSettingsMenu) playerSettingsMenu.hidden = true;
+          if (playerAudioSubsMenu) playerAudioSubsMenu.hidden = true;
+          if (playerQualityBtn) playerQualityBtn.classList.remove('active');
+          if (playerAudioSubsBtn) playerAudioSubsBtn.classList.remove('active');
+          reloadStream();
+        });
+      });
+    }
+    wireAudioLanguageButtons(playerAudioSourceList);
+    wireAudioLanguageButtons(audioTracksList);
+
+    // Speed setting row
+    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+    if (speedValLabel) speedValLabel.textContent = currentSpeed === 1.0 ? 'Normal' : `${currentSpeed}x`;
+    if (settingSpeedRow) {
+      settingSpeedRow.addEventListener('click', () => {
+        const curIdx = speeds.indexOf(currentSpeed);
+        currentSpeed = speeds[(curIdx + 1) % speeds.length];
+        localStorage.setItem('animeverse_speed', String(currentSpeed));
+        if (video) video.playbackRate = currentSpeed;
+        if (speedValLabel) speedValLabel.textContent = currentSpeed === 1.0 ? 'Normal' : `${currentSpeed}x`;
+      });
+    }
+
+    // Skip interval setting row
+    const skipIntervals = [5, 10, 15, 30, 60];
+    if (skipValLabel) skipValLabel.textContent = `${currentSkipInterval}s`;
+    if (settingSkipRow) {
+      settingSkipRow.addEventListener('click', () => {
+        const curIdx = skipIntervals.indexOf(currentSkipInterval);
+        currentSkipInterval = skipIntervals[(curIdx + 1) % skipIntervals.length];
+        localStorage.setItem('animeverse_skip', String(currentSkipInterval));
+        if (skipValLabel) skipValLabel.textContent = `${currentSkipInterval}s`;
+        updateSkipIcons(currentSkipInterval);
+      });
+    }
+
+    // Volume boost setting row
+    const boosts = [1.0, 1.5, 2.0, 3.0];
+    applyVolumeBoost(currentBoost);
+    if (settingBoostRow) {
+      settingBoostRow.addEventListener('click', () => {
+        const curIdx = boosts.indexOf(currentBoost);
+        const nextBoost = boosts[(curIdx + 1) % boosts.length];
+        applyVolumeBoost(nextBoost);
+      });
+    }
+
+    // Video fit setting row
+    const videoFits = [
+      { id: 'contain', label: 'Fit' },
+      { id: 'cover', label: 'Cover' },
+      { id: 'fill', label: 'Stretch' },
+    ];
+    if (videoFitValLabel) videoFitValLabel.textContent = videoFits.find((f) => f.id === currentVideoFit)?.label || 'Fit';
+    if (settingVideoFitRow) {
+      settingVideoFitRow.addEventListener('click', () => {
+        const curIdx = videoFits.findIndex((f) => f.id === currentVideoFit);
+        const nextFit = videoFits[(curIdx + 1) % videoFits.length];
+        currentVideoFit = nextFit.id;
+        localStorage.setItem('animeverse_fit', currentVideoFit);
+        if (video) video.style.objectFit = currentVideoFit;
+        if (videoFitValLabel) videoFitValLabel.textContent = nextFit.label;
+      });
+    }
+
+    // Lock controls button
+    if (playerLockBtn && wrap) {
+      playerLockBtn.addEventListener('click', () => {
+        wrap.classList.add('is-locked');
+        if (playerUnlockFloatingBtn) playerUnlockFloatingBtn.hidden = false;
+      });
+    }
+    if (playerUnlockFloatingBtn && wrap) {
+      playerUnlockFloatingBtn.addEventListener('click', () => {
+        wrap.classList.remove('is-locked');
+        playerUnlockFloatingBtn.hidden = true;
+        resetControlsTimer();
+      });
+    }
+
+    // Picture in Picture
+    if (playerPipBtn && video) {
+      playerPipBtn.addEventListener('click', async () => {
+        try {
+          if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+          } else if (document.pictureInPictureEnabled) {
+            await video.requestPictureInPicture();
+          }
+        } catch (e) {
+          console.warn('PIP error:', e);
+        }
+      });
+    }
+
+    // Fullscreen Toggle
+    if (playerFsBtn && wrap) {
+      playerFsBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          wrap.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      });
+    }
+
+    // Keyboard Shortcuts
+    function handleKeyDown(e) {
+      // Don't trigger if user is typing in a search or input field
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === ' ' || e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === 'ArrowLeft' || e.key === 'j' || e.key === 'J') {
+        e.preventDefault();
+        if (video) video.currentTime = Math.max(0, video.currentTime - currentSkipInterval);
+      } else if (e.key === 'ArrowRight' || e.key === 'l' || e.key === 'L') {
+        e.preventDefault();
+        if (video) video.currentTime = Math.min(video.duration, video.currentTime + currentSkipInterval);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (video) {
+          video.volume = Math.min(1, video.volume + 0.1);
+          if (playerVolSlider) playerVolSlider.value = String(video.volume);
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (video) {
+          video.volume = Math.max(0, video.volume - 0.1);
+          if (playerVolSlider) playerVolSlider.value = String(video.volume);
+        }
+      } else if (e.key === 'm' || e.key === 'M') {
+        if (playerVolBtn) playerVolBtn.click();
+      } else if (e.key === 'f' || e.key === 'F') {
+        if (playerFsBtn) playerFsBtn.click();
+      } else if (e.key === 'c' || e.key === 'C') {
+        // Toggle subtitles
+        if (video && video.textTracks && video.textTracks.length > 0) {
+          const isShowing = video.textTracks[0].mode === 'showing';
+          video.textTracks[0].mode = isShowing ? 'hidden' : 'showing';
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    cleanup.push(() => window.removeEventListener('keydown', handleKeyDown));
+
+    function updateProgressUI(pct) {
+      if (progressBarFill) progressBarFill.style.width = `${pct}%`;
+      if (progressPctLabel) progressPctLabel.textContent = pct > 0 ? `${pct}% watched` : '';
+    }
+
+    function saveWatched() {
+      try {
+        localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
+      } catch {}
+    }
+
+    // Toggle watched on button
+    if (markWatchedBtn) {
+      markWatchedBtn.addEventListener('click', () => {
+        const isWatched = watched.has(currentEp);
+        if (isWatched) {
+          watched.delete(currentEp);
+          markWatchedBtn.classList.remove('watched');
+          markWatchedBtn.textContent = '✓ Mark Watched';
+          localStorage.removeItem(storageKeyProgress(currentEp));
+          updateProgressUI(0);
+        } else {
+          watched.add(currentEp);
+          markWatchedBtn.classList.add('watched');
+          markWatchedBtn.textContent = '✓ Watched';
+          localStorage.setItem(storageKeyProgress(currentEp), '100');
+          updateProgressUI(100);
+        }
+        saveWatched();
+        if (episodesGrid && viewingSeason === currentSeason) {
+          episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
+          attachCardListeners(episodes, currentSeason);
+        }
+      });
+    }
+
+    // Progress mark buttons
+    $$('.progress-mark-btn', view).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const pct = Number(btn.dataset.pct);
+        localStorage.setItem(storageKeyProgress(currentEp), String(pct));
+        updateProgressUI(pct);
+        if (pct >= 90) {
+          watched.add(currentEp);
+          if (markWatchedBtn) {
+            markWatchedBtn.classList.add('watched');
+            markWatchedBtn.textContent = '✓ Watched';
+          }
+          saveWatched();
+        }
+        if (episodesGrid && viewingSeason === currentSeason) {
+          episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
+          attachCardListeners(episodes, currentSeason);
+        }
+      });
+    });
+
+    if (sourceSelectorBtn && playerSettingsMenu) {
+      sourceSelectorBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (playerAudioSubsMenu) playerAudioSubsMenu.hidden = true;
+        const willShow = playerSettingsMenu.hidden;
+        playerSettingsMenu.hidden = !willShow;
+        if (playerQualityBtn) playerQualityBtn.classList.toggle('active', willShow);
+      });
+    }
+
+    // AdShield Modal
+    function openShieldModal() {
+      if (adShieldModal) {
+        if (modalBlockCount) modalBlockCount.textContent = String(window.__adShieldBlockedCount || 0);
+        adShieldModal.hidden = false;
+        adShieldModal.style.display = 'flex';
+      }
+    }
+    function closeShieldModal() {
+      if (adShieldModal) {
+        adShieldModal.hidden = true;
+        adShieldModal.style.display = 'none';
+      }
+    }
+
+    if (adShieldBtn) adShieldBtn.addEventListener('click', openShieldModal);
+    if (closeAdShieldModal) closeAdShieldModal.addEventListener('click', closeShieldModal);
+    if (dismissAdShieldBtn) dismissAdShieldBtn.addEventListener('click', closeShieldModal);
+    if (adShieldModal) {
+      adShieldModal.addEventListener('click', (e) => {
+        if (e.target === adShieldModal) closeShieldModal();
+      });
+    }
+
+    // Live update for AdShield badge
+    window.addEventListener('adshield:blocked', (e) => {
+      if (adShieldBadge) adShieldBadge.textContent = String(e.detail.count);
+      if (modalBlockCount) modalBlockCount.textContent = String(e.detail.count);
+    });
+
+    // Theater mode
+    if (theaterToggleBtn && wrap) {
+      theaterToggleBtn.addEventListener('click', () => {
+        const isTheater = wrap.classList.toggle('theater-mode');
+        theaterToggleBtn.classList.toggle('active', isTheater);
+        if (isTheater) wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    function switchEpisode(epNum) {
+      currentEp = epNum;
+      viewingSeason = currentSeason;
+      try {
+        localStorage.setItem(`animeverse_season_${a.id}`, String(currentSeason));
+        localStorage.setItem(`animeverse_ep_${a.id}`, String(currentEp));
+      } catch {}
+
+      const epObj = episodes.find((e) => e.episode_number === currentEp) || {
+        episode_number: currentEp,
+        name: `Episode ${currentEp}`,
+      };
+
+      if (seasonEpTag) seasonEpTag.textContent = `Season ${currentSeason} · E${currentEp}`;
+      if (playerEpTitle) playerEpTitle.textContent = epObj.name || `Episode ${currentEp}`;
+
+      const isWatched = watched.has(currentEp);
+      if (markWatchedBtn) {
+        markWatchedBtn.classList.toggle('watched', isWatched);
+        markWatchedBtn.textContent = isWatched ? '✓ Watched' : '✓ Mark Watched';
+      }
+
+      const epPct = Number(localStorage.getItem(storageKeyProgress(currentEp)) || (isWatched ? 100 : 0));
+      updateProgressUI(epPct);
+
+      // Re-mark playing card in grid and sync active season tab
+      if (seasonSelector) {
+        $$('.season-btn', seasonSelector).forEach((b) => b.classList.toggle('active', Number(b.dataset.seasonNum) === currentSeason));
+      }
+      if (episodesCountBadge) {
+        episodesCountBadge.textContent = `${episodes.length} Episodes`;
+      }
+      if (episodesGrid) {
+        episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
+        attachCardListeners(episodes, currentSeason);
+      }
+
+      // Update URL silently
+      window.history.replaceState({}, '', `/watch/${encodeURIComponent(a.id)}?season=${currentSeason}&ep=${currentEp}`);
+      document.title = `Watch E${currentEp}: ${a.title} — AnimeVerse`;
+
+      reloadStream();
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
+
+    function attachCardListeners(cardList = episodes, cardSeason = viewingSeason) {
+      if (!episodesGrid) return;
+
+      $$('[data-ep-card]', episodesGrid).forEach((card) => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.episode-desc-toggle')) return;
+          const epNum = Number(card.dataset.epCard);
+          if (epNum !== currentEp || cardSeason !== currentSeason) {
+            currentSeason = cardSeason;
+            episodes = cardList;
+            switchEpisode(epNum);
+          }
+        });
+      });
+
+      // Episode description MORE / LESS toggles
+      $$('.episode-desc-toggle', episodesGrid).forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const epNum = btn.dataset.descToggle;
+          const descEl = $(`#epDesc_${epNum}`, episodesGrid);
+          if (descEl) {
+            const isClamped = descEl.classList.toggle('clamped');
+            btn.textContent = isClamped ? 'MORE' : 'LESS';
+          }
+        });
+      });
+    }
+
+    attachCardListeners(episodes, currentSeason);
+
+    // Season selector tabs
+    if (seasonSelector) {
+      $$('.season-btn', seasonSelector).forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const sNum = Number(btn.dataset.seasonNum);
+          if (sNum === viewingSeason) return;
+
+          viewingSeason = sNum;
+
+          $$('.season-btn', seasonSelector).forEach((b) => b.classList.toggle('active', Number(b.dataset.seasonNum) === viewingSeason));
+
+          if (episodesGrid) {
+            episodesGrid.innerHTML = Array.from({ length: 6 }, () => '<div class="sk" style="height:110px;border-radius:8px;"></div>').join('');
+          }
+
+          const newEpData = await api(`/anime/${encodeURIComponent(a.id)}/episodes?season=${viewingSeason}`, 60 * 60 * 1000).catch(() => null);
+          let seasonEpisodes = (newEpData && newEpData.episodes && newEpData.episodes.length > 0) ? newEpData.episodes : [];
+
+          // Only filter available episodes for the detected airing season
+          if (viewingSeason === detectedSeason && a.airing && availableEp < seasonEpisodes.length) {
+            seasonEpisodes = seasonEpisodes.filter((e) => e.episode_number <= availableEp);
+          }
+
+          if (episodesCountBadge) {
+            episodesCountBadge.textContent = `${seasonEpisodes.length} Episodes`;
+          }
+
+          if (episodesGrid) {
+            const isPlayingThisSeason = viewingSeason === currentSeason;
+            episodesGrid.innerHTML = renderEpisodeCardsHtml(seasonEpisodes, isPlayingThisSeason ? currentEp : -1, isPlayingThisSeason, viewingSeason);
+            attachCardListeners(seasonEpisodes, viewingSeason);
+          }
+
+          // Video playback is intentionally NOT interrupted or reset!
+          // The user is just inspecting/browsing the episode list in the bottom section.
+        });
+      });
+    }
+
+    // Initialize playback immediately
+    reloadStream();
+  }
+
+  function relationsHtml(a) {
+    // Seasons, movies and specials already appear in their own rows above.
+    const inSeries = new Set([...(a.series?.seasons || []), ...(a.series?.extras || [])].map((x) => x.id));
+    const rel = (a.relations || []).filter((r) => r.title && !(r.id && inSeries.has(r.id)));
+    if (!rel.length) return '';
+    const order = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative version', 'Summary', 'Adaptation', 'Source'];
+    const rank = (r) => (order.includes(r.relation) ? order.indexOf(r.relation) : order.length) + (r.id ? 0 : 50);
+    rel.sort((x, y) => rank(x) - rank(y));
+    return `
+      <section class="row reveal related">
+        <div class="row-head"><div><h2>Related</h2><p>Spin-offs, alternate versions and the original source</p></div></div>
+        <div class="track-wrap">
+          <button class="track-btn prev" aria-label="Scroll left" disabled>${icon.left}</button>
+          <div class="track">${rel.map((r, i) => {
+            const inner = `
+              <div class="card-poster${r.image ? '' : ' no-img'}" data-title="${esc(r.title)}">
+                <span class="pill card-tag rel-tag">${esc(r.relation)}</span>
+                ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : ''}
+              </div>
+              <h3 class="card-title">${esc(r.title)}</h3>
+              <p class="card-sub">${esc([r.kind === 'manga' ? 'Manga' : r.format, r.year].filter(Boolean).join(' · ') || cap(r.kind || ''))}</p>`;
+            return r.id
+              ? `<a class="card" href="/anime/${esc(r.id)}" data-link style="--i:${i}">${inner}</a>`
+              : `<div class="card is-static" style="--i:${i}">${inner}</div>`;
+          }).join('')}</div>
+          <button class="track-btn next" aria-label="Scroll right">${icon.right}</button>
+        </div>
+      </section>`;
+  }
+
+  function statsHtml(a) {
+    const dist = (a.scoreDistribution || []).filter((d) => d.amount);
+    const status = a.statusDistribution || [];
+    if (!dist.length && !status.length) return '';
+    const max = Math.max(...dist.map((d) => d.amount), 1);
+    const totalRatings = dist.reduce((sum, d) => sum + d.amount, 0);
+    const high = dist.filter((d) => d.score >= 80).reduce((sum, d) => sum + d.amount, 0);
+    const totalStatus = status.reduce((sum, d) => sum + d.amount, 0) || 1;
+    const cls = (d) => `st-${esc(d.status.replace(/\s/g, '').toLowerCase())}`;
+    return `
+      <section class="section reveal">
+        <div class="panel fans">
+          ${dist.length ? `
+          <div class="fans-chart">
+            <div class="fans-head">
+              <h3>How fans rated it</h3>
+              <p><b>${totalRatings ? Math.round((high / totalRatings) * 100) : 0}%</b> rated it 8 or higher · ${fmtNum(totalRatings)} ratings</p>
+            </div>
+            <div class="dist">${dist.map((d, i) => `
+              <div class="dist-col" style="--h:${Math.max(4, Math.round((d.amount / max) * 100))}%;--i:${i}" title="${d.amount.toLocaleString()} ratings of ${d.score / 10}">
+                <span class="dist-bar" style="--hue:${Math.round((d.score / 100) * 120)}"></span><small>${d.score / 10}</small>
+              </div>`).join('')}
+            </div>
+          </div>` : ''}
+          ${status.length ? `
+          <div class="fans-status">
+            <h3>What viewers are doing</h3>
+            <div class="status-bar">${status.map((d) => `<span style="flex:${d.amount}" class="${cls(d)}" title="${esc(d.status)}: ${d.amount.toLocaleString()}"></span>`).join('')}</div>
+            <ul class="status-list">${status.map((d, i) => `
+              <li style="--i:${i}"><i class="${cls(d)}"></i><span>${esc(d.status)}</span><b>${fmtNum(d.amount)}</b><em>${Math.round((d.amount / totalStatus) * 100)}%</em></li>`).join('')}
+            </ul>
+          </div>` : ''}
+        </div>
+      </section>`;
+  }
+
+  function themesHtml(a) {
+    if (!a.openings?.length && !a.endings?.length) return '';
+    const list = (items) => items.slice(0, 6).map((t) => `<li>${esc(t.replace(/^\d+:\s*/, ''))}</li>`).join('');
+    return `
+      <section class="section reveal">
+        <div class="info-layout">
+          ${a.openings?.length ? `<div class="panel"><h3>Opening themes</h3><ol class="themes">${list(a.openings)}</ol></div>` : ''}
+          ${a.endings?.length ? `<div class="panel"><h3>Ending themes</h3><ol class="themes">${list(a.endings)}</ol></div>` : ''}
+        </div>
+      </section>`;
+  }
+
+  async function detailPage(view, id) {
+    view.innerHTML = `
+      <div class="detail-hero"><div class="detail-grid">
+        <div class="sk sk-poster"></div>
+        <div><div class="sk" style="height:42px;width:60%"></div><div class="sk sk-line" style="width:40%"></div>
+        <div class="sk" style="height:80px;width:100%;margin-top:28px"></div></div>
+      </div></div>`;
+
+    const a = await api(`/anime/${encodeURIComponent(id)}`, 30 * 60 * 1000);
+    const meta = [a.type, a.year, a.episodes ? `${a.episodes} episodes` : null, a.duration, a.ageRating].filter(Boolean);
+    const altTitles = [a.titleRomaji !== a.title ? a.titleRomaji : null, a.titleJapanese].filter(Boolean);
+    const availableEp = getAvailableEpisodes(a);
+    const lastEp = Math.min(Math.max(1, Number(localStorage.getItem(`animeverse_ep_${a.id}`) || 1)), availableEp || 1);
+    const scorePct = a.score ? Math.round(a.score * 10) : 0;
+    // Streambert-style header: what it is, then the series facts TMDB gives us.
+    const kicker = a.type === 'Movie' ? 'Movie' : a.seasonCount ? 'Series' : a.type || 'Anime';
+    // The server decides: a series' main entry gets TMDB's series poster (as on
+    // the cards), a page for one particular season keeps that season's cover.
+    const poster = a.tmdbPoster || a.image;
+    const factLine = [
+      ...factsOf(a, { long: true }),
+      a.tmdbStatus || (a.status ? a.status.replace('Currently Airing', 'Airing').replace('Finished Airing', 'Ended') : null),
+      a.duration,
+    ].filter(Boolean);
+
+    view.innerHTML = `
+      <section class="detail-hero sb${a.backdrop ? ' has-art' : ''}">
+        <div class="detail-bg${a.backdrop ? ' hd' : a.banner ? '' : ' blur'}" style="${artVars(a)}"></div>
+        <div class="detail-grid">
+          <div class="detail-poster"><img src="${esc(poster)}" alt="${esc(a.title)} poster" onerror="this.onerror=null;this.src='${esc(a.image)}'"></div>
+          <div class="detail-main">
+            <p class="sb-kicker">${esc(kicker)}${a.airing ? '<span class="sb-live">Airing</span>' : ''}</p>
+            ${titleHtml(a)}
+            ${altTitles.length ? `<p class="detail-alt">${altTitles.map(esc).join(' · ')}</p>` : '<span></span>'}
+            <div class="sb-genres">${(a.genres || []).map((g) => `<a class="sb-chip" href="/browse?genre=${encodeURIComponent(g)}" data-link>${esc(g)}</a>`).join('')}</div>
+            <div class="sb-meta">
+              ${a.score ? `<span class="sb-score">${icon.star}<b data-count="${a.score}">${a.score.toFixed(1)}</b></span>` : ''}
+              ${factLine.map((m) => `<span>${esc(m)}</span>`).join('')}
+              ${langHtml(a)}
+            </div>
+            ${a.contentRating ? `<span class="sb-age">${icon.shield}${esc(a.contentRating)}</span>` : '<span></span>'}
+            ${a.nextEpisode ? `<div class="countdown">${icon.clock}Episode ${a.nextEpisode.episode} airs in <b data-countdown="${a.nextEpisode.airingAt}">${formatCountdown(a.nextEpisode.airingAt - Date.now() / 1000)}</b></div>` : '<span></span>'}
+            <div>
+              <p class="synopsis clamped" id="synopsis">${esc(a.synopsis || 'No synopsis available yet.')}</p>
+              <button class="link-btn" id="synMore" hidden>Read more</button>
+              <div class="hero-actions">
+                ${availableEp > 0 ? `
+                  <a class="btn btn-primary btn-watch" href="/watch/${esc(a.id)}?season=${detectSeasonNumber(a.title, a.titleRomaji)}&ep=${lastEp}" data-link>
+                    ${icon.play}${lastEp > 1 ? `Continue Ep ${lastEp}` : (a.type === 'Movie' ? 'Watch Movie' : 'Watch Episode 1')}
+                  </a>` : `
+                  <button class="btn btn-ghost" disabled style="opacity:0.6;cursor:not-allowed;">Not Yet Aired</button>`}
+                ${a.trailer ? `<button class="btn btn-glass" data-trailer="${esc(a.trailer)}">${icon.spark}Trailer</button>` : ''}
+                ${primaryStream(a) ? `<a class="btn btn-glass" href="${esc(primaryStream(a).url)}" target="_blank" rel="noopener">${icon.ext}Official: ${esc(primaryStream(a).name)}</a>` : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section sb-stats reveal">
+        <div class="ratings">
+          <div class="rating-box">
+            <div class="label">${scoreLabel(a)} score</div>
+            <div class="value">${a.score ? `${icon.star}<span>${a.score.toFixed(1)}</span><small>/10</small>` : '<small>Not rated yet</small>'}</div>
+            ${a.score ? `<div class="rating-bar"><i style="width:${scorePct}%"></i></div>` : ''}
+            ${a.scoredBy ? `<div class="foot">${fmtNum(a.scoredBy)} votes</div>` : ''}
+          </div>
+          ${a.imdb ? `
+          <a class="rating-box imdb" href="https://www.imdb.com/title/${esc(a.imdb.id)}/" target="_blank" rel="noopener">
+            <div class="label">IMDb</div>
+            <div class="value">${icon.star}<span>${a.imdb.rating.toFixed(1)}</span><small>/10</small></div>
+            <div class="rating-bar"><i style="width:${a.imdb.rating * 10}%"></i></div>
+            ${a.imdb.votes ? `<div class="foot">${esc(a.imdb.votes)} votes</div>` : ''}
+          </a>` : ''}
+          ${a.rank ? `<div class="rating-box"><div class="label">Ranked</div><div class="value">#${a.rank.toLocaleString()}</div><div class="foot">all time</div></div>` : ''}
+          ${a.members ? `<div class="rating-box"><div class="label">${a.source === 'jikan' ? 'Members' : 'Fans'}</div><div class="value">${fmtNum(a.members)}</div><div class="foot">${a.popularity ? `#${a.popularity} most popular` : 'tracking this'}</div></div>` : ''}
+          ${a.seasonCount ? `<div class="rating-box"><div class="label">Series</div><div class="value">${a.seasonCount}<small>${a.seasonCount === 1 ? 'season' : 'seasons'}</small></div><div class="foot">${a.episodeCount ? `${a.episodeCount} episodes in total` : ''}</div></div>` : ''}
+        </div>
+      </section>
+
+
+      ${languagesHtml(a)}
+      ${relationsHtml(a)}
+      ${statsHtml(a)}
+      ${themesHtml(a)}
+
+
+
+      <div id="extras"><div class="loader-row"><div class="spinner"></div></div></div>`;
+
+    enhance(view);
+    const syn = $('#synopsis', view);
+    const more = $('#synMore', view);
+    if (syn.scrollHeight > syn.clientHeight + 4) {
+      more.hidden = false;
+      more.addEventListener('click', () => {
+        const open = syn.classList.toggle('clamped');
+        more.textContent = open ? 'Read more' : 'Show less';
+      });
+    }
+    countUp(view);
+    loadExtras(view, id);
+    return `${a.title} — AnimeVerse`;
+  }
+
+  async function loadExtras(view, id) {
+    const box = $('#extras', view);
+    try {
+      const { characters, recommendations } = await api(`/anime/${encodeURIComponent(id)}/extras`, 30 * 60 * 1000);
+      if (!box.isConnected) return;
+      box.innerHTML = `
+        ${characters.length ? `
+        <section class="section reveal">
+          <h2>Characters &amp; Voice Cast</h2>
+          <div class="char-grid">${characters.map((c) => `
+            <div class="char"><img src="${esc(c.image)}" alt="" loading="lazy"><div><strong>${esc(c.name)}</strong><span>${esc(c.role)}${c.voiceActor ? ` · ${esc(c.voiceActor)}` : ''}</span></div></div>`).join('')}
+          </div>
+        </section>` : ''}
+        ${rowHtml({ title: 'You might also like', items: recommendations })}`;
+      enhance(box);
+    } catch {
+      box.innerHTML = '';
+    }
+  }
+
+  // Animate score numbers counting up.
+  function countUp(root) {
+    if (reduceMotion) return;
+    $$('[data-count]', root).forEach((el) => {
+      const target = Number(el.dataset.count);
+      const t0 = performance.now();
+      const dur = 1100;
+      const tick = (t) => {
+        const p = Math.min(1, (t - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = (target * eased).toFixed(1);
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
+  let genresCache = null;
+  async function browsePage(view, params) {
+    const state = {
+      q: params.get('q') || '',
+      genre: params.get('genre') || '',
+      type: params.get('type') || '',
+      status: params.get('status') || '',
+      order: params.get('order') || '',
+      dub: params.get('dub') === '1' ? '1' : '',
+    };
+    const opt = (value, label, current) => `<option value="${esc(value)}"${value === current ? ' selected' : ''}>${esc(label)}</option>`;
+    const titleFor = () =>
+      state.q ? `Results for “${state.q}”` : state.dub ? 'English Dubbed Anime' : state.genre ? `${state.genre} Anime` : 'Browse Anime';
+
+    view.innerHTML = `
+      <div class="container page-top">
+        <div class="browse-head">
+          <div><h1 id="browseTitle">${esc(titleFor())}</h1><p id="browseSub">Filters update instantly. More titles load as you scroll.</p></div>
+        </div>
+        <form class="filters" id="filters" role="search" autocomplete="off">
+          <div class="filter-q-wrap">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+            <input class="filter-q" name="q" type="search" placeholder="Search any anime title…" value="${esc(state.q)}" aria-label="Title">
+            <span class="filter-q-spin" aria-hidden="true"></span>
+          </div>
+          <div class="select"><select name="genre" aria-label="Genre"><option value="">All genres</option>${state.genre ? opt(state.genre, state.genre, state.genre) : ''}</select></div>
+          <div class="select"><select name="type" aria-label="Format">
+            ${opt('', 'All formats', state.type)}${opt('tv', 'TV series', state.type)}${opt('movie', 'Movie', state.type)}${opt('ova', 'OVA', state.type)}${opt('ona', 'ONA', state.type)}${opt('special', 'Special', state.type)}
+          </select></div>
+          <div class="select"><select name="status" aria-label="Status">
+            ${opt('', 'Any status', state.status)}${opt('airing', 'Airing', state.status)}${opt('finished', 'Finished', state.status)}${opt('upcoming', 'Upcoming', state.status)}
+          </select></div>
+          <div class="select"><select name="order" aria-label="Sort by">
+            ${opt('', 'Best match / popular', state.order)}${opt('score', 'Highest rated', state.order)}${opt('popularity', 'Most popular', state.order)}${opt('newest', 'Newest', state.order)}${opt('title', 'A–Z', state.order)}
+          </select></div>
+          <button type="button" class="toggle${state.dub ? ' on' : ''}" id="dubToggle" aria-pressed="${Boolean(state.dub)}"><span class="box">${icon.check}</span>English dub only</button>
+          <button type="button" class="reset-btn" id="resetFilters" hidden>Reset</button>
+        </form>
+        <div class="active-filters" id="activeFilters"></div>
+        <div class="grid" id="grid">${skeletonCards(18)}</div>
+        <div class="loader-row" id="sentinel"></div>
+      </div>`;
+
+    const form = $('#filters', view);
+    const grid = $('#grid', view);
+    const sentinel = $('#sentinel', view);
+    const qInput = form.elements.q;
+    const qWrap = $('.filter-q-wrap', view);
+    $$('select', form).forEach(customSelect);
+
+    (async () => {
+      try {
+        genresCache = genresCache || (await api('/genres', 24 * 3600 * 1000));
+        const sel = form.elements.genre;
+        sel.innerHTML = '<option value="">All genres</option>' + genresCache.map((g) => opt(g, g, state.genre)).join('');
+        sel._cs?.refresh();
+      } catch { /* genre list is optional */ }
+    })();
+
+    let page = 1;
+    let loading = false;
+    let done = false;
+    let count = 0;
+    const shown = new Set(); // a series can turn up on more than one page
+    let generation = 0;
+    let relaxed = false;
+
+    const filterLabels = () => [
+      state.genre && ['genre', state.genre],
+      state.type && ['type', form.elements.type.selectedOptions[0]?.textContent || state.type],
+      state.status && ['status', cap(state.status)],
+      state.dub && ['dub', 'English dub'],
+    ].filter(Boolean);
+
+    // Update the URL, heading and chips in place, so the search box keeps focus while typing.
+    const syncUi = () => {
+      const qs = new URLSearchParams(Object.entries(state).filter(([, v]) => v));
+      history.replaceState({}, '', `/browse${qs.toString() ? `?${qs}` : ''}`);
+      $('#browseTitle', view).textContent = titleFor();
+      document.title = `${titleFor()} — AnimeVerse`;
+      $$('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === (state.dub ? 'dubbed' : 'browse')));
+      const chips = filterLabels();
+      $('#activeFilters', view).innerHTML = chips
+        .map(([k, label]) => `<button type="button" class="chip chip-x" data-clear="${k}">${esc(label)}${icon.x}</button>`)
+        .join('');
+      $('#resetFilters', view).hidden = !chips.length && !state.q && !state.order;
+    };
+
+    const restart = () => {
+      generation += 1;
+      page = 1;
+      done = false;
+      count = 0;
+      shown.clear();
+      relaxed = false;
+      loading = false;
+      grid.classList.add('refreshing');
+      sentinel.innerHTML = '';
+      // New filters start from the first result. Otherwise the shorter page leaves the
+      // "load more" marker on screen and infinite scroll refetches pages back down to
+      // where the user had scrolled.
+      const stickyOffset = nav.offsetHeight + form.offsetHeight + 16;
+      const resultsTop = Math.max(0, grid.getBoundingClientRect().top + window.scrollY - stickyOffset);
+      if (window.scrollY > resultsTop) window.scrollTo({ top: resultsTop, behavior: 'instant' });
+      syncUi();
+      load();
+    };
+
+    const set = (patch) => {
+      Object.assign(state, patch);
+      restart();
+    };
+
+    form.addEventListener('change', (e) => {
+      if (e.target.name && e.target.name !== 'q') set({ [e.target.name]: e.target.value });
+    });
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      clearTimeout(qTimer);
+      if (qInput.value.trim() !== state.q) set({ q: qInput.value.trim() });
+    });
+    let qTimer;
+    qInput.addEventListener('input', () => {
+      clearTimeout(qTimer);
+      const value = qInput.value.trim();
+      qTimer = setTimeout(() => { if (value !== state.q) set({ q: value }); }, 450);
+    });
+    $('#dubToggle', view).addEventListener('click', (e) => {
+      const on = !state.dub;
+      e.currentTarget.classList.toggle('on', on);
+      e.currentTarget.setAttribute('aria-pressed', String(on));
+      set({ dub: on ? '1' : '' });
+    });
+    $('#activeFilters', view).addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-clear]');
+      if (!btn) return;
+      const key = btn.dataset.clear;
+      if (key === 'dub') { $('#dubToggle', view).classList.remove('on'); }
+      else { form.elements[key].value = ''; form.elements[key]._cs?.refresh(); }
+      set({ [key]: '' });
+    });
+    $('#resetFilters', view).addEventListener('click', () => {
+      form.reset();
+      qInput.value = '';
+      [...form.querySelectorAll('select')].forEach((s) => { s.value = ''; s._cs?.refresh(); });
+      $('#dubToggle', view).classList.remove('on');
+      set({ q: '', genre: '', type: '', status: '', order: '', dub: '' });
+    });
+
+    const fetchPage = (s, p) => {
+      const qs = new URLSearchParams(Object.entries({ ...s, page: p }).filter(([, v]) => v));
+      return api(`/search?${qs}`);
+    };
+
+    const load = async () => {
+      if (loading || done) return;
+      const gen = generation;
+      loading = true;
+      qWrap.classList.add('busy');
+      if (page > 1) sentinel.innerHTML = '<div class="spinner"></div>';
+      try {
+        let res = await fetchPage(relaxed ? { ...state, genre: '', type: '', status: '' } : state, page);
+        if (gen !== generation || !grid.isConnected) return;
+
+        // A title search that finds nothing inside the filters retries across all of them.
+        if (page === 1 && !res.items.length && state.q && (state.genre || state.type || state.status)) {
+          relaxed = true;
+          res = await fetchPage({ ...state, genre: '', type: '', status: '' }, 1);
+          if (gen !== generation) return;
+        }
+
+        if (page === 1) {
+          grid.innerHTML = '';
+          grid.classList.remove('refreshing');
+          $('#browseSub', view).innerHTML = relaxed && res.items.length
+            ? `Nothing matched “${esc(state.q)}” with your filters, so these results cover <b>all genres and formats</b>.`
+            : 'Filters update instantly. More titles load as you scroll.';
+        }
+        const fresh = res.items.filter((a) => !shown.has(a.group || a.id) && shown.add(a.group || a.id));
+        grid.insertAdjacentHTML('beforeend', fresh.map((a, i) => cardHtml(a, i)).join(''));
+        enhance(grid);
+        count += fresh.length;
+        done = !res.hasNext;
+        page += 1;
+        if (done) {
+          sentinel.innerHTML = count
+            ? '<span class="end-note">You’ve reached the end.</span>'
+            : `<div class="state empty-state"><div class="empty-art" aria-hidden="true">(・_・;)</div><h2>No anime found</h2><p>${state.q ? `Nothing matches “${esc(state.q)}”. Check the spelling or try the English or Japanese title.` : 'Try loosening the filters.'}</p></div>`;
+        } else {
+          sentinel.innerHTML = '';
+          if (sentinel.getBoundingClientRect().top < window.innerHeight + 1600) setTimeout(load, 50);
+        }
+      } catch (err) {
+        if (gen !== generation) return;
+        if (page === 1) { grid.innerHTML = ''; grid.classList.remove('refreshing'); }
+        sentinel.innerHTML = `<div class="state empty-state"><h2>Couldn’t load anime</h2><p>${esc(err.message)}</p><button class="btn btn-plain" id="retry">Try again</button></div>`;
+        $('#retry', sentinel)?.addEventListener('click', load);
+      } finally {
+        if (gen === generation) {
+          loading = false;
+          qWrap.classList.remove('busy');
+        }
+      }
+    };
+
+    const io = new IntersectionObserver((entries) => { if (entries[0].isIntersecting) load(); }, { rootMargin: '1600px 0px' });
+    io.observe(sentinel);
+    cleanup.push(() => io.disconnect());
+    syncUi();
+    load();
+    if (state.q === '' && params.get('focus') === '1') qInput.focus();
+    return `${titleFor()} — AnimeVerse`;
+  }
+
+  const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  async function schedulePage(view, params) {
+    const today = DAYS[new Date().getDay()];
+    let day = DAYS.includes(params.get('day')) ? params.get('day') : today;
+    const dates = DAYS.map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+    view.innerHTML = `
+      <div class="container page-top">
+        <div class="browse-head"><div><h1>Release Schedule</h1><p>New episodes this week, shown in your local time.</p></div></div>
+        <div class="days" role="tablist" aria-label="Day">
+          <span class="day-pill" aria-hidden="true"></span>
+          ${dates.map((d) => {
+            const name = DAYS[d.getDay()];
+            return `<button class="day" role="tab" aria-selected="${name === day}" data-day="${name}">
+              <small>${name === today ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short' })}</small>
+              <strong>${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</strong>
+              <em class="day-count" data-count-for="${name}"></em></button>`;
+          }).join('')}
+        </div>
+        <div class="timeline" id="timeline" role="tabpanel"></div>
+      </div>`;
+
+    const tabs = $('.days', view);
+    const pill = $('.day-pill', view);
+    const timeline = $('#timeline', view);
+    let seq = 0;
+
+    // The orange pill glides between days instead of the whole page re-rendering.
+    const movePill = (instant) => {
+      const btn = $(`.day[data-day="${day}"]`, tabs);
+      $$('.day', tabs).forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+      pill.style.transition = instant ? 'none' : '';
+      pill.style.width = `${btn.offsetWidth}px`;
+      pill.style.height = `${btn.offsetHeight}px`;
+      pill.style.transform = `translate(${btn.offsetLeft}px, ${btn.offsetTop}px)`;
+      btn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: instant || reduceMotion ? 'auto' : 'smooth' });
+    };
+
+    const skeleton = () => Array.from({ length: 5 }, (_, i) =>
+      `<div class="slot slot-sk" style="--i:${i}"><span class="sk" style="height:20px;width:60px"></span><span class="sk" style="width:64px;height:88px"></span><div><span class="sk" style="height:16px;width:55%;display:block"></span><span class="sk" style="height:12px;width:30%;display:block;margin-top:10px"></span></div></div>`).join('');
+
+    const slotsHtml = (list) => {
+      const now = Date.now() / 1000;
+      const sorted = [...list].sort((x, y) => (x.nextEpisode?.airingAt || 9e9) - (y.nextEpisode?.airingAt || 9e9));
+      if (!sorted.length) return '<div class="state empty-state"><div class="empty-art" aria-hidden="true">(￣o￣) zzZ</div><h2>Nothing scheduled</h2><p>No episodes are listed for this day yet.</p></div>';
+      let nowMarked = false;
+      return sorted.map((a, i) => {
+        const at = a.nextEpisode?.airingAt;
+        const time = at ? new Date(at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+        const past = at && at < now;
+        let marker = '';
+        if (!past && !nowMarked && day === today && i > 0) {
+          nowMarked = true;
+          marker = `<div class="now-line" style="--i:${i}"><span>Now · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>`;
+        }
+        return `${marker}
+          <a class="slot${past ? ' past' : ''}" href="/anime/${esc(a.id)}" data-link style="--i:${i}">
+            <time>${time}</time>
+            <span class="slot-img${a.image ? '' : ' no-img'}">${a.image ? `<img src="${esc(a.image)}" alt="" loading="lazy">` : ''}</span>
+            <div><h3>${esc(a.title)}</h3><div class="meta">${scoreHtml(a)}${langHtml(a)}${a.type ? `<span>${esc(a.type)}</span>` : ''}${a.broadcast ? `<span>${esc(a.broadcast)}</span>` : ''}</div></div>
+            ${a.nextEpisode ? `<div class="ep">EP ${a.nextEpisode.episode}<small>${past ? `${icon.check} Released` : `<span data-countdown="${at}">${formatCountdown(at - now)}</span>`}</small></div>` : '<span></span>'}
+          </a>`;
+      }).join('');
+    };
+
+    const show = async (dir = 0) => {
+      const mine = ++seq;
+      movePill(dir === 0);
+      const key = `/schedule/${day}`;
+      const cached = memo.get(key);
+      if (!cached) {
+        timeline.classList.add('swap');
+        timeline.innerHTML = skeleton();
+      }
+      try {
+        const list = await api(key, 30 * 60 * 1000);
+        if (mine !== seq || !timeline.isConnected) return;
+        timeline.style.setProperty('--dir', dir < 0 ? '-1' : '1');
+        timeline.classList.remove('swap');
+        void timeline.offsetWidth;
+        timeline.classList.add('swap');
+        timeline.innerHTML = slotsHtml(list);
+        const badge = $(`[data-count-for="${day}"]`, tabs);
+        if (badge) badge.textContent = list.length;
+        enhance(timeline);
+      } catch (err) {
+        if (mine !== seq) return;
+        timeline.innerHTML = `<div class="state empty-state"><h2>Couldn’t load the schedule</h2><p>${esc(err.message)}</p><button class="btn btn-plain" id="retrySched">Try again</button></div>`;
+        $('#retrySched', timeline).addEventListener('click', () => show());
+      }
+    };
+
+    tabs.addEventListener('click', (e) => {
+      const btn = e.target.closest('.day');
+      if (!btn || btn.dataset.day === day) return;
+      const order = $$('.day', tabs).map((b) => b.dataset.day);
+      const dir = order.indexOf(btn.dataset.day) > order.indexOf(day) ? 1 : -1;
+      day = btn.dataset.day;
+      history.replaceState({}, '', `/schedule?day=${day}`);
+      show(dir);
+    });
+    tabs.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      const btns = $$('.day', tabs);
+      const i = btns.findIndex((b) => b.dataset.day === day) + (e.key === 'ArrowRight' ? 1 : -1);
+      if (btns[i]) { btns[i].click(); btns[i].focus(); }
+    });
+    const onResize = () => movePill(true);
+    window.addEventListener('resize', onResize);
+    cleanup.push(() => window.removeEventListener('resize', onResize));
+
+    requestAnimationFrame(() => movePill(true));
+    await show();
+    // Warm the other days in the background so switching is instant.
+    (async () => {
+      for (const d of DAYS) {
+        if (d === day || !view.isConnected) continue;
+        try {
+          const list = await api(`/schedule/${d}`, 30 * 60 * 1000);
+          const badge = $(`[data-count-for="${d}"]`, tabs);
+          if (badge) badge.textContent = list.length;
+        } catch { /* background warm-up only */ }
+      }
+    })();
+    return `Schedule — AnimeVerse`;
+  }
+
+  // Thin loading bar at the top of the window during page changes.
+  const progress = (() => {
+    const bar = document.getElementById('routeProgress');
+    let timer = null;
+    return {
+      start() {
+        clearTimeout(timer);
+        bar.className = 'route-progress';
+        void bar.offsetWidth;
+        bar.classList.add('run');
+      },
+      done() {
+        bar.classList.add('done');
+        timer = setTimeout(() => { bar.className = 'route-progress'; }, 500);
+      },
+    };
+  })();
+
+  // ---------- Router ----------
+  const cleanup = [];
+  let renderToken = 0;
+
+  const routes = [
+    { re: /^\/$/, nav: 'home', run: (v) => homePage(v) },
+    { re: /^\/watch\/((?:al)?\d+)\/?$/, nav: null, run: (v, m, p) => watchPage(v, m[1], p) },
+    { re: /^\/anime\/((?:al)?\d+)\/?$/, nav: null, run: (v, m) => detailPage(v, m[1]) },
+    { re: /^\/browse\/?$/, nav: 'browse', run: (v, m, p) => browsePage(v, p) },
+    { re: /^\/schedule\/?$/, nav: 'schedule', run: (v, m, p) => schedulePage(v, p) },
+  ];
+
+  // Going back restores where you were on the previous page.
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+  async function render({ keepScroll = false, restoreY = null } = {}) {
+    const token = ++renderToken;
+    cleanup.splice(0).forEach((fn) => fn());
+    heroCtl?.destroy();
+    heroCtl = null;
+
+    const path = location.pathname;
+    const params = new URLSearchParams(location.search);
+    const route = routes.find((r) => r.re.test(path));
+    const navKey = route?.nav === 'browse' && params.get('dub') === '1' ? 'dubbed' : route?.nav;
+    $$('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === navKey));
+    $('.nav-links').classList.remove('open');
+    $('#menuBtn').setAttribute('aria-expanded', 'false');
+
+    progress.start();
+    const old = $('.page', app);
+    if (old && !keepScroll && !reduceMotion) {
+      old.classList.add('leaving');
+      await new Promise((r) => setTimeout(r, 160));
+      if (token !== renderToken) return;
+    }
+
+    const view = document.createElement('div');
+    view.className = 'page';
+    app.replaceChildren(view);
+    if (!keepScroll) window.scrollTo({ top: 0, behavior: 'instant' });
+    updateNav();
+
+    if (!route) {
+      view.innerHTML = `<div class="state"><h2>Page not found</h2><p>That page doesn’t exist.</p><a class="btn btn-primary" href="/" data-link>Go home</a></div>`;
+      document.title = 'Not found — AnimeVerse';
+      return;
+    }
+    try {
+      const title = await route.run(view, path.match(route.re), params);
+      if (token === renderToken && title) document.title = title;
+      if (token === renderToken) {
+        progress.done();
+        if (restoreY != null) requestAnimationFrame(() => window.scrollTo({ top: restoreY, behavior: 'instant' }));
+      }
+    } catch (err) {
+      if (token === renderToken) progress.done();
+      if (token !== renderToken) return;
+      console.error(err);
+      view.innerHTML = `<div class="state"><h2>Something went wrong</h2><p>${esc(err.message)}</p><button class="btn btn-primary" id="retryPage">Try again</button></div>`;
+      $('#retryPage', view).addEventListener('click', () => { memo.clear(); render(); });
+    }
+  }
+
+  function navigate(url, { replace = false, keepScroll = false } = {}) {
+    window.__isAppNavigation = true;
+    const target = new URL(url, location.origin);
+    if (target.pathname + target.search === location.pathname + location.search && !replace) {
+      window.__isAppNavigation = false;
+      return;
+    }
+    if (!replace) history.replaceState({ ...(history.state || {}), scroll: window.scrollY }, '');
+    history[replace ? 'replaceState' : 'pushState'](replace ? history.state : {}, '', target.pathname + target.search);
+    render({ keepScroll });
+    setTimeout(() => { window.__isAppNavigation = false; }, 200);
+  }
+
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-link]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    closeSearch();
+    navigate(a.getAttribute('href'));
+  });
+  window.addEventListener('popstate', (e) => render({ restoreY: e.state?.scroll ?? null }));
+
+  // Solid nav once the page scrolls.
+  const toTop = document.getElementById('toTop');
+  function updateNav() {
+    nav.classList.toggle('solid', window.scrollY > 40 || !$('.hero, .detail-hero', app));
+    toTop.classList.toggle('show', window.scrollY > 900);
+  }
+  toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
+  window.addEventListener('scroll', updateNav, { passive: true });
+
+  $('#menuBtn').addEventListener('click', (e) => {
+    const open = $('.nav-links').classList.toggle('open');
+    e.currentTarget.setAttribute('aria-expanded', String(open));
+  });
+
+  // ---------- Search overlay ----------
+  const overlay = document.getElementById('searchOverlay');
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  const searchBar = $('.search-bar', overlay);
+  const RECENT_KEY = 'av-recent-searches';
+  let searchTimer;
+  let searchSeq = 0;
+  let selIndex = -1;
+  let lastQuery = '';
+
+  const readRecent = () => {
+    try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
+  };
+  const saveRecent = (q) => {
+    try {
+      const list = [q, ...readRecent().filter((x) => x.toLowerCase() !== q.toLowerCase())].slice(0, 6);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+    } catch { /* storage may be blocked */ }
+  };
+
+  // Wraps the matched part of a title in <mark> for a highlight sweep.
+  function highlight(text, q) {
+    const safe = esc(text);
+    if (!q) return safe;
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return safe;
+    return `${esc(text.slice(0, i))}<mark>${esc(text.slice(i, i + q.length))}</mark>${esc(text.slice(i + q.length))}`;
+  }
+
+  async function renderSearchHome() {
+    const recent = readRecent();
+    let trending = [];
+    try { trending = (await api('/home', 10 * 60 * 1000)).trending.slice(0, 6); } catch { /* optional */ }
+    if (input.value.trim()) return;
+    results.innerHTML = `
+      ${recent.length ? `
+        <div class="search-group"><div class="search-group-head"><span>Recent searches</span><button class="link-mini" id="clearRecent">Clear</button></div>
+        <div class="search-chips">${recent.map((q, i) => `<button class="chip" data-q="${esc(q)}" style="--i:${i}">${icon.clock}${esc(q)}</button>`).join('')}</div></div>` : ''}
+      ${trending.length ? `
+        <div class="search-group"><div class="search-group-head"><span>Trending now</span></div>
+        ${trending.map((a, i) => resultHtml(a, i, '')).join('')}</div>` : '<p class="search-empty">Start typing to search every anime on MyAnimeList and AniList.</p>'}`;
+    enhance(results);
+    selIndex = -1;
+    $('#clearRecent', results)?.addEventListener('click', () => {
+      try { localStorage.removeItem(RECENT_KEY); } catch { /* ignore */ }
+      renderSearchHome();
+    });
+  }
+
+  function resultHtml(a, i, q) {
+    return `
+      <a class="result" href="/anime/${esc(a.id)}" data-link style="--i:${i}">
+        <span class="result-img${a.image ? '' : ' no-img'}">${a.image ? `<img src="${esc(a.image)}" alt="" loading="eager" decoding="async" onload="this.classList.add('loaded')" onerror="this.parentElement.classList.add('no-img');this.remove();">` : ''}</span>
+        <div><strong>${highlight(a.title, q)}</strong>
+          <div class="meta">${scoreHtml(a)}${langHtml(a)}${factsOf(a).map((m) => `<span>${esc(m)}</span>`).join('<i class="sep"></i>')}</div>
+          ${a.titleRomaji && a.titleRomaji !== a.title ? `<div class="alt">${highlight(a.titleRomaji, q)}</div>` : ''}
+        </div>
+        <span class="result-go">${icon.right}</span>
+      </a>`;
+  }
+
+  function openSearch() {
+    overlay.hidden = false;
+    overlay.classList.remove('closing');
+    document.body.style.overflow = 'hidden';
+    selIndex = -1;
+    if (!input.value.trim()) renderSearchHome();
+    requestAnimationFrame(() => { input.focus(); input.select(); });
+    heroCtl?.pause();
+  }
+  function closeSearch() {
+    if (overlay.hidden || overlay.classList.contains('closing')) return;
+    overlay.classList.add('closing');
+    setTimeout(() => {
+      overlay.hidden = true;
+      overlay.classList.remove('closing');
+    }, reduceMotion ? 0 : 200);
+    document.body.style.overflow = '';
+    heroCtl?.resume();
+  }
+
+  async function runSearch(q) {
+    const seq = ++searchSeq;
+    if (!q) { searchBar.classList.remove('busy'); renderSearchHome(); return; }
+    if (q.length < 2) return;
+    searchBar.classList.add('busy');
+    // Keep the previous results on screen (dimmed) instead of flashing a spinner.
+    if ($('.result', results) && lastQuery) results.classList.add('stale');
+    else results.innerHTML = Array.from({ length: 5 }, () => '<div class="result-sk"><span class="sk"></span><div><span class="sk"></span><span class="sk"></span></div></div>').join('');
+    try {
+      const res = await api(`/search?q=${encodeURIComponent(q)}`);
+      if (seq !== searchSeq) return;
+      lastQuery = q;
+      const items = res.items.slice(0, 10);
+      selIndex = -1;
+      results.innerHTML = items.length
+        ? `<div class="search-group-head"><span>Top matches</span></div>${items.map((a, i) => resultHtml(a, i, q)).join('')}
+           <a class="search-all" href="/browse?q=${encodeURIComponent(q)}" data-link>See all results for “${esc(q)}” ${icon.right}</a>`
+        : `<div class="search-empty"><div class="empty-art" aria-hidden="true">(・_・;)</div><strong>No anime found for “${esc(q)}”</strong><p>Try the English or Japanese title, or fewer words.</p></div>`;
+      enhance(results);
+    } catch (err) {
+      if (seq === searchSeq) results.innerHTML = `<p class="search-empty">${esc(err.message)}</p>`;
+    } finally {
+      if (seq === searchSeq) {
+        searchBar.classList.remove('busy');
+        results.classList.remove('stale');
+      }
+    }
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => runSearch(input.value.trim()), 300);
+  });
+  input.addEventListener('keydown', (e) => {
+    const items = $$('.result', results);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!items.length) return;
+      selIndex = (selIndex + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items.forEach((el, i) => el.classList.toggle('sel', i === selIndex));
+      items[selIndex].scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const q = input.value.trim();
+      if (q) saveRecent(q);
+      if (items[selIndex]) items[selIndex].click();
+      else if (q) { closeSearch(); navigate(`/browse?q=${encodeURIComponent(q)}`); }
+    }
+  });
+  results.addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-q]');
+    if (chip) {
+      input.value = chip.dataset.q;
+      input.focus();
+      runSearch(chip.dataset.q);
+      return;
+    }
+    if (e.target.closest('.result, .search-all') && input.value.trim()) saveRecent(input.value.trim());
+  });
+  $('#searchClear', overlay).addEventListener('click', () => {
+    input.value = '';
+    input.focus();
+    runSearch('');
+  });
+  document.getElementById('searchOpen').addEventListener('click', openSearch);
+  document.getElementById('searchClose').addEventListener('click', closeSearch);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSearch(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (!modal.hidden) closeTrailer();
+      else closeSearch();
+      return;
+    }
+    const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName);
+    if (e.key === '/' && !typing && overlay.hidden) {
+      e.preventDefault();
+      openSearch();
+    }
+  });
+
+  // ---------- Nav search hint: cycles through what's trending ----------
+  (async () => {
+    try {
+      const names = (await api('/home', 10 * 60 * 1000)).trending.slice(0, 8).map((a) => a.title);
+      const el = document.getElementById('searchHint');
+      if (!names.length || reduceMotion) return;
+      let i = 0;
+      setInterval(() => {
+        if (document.hidden || !overlay.hidden) return;
+        el.classList.add('out');
+        setTimeout(() => {
+          el.textContent = `Try “${names[i++ % names.length]}”`;
+          el.classList.remove('out');
+        }, 260);
+      }, 4200);
+    } catch { /* hint stays static */ }
+  })();
+
+  // ---------- Footer status ----------
+  fetch('/api/status').then((r) => r.json()).then((s) => {
+    const prov = s.provider.active === 'jikan' ? 'MyAnimeList (backup source)' : 'AniList';
+    $('#footerStatus').textContent = `Live data: ${prov} · artwork: TMDB · ${s.dubs.dubbed.toLocaleString()} dubbed titles tracked${s.imdb === 'enabled' ? ' · IMDb ratings on' : ''}`;
+  }).catch(() => {});
+
+  // Home data refreshes on its own: re-render quietly every 30 minutes if the user is on the home page.
+  setInterval(() => {
+    if (location.pathname === '/' && !document.hidden && window.scrollY < 50) {
+      memo.delete('/home');
+      render({ keepScroll: true });
+    }
+  }, 30 * 60 * 1000);
+
+  render();
+})();

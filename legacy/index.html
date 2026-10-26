@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus Stream - Aggregator & HLS Architecture Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <!-- HLS.js for direct HLS streaming across all modern desktop & mobile browsers -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="navbar">
+    <div class="nav-left">
+      <div class="logo">
+        <span class="logo-icon">▶</span>
+        <span class="logo-text">NEXUS<span class="accent">STREAM</span></span>
+      </div>
+      <div class="series-selector-wrapper">
+        <label for="seriesSelect" class="sr-only">Series:</label>
+        <select id="seriesSelect" class="styled-select"></select>
+      </div>
+    </div>
+    
+    <div class="nav-right">
+      <div class="system-status">
+        <span class="status-dot"></span>
+        <span class="status-label">Approved-source player: Online</span>
+      </div>
+      <button id="toggleInspectorBtn" class="btn-secondary">
+        <span class="btn-icon">⚡</span> Lifecycle Inspector
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-layout">
+    <!-- Left Column: Video Player & Controls -->
+    <section class="player-column">
+      <div class="player-container">
+        <div class="video-wrapper">
+          <video id="videoPlayer" controls playsinline poster="https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80"></video>
+          
+          <!-- Loading Overlay -->
+          <div id="playerLoader" class="player-loader hidden">
+            <div class="spinner"></div>
+            <p id="loaderMessage">Resolving Stream Manifest...</p>
+          </div>
+        </div>
+
+        <!-- Video Metadata Bar -->
+        <div class="video-meta">
+          <div class="meta-titles">
+            <span id="currentEpisodeBadge" class="badge">EPISODE 1</span>
+            <h1 id="currentEpisodeTitle">Episode 1: The Ashur's Quest</h1>
+            <p id="currentSeriesTitle" class="series-subtitle">Overgeared: The Legendary Blacksmith</p>
+          </div>
+          <div class="stream-stats">
+            <div class="stat-pill">
+              <span class="stat-name">Format:</span>
+              <span id="statFormat" class="stat-val">HLS (m3u8)</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-name">Active Mirror:</span>
+              <span id="statServer" class="stat-val">Approved Demo HLS</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-name">Resolution:</span>
+              <span id="statResolution" class="stat-val">Adaptive</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Server & Audio Switching Panel (Step 2 & 3 in UI) -->
+        <div class="server-control-panel">
+          <div class="panel-section">
+            <span class="panel-label">AUDIO TYPE</span>
+            <div class="tab-group" id="audioTypeTabs">
+              <button class="tab-btn active" data-type="sub">
+                <span class="icon">💬</span> SUB
+              </button>
+              <button class="tab-btn" data-type="dub">
+                <span class="icon">🎙️</span> DUB
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-section flex-grow">
+            <span class="panel-label">AVAILABLE APPROVED PLAYBACK SOURCES</span>
+            <div class="servers-list" id="serversList">
+              <!-- Dynamically populated via GET /api/v2/episode/:id/servers -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Step Inspector (Drawer / Collapsible) -->
+        <div id="inspectorDrawer" class="inspector-card">
+          <div class="inspector-header">
+            <div class="inspector-title">
+              <span class="pulse-icon">●</span>
+              <span>API Route Lifecycle Trace (Section 4 Spec)</span>
+            </div>
+            <span class="inspector-tag">Live Network Bus</span>
+          </div>
+          <div class="lifecycle-steps-grid">
+            <div class="step-card" id="step1Card">
+              <div class="step-tag">Step 1</div>
+              <div class="step-name">Episode Discovery</div>
+              <div class="step-endpoint">GET /api/v2/anime/{id}/episodes</div>
+              <div class="step-status" id="step1Status">Waiting</div>
+            </div>
+            <div class="step-card" id="step2Card">
+              <div class="step-tag">Step 2</div>
+              <div class="step-name">Server Selection</div>
+              <div class="step-endpoint">GET /api/v2/episode/{id}/servers</div>
+              <div class="step-status" id="step2Status">Waiting</div>
+            </div>
+            <div class="step-card" id="step3Card">
+              <div class="step-tag">Step 3</div>
+              <div class="step-name">Source Resolver</div>
+              <div class="step-endpoint">GET /api/v2/source/{serverId}</div>
+              <div class="step-status" id="step3Status">Waiting</div>
+            </div>
+            <div class="step-card" id="step4Card">
+              <div class="step-tag">Step 4</div>
+              <div class="step-name">HLS Stream Delivery</div>
+              <div class="step-endpoint">HLS.js .m3u8 Handshake</div>
+              <div class="step-status" id="step4Status">Waiting</div>
+            </div>
+          </div>
+          <div class="inspector-console">
+            <pre><code id="consoleLogs">// Initializing Stream Engine...</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Episode Playlist -->
+    <aside class="playlist-column">
+      <div class="playlist-header">
+        <div class="playlist-title-wrap">
+          <h2>Episodes</h2>
+          <span id="episodeCountBadge" class="count-badge">0</span>
+        </div>
+        <div class="search-wrap">
+          <input type="text" id="episodeSearchInput" placeholder="Filter episodes..." class="search-input">
+        </div>
+      </div>
+
+      <div class="episodes-list" id="episodesList">
+        <!-- Dynamically rendered via /api/v2/anime/:id/episodes -->
+      </div>
+    </aside>
+  </main>
+
+  <footer class="app-footer">
+    <p>Nexus Stream Architecture Engine • Powered by Node.js, Express, HLS.js, and In-Memory TTL Cache</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
