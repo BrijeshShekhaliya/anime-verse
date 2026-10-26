@@ -1540,6 +1540,13 @@
               abrBandWidthFactor: 0.85,
               abrBandWidthUpFactor: 0.7,
               capLevelToPlayerSize: false,
+              manifestLoadingTimeOut: 20000,
+              manifestLoadingMaxRetry: 4,
+              manifestLoadingRetryDelay: 1000,
+              levelLoadingTimeOut: 20000,
+              levelLoadingMaxRetry: 4,
+              fragLoadingTimeOut: 25000,
+              fragLoadingMaxRetry: 6,
             });
             currentHls = hls;
             hls.loadSource(res.streamUrl);

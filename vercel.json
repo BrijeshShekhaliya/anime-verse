@@ -7,11 +7,11 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "http://13.236.161.33:3000/api/:match*"
+      "destination": "https://13.236.161.33.sslip.io/api/:match*"
     },
     {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "source": "/:path*",
+      "destination": "/"
     }
   ],
   "headers": [
