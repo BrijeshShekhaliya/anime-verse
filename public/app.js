@@ -1207,6 +1207,7 @@
       currentLang,
       watched,
       storageKeyWatched,
+      storageKeyExactTime,
       renderEpisodeCardsHtml,
     });
 
@@ -1235,6 +1236,7 @@
     let episodes = ctx.episodes;
 
     const storageKeyProgress = (ep, s = currentSeason) => `animeverse_prog_${a.id}_s${s}_e${ep}`;
+    const storageKeyExactTime = ctx.storageKeyExactTime || ((ep, s = currentSeason) => `animeverse_time_${a.id}_s${s}_e${ep}`);
 
     function getActiveServer() {
       return STREAM_SERVERS.find((srv) => srv.id === currentServer) || STREAM_SERVERS[0];
@@ -1537,6 +1539,7 @@
             const hls = new Hls({
               autoStartLoad: true,
               enableWorker: true,
+              startPosition: targetResumeSec > 1.5 ? targetResumeSec : -1,
               startFragPrefetch: true,
               progressive: false,
               lowLatencyMode: false,
@@ -1965,22 +1968,30 @@
     }
 
     if (video) {
-      video.addEventListener('timeupdate', updatePlayerTimeAndProgress);
-      video.addEventListener('pause', () => {
-        syncPlayState();
-        if (video.currentTime > 1) {
+      const saveExactCurrentPosition = () => {
+        if (video && video.currentTime > 1) {
           try {
             localStorage.setItem(storageKeyExactTime(currentEp), video.currentTime.toFixed(2));
           } catch {}
-        }
-        if (video.duration && !isNaN(video.duration)) {
-          const pct = Math.min(100, Math.floor((video.currentTime / video.duration) * 100));
-          if (pct > 0) {
-            try {
-              localStorage.setItem(storageKeyProgress(currentEp), String(pct));
-            } catch {}
+          if (video.duration && !isNaN(video.duration)) {
+            const pct = Math.min(100, Math.floor((video.currentTime / video.duration) * 100));
+            if (pct > 0) {
+              try {
+                localStorage.setItem(storageKeyProgress(currentEp), String(pct));
+              } catch {}
+            }
           }
         }
+      };
+
+      window.addEventListener('beforeunload', saveExactCurrentPosition);
+      window.addEventListener('pagehide', saveExactCurrentPosition);
+      video.addEventListener('seeking', saveExactCurrentPosition);
+      video.addEventListener('seeked', saveExactCurrentPosition);
+      video.addEventListener('timeupdate', updatePlayerTimeAndProgress);
+      video.addEventListener('pause', () => {
+        syncPlayState();
+        saveExactCurrentPosition();
       });
       video.addEventListener('ended', () => {
         watched.add(currentEp);
