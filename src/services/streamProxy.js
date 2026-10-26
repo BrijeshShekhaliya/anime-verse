@@ -10,8 +10,8 @@ const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 const MAX_PLAYLIST_BYTES = 5 * 1024 * 1024;
 
-const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 32 });
-const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 32 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 300, keepAliveMsecs: 60000, timeout: 15000 });
+const httpAgent = new http.Agent({ keepAlive: true, maxSockets: 300, keepAliveMsecs: 60000, timeout: 15000 });
 
 function proxiedUrl(targetUrl, ref) {
   return `/api/stream/proxy?url=${encodeURIComponent(targetUrl)}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`;
@@ -132,7 +132,7 @@ async function handleProxy(req, res, hops = 0) {
 
       // Media chunk or subtitle or direct binary stream
       const passHeaders = {
-        'Cache-Control': 'public, max-age=86400',
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400, immutable',
         'X-Content-Type-Options': 'nosniff',
       };
       for (const h of [
