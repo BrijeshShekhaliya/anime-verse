@@ -623,60 +623,14 @@
       getUrl: () => '',
     },
     {
-      id: 'vidlink',
-      name: 'VidLink',
-      tag: 'Fast • Ad-Free',
-      supportsDub: true,
-      isNative: false,
-      getUrl: (alId, ep, lang, tmdbId, season) => `https://vidlink.pro/anime/${alId}/${ep}/${lang}`,
-    },
-    {
-      id: 'vidsrc',
-      name: 'VidSrc',
-      tag: 'Multi Audio',
-      supportsDub: true,
-      isNative: false,
-      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId ? `https://vsembed.su/embed/tv/${tmdbId}/${season}/${ep}` : `https://vsembed.su/embed/anime/${alId}/${ep}/${lang}`,
-    },
-    {
-      id: 'vidfast',
-      name: 'Vidfast',
-      tag: 'HD Stream',
-      supportsDub: false,
-      isNative: false,
-      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId ? `https://vidfast.vc/tv/${tmdbId}/${season}/${ep}` : `https://vidlink.pro/anime/${alId}/${ep}/${lang}`,
-    },
-    {
-      id: 'vidnest',
-      name: 'Vidnest',
-      tag: 'Anime Sub/Dub',
-      supportsDub: true,
-      isNative: false,
-      getUrl: (alId, ep, lang, tmdbId, season) => `https://vidnest.fun/anime/${alId}/${ep}/${lang}`,
-    },
-    {
-      id: 'aether',
-      name: 'Aether',
-      tag: 'Multi Lang',
-      supportsDub: false,
-      isNative: false,
-      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId ? `https://aether.ist/media/tmdb-tv-${tmdbId}/${season}/${ep}` : `https://vidlink.pro/anime/${alId}/${ep}/${lang}`,
-    },
-    {
       id: 'vidrift',
       name: 'Vidrift',
-      tag: 'Anime ✓',
+      tag: 'Anime • Multi-Audio',
       supportsDub: true,
       isNative: false,
-      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId ? `https://embed.vidrift.net/embed/tv/${tmdbId}/${season}/${ep}` : `https://vidlink.pro/anime/${alId}/${ep}/${lang}`,
-    },
-    {
-      id: 'autoembed',
-      name: 'AutoEmbed',
-      tag: 'Fallback',
-      supportsDub: false,
-      isNative: false,
-      getUrl: (alId, ep) => `https://anime.autoembed.cc/embed/${alId}/${ep}`,
+      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId
+        ? `https://embed.vidrift.net/embed/tv/${tmdbId}/${season}/${ep}`
+        : `https://embed.vidrift.net/embed/anime/${alId}/${ep}`,
     },
   ];
 
@@ -797,7 +751,7 @@
 
     let currentServer = 'hianime';
     const savedServer = sessionStorage.getItem('animeverse_server_session');
-    if (savedServer && ['hianime', 'vidlink', 'vidsrc', 'vidfast'].includes(savedServer)) {
+    if (savedServer && ['hianime', 'vidrift'].includes(savedServer)) {
       currentServer = savedServer;
     } else {
       localStorage.setItem('animeverse_server', 'hianime');
@@ -1306,14 +1260,12 @@
                 <p class="err-desc">${esc(err.message || 'Could not resolve video stream.')}</p>
                 <div class="err-actions">
                   <button type="button" class="btn btn-red" id="retryStreamBtn">Retry</button>
-                  <button type="button" class="btn btn-ghost" id="fallbackVidLinkBtn">Switch to VidLink</button>
-                  <button type="button" class="btn btn-ghost" id="fallbackVidSrcBtn">Switch to VidSrc</button>
+                  <button type="button" class="btn btn-ghost" id="fallbackVidriftBtn">Switch to Vidrift</button>
                 </div>
               </div>
             `;
             $('#retryStreamBtn', playerMount)?.addEventListener('click', () => loadStream());
-            $('#fallbackVidLinkBtn', playerMount)?.addEventListener('click', () => switchServer('vidlink'));
-            $('#fallbackVidSrcBtn', playerMount)?.addEventListener('click', () => switchServer('vidsrc'));
+            $('#fallbackVidriftBtn', playerMount)?.addEventListener('click', () => switchServer('vidrift'));
           }
         }
       } else {
