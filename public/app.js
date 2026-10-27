@@ -57,6 +57,10 @@
   // parts of the page asking for the same thing share it), a short memory so
   // going back and forth doesn't re-download, one quiet retry on a network
   // blip or 5xx, and the last good copy if the server can't answer.
+  const API_BASE = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+    ? 'https://13.236.161.33.sslip.io'
+    : '';
+
   const inflightApi = new Map();
   async function api(path, ttlMs = 5 * 60 * 1000) {
     const hit = memo.get(path);
@@ -64,7 +68,7 @@
     if (inflightApi.has(path)) return inflightApi.get(path);
 
     const attempt = async () => {
-      const res = await fetch(`/api${path}`);
+      const res = await fetch(`${API_BASE}/api${path}`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         const err = new Error(body.error || `Request failed (${res.status})`);
@@ -885,261 +889,60 @@
           </div>
         </div>
 
-        <!-- Cinema Video Player Container -->
-        <div class="player-wrap is-loading initial-loading" id="playerWrap">
-          <div class="player-loader" id="playerLoader">
+        <!-- Cinema Video Player Viewport -->
+        <div class="cinema-player-box" id="playerBox">
+          <div class="cinema-loader" id="playerLoader">
             <div class="spinner"></div>
+            <p id="playerLoaderMsg">Connecting to stream...</p>
           </div>
+          <div class="cinema-player-mount" id="playerMount"></div>
+        </div>
 
-          <!-- Native Ad-Free HTML5 Video Player -->
-          <video
-            id="nativeVideoPlayer"
-            class="native-video-player"
-            playsinline
-            preload="auto"
-            crossorigin="anonymous"
-            style="display:none;"
-          ></video>
-
-          <!-- Fallback Embed Player -->
-          <iframe
-            id="watchIframe"
-            src=""
-            style="display:none;"
-            title="${esc(a.title)} - Season ${currentSeason} Episode ${currentEp}"
-            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            referrerpolicy="no-referrer"
-            allowfullscreen
-          ></iframe>
-
-          <!-- Center Big Play Button -->
-          <button type="button" class="player-center-play" id="playerCenterPlayBtn" aria-label="Play video">
-            <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
-          </button>
-
-          <!-- Floating Unlock Pill (shows only when controls are locked) -->
-          <button type="button" class="player-unlock-pill" id="playerUnlockFloatingBtn" hidden>
-            <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-            Controls Locked — Click to Unlock
-          </button>
-
-          <!-- Custom Player Top Bar -->
-          <div class="player-top-bar" id="playerTopBar">
-            <div class="player-top-left">
-              <!-- Server Selector Pill -->
-              <button type="button" class="player-pill-btn" id="sourceSelectorBtn" title="Select Server">
-                <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                <span id="activeSourceLabel">${esc(getActiveServer().name)}</span>
-                <svg class="ic" viewBox="0 0 24 24" style="width:10px;height:10px;"><path d="M7 10l5 5 5-5" stroke-width="2.4"/></svg>
-              </button>
-
-              <!-- AdShield Badge Pill -->
-              <button type="button" class="player-pill-btn" id="adShieldBtn" title="AdShield Protection Active">
-                <svg class="ic" viewBox="0 0 24 24"><path d="M12 2l7 3.5v6.5c0 5-3.5 9-7 10-3.5-1-7-5-7-10V5.5L12 2z"/></svg>
-                <span class="player-blocked-badge" id="adShieldBadge">${window.__adShieldBlockedCount || 0}</span>
-              </button>
-
-              <!-- Brand Title & Tag -->
-              <div class="player-brand-info">
-                <span class="player-brand-title">${esc(a.title)}</span>
-                <span class="player-brand-tag">${a.type || 'ANIME'}</span>
-              </div>
-            </div>
-
-            <div class="player-top-right">
-              <!-- Quality & Settings Button (matching user's screenshot) -->
-              <button type="button" class="player-pill-btn" id="playerQualityBtn" title="Video Quality & Settings">
-                <svg class="ic" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                <span>Quality <strong id="playerQualityLabel">AUTO</strong></span>
-              </button>
-
-              <!-- Audio & Subtitles Button (matching user's screenshot) -->
-              <button type="button" class="player-pill-btn" id="playerAudioSubsBtn" title="Audio & Subtitles">
-                <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 15h3M14 15h3M7 11h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                <span>Audio &amp; Subtitles</span>
-              </button>
-
-              <!-- Theater Mode Button -->
-              <button type="button" class="player-pill-btn" id="theaterToggleBtn" title="Toggle Theater Mode">
-                <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16"/></svg>
-              </button>
+        <!-- Permanent Server & Audio Bar (OUTSIDE player frame, ALWAYS VISIBLE) -->
+        <div class="player-toolbar" id="playerToolbar">
+          <div class="toolbar-section">
+            <span class="toolbar-label">
+              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+              SERVER:
+            </span>
+            <div class="server-pill-list" id="serverSelectorList">
+              ${STREAM_SERVERS.map((s) => `
+                <button type="button" class="server-pill${s.id === currentServer ? ' active' : ''}" data-server-id="${s.id}">
+                  <span class="server-dot"></span>
+                  ${esc(s.name)}
+                </button>
+              `).join('')}
             </div>
           </div>
 
-          <!-- Quality & Settings Dropdown Popover (matching screenshot 1) -->
-          <div class="player-popup-menu" id="playerSettingsMenu" hidden>
-            <div class="player-popup-columns">
-              <!-- QUALITY Column -->
-              <div class="player-popup-col">
-                <div class="player-popup-heading">QUALITY</div>
-                <div id="playerQualityList">
-                  <button type="button" class="player-popup-item active" data-quality="-1">
-                    <span>Auto</span><span class="player-popup-check">✓</span>
-                  </button>
-                  <button type="button" class="player-popup-item" data-quality="1080">
-                    <span>1080p</span><span class="player-popup-check">✓</span>
-                  </button>
-                  <button type="button" class="player-popup-item" data-quality="720">
-                    <span>720p</span><span class="player-popup-check">✓</span>
-                  </button>
-                  <button type="button" class="player-popup-item" data-quality="480">
-                    <span>480p</span><span class="player-popup-check">✓</span>
-                  </button>
-                  <button type="button" class="player-popup-item" data-quality="360">
-                    <span>360p</span><span class="player-popup-check">✓</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- SERVER Column -->
-              <div class="player-popup-col">
-                <div class="player-popup-heading">SERVER</div>
-                <div id="playerServerList">
-                  ${STREAM_SERVERS.map((s) => `
-                    <button type="button" class="player-popup-item${s.id === currentServer ? ' active' : ''}" data-server-id="${s.id}">
-                      <span>${esc(s.name)}</span>
-                      <span class="player-popup-check">✓</span>
-                    </button>
-                  `).join('')}
-                </div>
-              </div>
-            </div>
-
-            <!-- SOURCE / DUB AUDIO Section -->
-            <div class="player-popup-heading">SOURCE / AUDIO</div>
-            <div id="playerAudioSourceList" style="margin-bottom:8px;">
-              <button type="button" class="player-popup-item${currentLang === 'sub' ? ' active' : ''}" data-audio-lang="sub">
-                <span>Original (Japanese)</span>
-                <span class="player-popup-check">✓</span>
-              </button>
-              <button type="button" class="player-popup-item${currentLang === 'dub' ? ' active' : ''}" data-audio-lang="dub">
-                <span>English Dub</span>
-                <span class="player-popup-check">✓</span>
-              </button>
-            </div>
-
-            <div class="player-popup-divider"></div>
-
-            <!-- Settings Options: Speed, Skip Interval, Volume Boost, Video Fit -->
-            <div class="player-setting-row" id="settingSpeedRow">
-              <span>Speed</span>
-              <span class="player-setting-val"><span id="speedValLabel">Normal</span> &gt;</span>
-            </div>
-            <div class="player-setting-row" id="settingSkipRow">
-              <span>Skip interval</span>
-              <span class="player-setting-val"><span id="skipValLabel">10s</span> &gt;</span>
-            </div>
-            <div class="player-setting-row" id="settingBoostRow">
-              <span>Volume boost</span>
-              <span class="player-setting-val"><span id="boostValLabel">Off</span> &gt;</span>
-            </div>
-            <div class="player-setting-row" id="settingVideoFitRow">
-              <span>Video</span>
-              <span class="player-setting-val"><span id="videoFitValLabel">Fit</span> &gt;</span>
+          <div class="toolbar-section audio-section">
+            <span class="toolbar-label">AUDIO:</span>
+            <div class="audio-toggle-pills" id="audioToggleList">
+              <button type="button" class="audio-pill${currentLang === 'sub' ? ' active' : ''}" data-audio-lang="sub">SUB</button>
+              <button type="button" class="audio-pill${currentLang === 'dub' ? ' active' : ''}" data-audio-lang="dub">DUB</button>
             </div>
           </div>
 
-          <!-- Audio & Subtitles Dropdown Popover -->
-          <div class="player-popup-menu" id="playerAudioSubsMenu" hidden>
-            <div class="player-popup-heading">AUDIO TRACKS</div>
-            <div id="audioTracksList" style="margin-bottom:12px;">
-              <button type="button" class="player-popup-item${currentLang === 'sub' ? ' active' : ''}" data-audio-lang="sub">
-                <span>Original (Japanese)</span>
-                <span class="player-popup-check">✓</span>
-              </button>
-              <button type="button" class="player-popup-item${currentLang === 'dub' ? ' active' : ''}" data-audio-lang="dub">
-                <span>English Dub</span>
-                <span class="player-popup-check">✓</span>
-              </button>
-            </div>
-
-            <div class="player-popup-divider"></div>
-
-            <div class="player-popup-heading">SUBTITLES</div>
-            <div id="subtitleTracksList" style="max-height:160px;overflow-y:auto;">
-              <button type="button" class="player-popup-item active" data-sub-idx="-1">
-                <span>Off</span>
-                <span class="player-popup-check">✓</span>
-              </button>
-            </div>
+          <div class="toolbar-section quality-section" id="qualitySection" ${getActiveServer().isNative ? '' : 'style="display:none;"'}>
+            <span class="toolbar-label">QUALITY:</span>
+            <select class="quality-select" id="playerQualitySelect">
+              <option value="-1">Auto</option>
+              <option value="1080">1080p</option>
+              <option value="720">720p</option>
+              <option value="480">480p</option>
+              <option value="360">360p</option>
+            </select>
           </div>
 
-          <!-- Custom Player Bottom Control Bar (matching screenshots 2 & 3) -->
-          <div class="player-bottom-bar" id="playerBottomBar">
-            <!-- Scrubber Timeline -->
-            <div class="player-timeline-wrap" id="playerTimeline">
-              <div class="player-timeline-rail">
-                <div class="player-timeline-buffered" id="playerTimelineBuffered"></div>
-                <div class="player-timeline-played" id="playerTimelinePlayed"></div>
-                <div class="player-timeline-thumb" id="playerTimelineThumb"></div>
-              </div>
-              <div class="player-timeline-tooltip" id="playerTimelineTooltip">0:00</div>
-            </div>
-
-            <!-- Controls Row -->
-            <div class="player-controls-row">
-              <div class="player-controls-left">
-                <!-- Play / Pause -->
-                <button type="button" class="player-ctrl-btn" id="playerPlayBtn" title="Play/Pause (Space)" aria-label="Play/Pause">
-                  <svg class="ic play-ic" viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4" fill="currentColor"/></svg>
-                  <svg class="ic pause-ic" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg>
-                </button>
-
-                <!-- Skip Back 10s -->
-                <button type="button" class="player-ctrl-btn" id="playerRewindBtn" title="Rewind 10s (← / J)" aria-label="Rewind 10s">
-                  <svg class="ic player-skip-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                    <path d="M3 3v5h5"/>
-                    <text x="12" y="15" text-anchor="middle">10</text>
-                  </svg>
-                </button>
-
-                <!-- Skip Forward 10s -->
-                <button type="button" class="player-ctrl-btn" id="playerFwdBtn" title="Forward 10s (→ / L)" aria-label="Forward 10s">
-                  <svg class="ic player-skip-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                    <path d="M21 3v5h-5"/>
-                    <text x="12" y="15" text-anchor="middle">10</text>
-                  </svg>
-                </button>
-
-                <!-- Volume Group -->
-                <div class="player-volume-group">
-                  <button type="button" class="player-ctrl-btn" id="playerVolBtn" title="Mute/Unmute (M)">
-                    <svg class="ic" viewBox="0 0 24 24" id="volHighIcon"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                    <svg class="ic" viewBox="0 0 24 24" id="volMuteIcon" hidden><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2"/><line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="2"/></svg>
-                  </button>
-                  <input type="range" class="player-volume-slider" id="playerVolSlider" min="0" max="1" step="0.05" value="1">
-                </div>
-
-                <!-- Time Display: 0:01 / 24:12 • Ends at 6:05 PM -->
-                <div class="player-time-display" id="playerTimeDisplay">
-                  <span class="player-time-current" id="timeCurrent">0:00</span> / <span id="timeDuration">0:00</span>
-                  <span class="player-time-ends" id="timeEndsAt">• Ends at --:--</span>
-                </div>
-              </div>
-
-              <div class="player-controls-right">
-                <!-- Lock Controls Button -->
-                <button type="button" class="player-ctrl-btn" id="playerLockBtn" title="Lock controls">
-                  <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                </button>
-
-                <!-- Picture in Picture -->
-                <button type="button" class="player-ctrl-btn" id="playerPipBtn" title="Picture in Picture">
-                  <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="12" y="11" width="8" height="7" rx="1" fill="currentColor"/></svg>
-                </button>
-
-                <!-- Fullscreen -->
-                <button type="button" class="player-ctrl-btn" id="playerFsBtn" title="Fullscreen (F)">
-                  <svg class="ic" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-                </button>
-              </div>
-            </div>
+          <div class="toolbar-section actions-section">
+            <button type="button" class="toolbar-action-btn" id="theaterToggleBtn" title="Toggle Theater Mode">
+              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16"/></svg>
+              Theater
+            </button>
           </div>
         </div>
 
-        <!-- Rich OTT Episodes Section (Matching Streambert) -->
+        <!-- Episodes Section -->
         <div class="episodes-section">
           <div class="episodes-section-header">
             <h2 class="episodes-section-title">EPISODES</h2>
@@ -1158,33 +961,6 @@
           <!-- Episodes Grid -->
           <div class="episodes-grid" id="episodesGrid">
             ${renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason)}
-          </div>
-        </div>
-
-        <!-- AdShield Info Modal (Hidden by default) -->
-        <div class="adshield-modal-backdrop" id="adShieldModal" hidden>
-          <div class="adshield-modal-card">
-            <div class="adshield-modal-header">
-              <h3>
-                <svg class="ic" viewBox="0 0 24 24" style="color:var(--red);"><path d="M12 2l7 3.5v6.5c0 5-3.5 9-7 10-3.5-1-7-5-7-10V5.5L12 2z"/></svg>
-                Streambert AdShield Active
-              </h3>
-              <button type="button" class="icon-btn" id="closeAdShieldModal">${icon.x}</button>
-            </div>
-            <div class="adshield-stats-grid">
-              <div class="adshield-stat-box">
-                <div class="adshield-stat-num" id="modalBlockCount">${window.__adShieldBlockedCount || 0}</div>
-                <div class="adshield-stat-label">Redirects & Popups Blocked</div>
-              </div>
-              <div class="adshield-stat-box">
-                <div class="adshield-stat-num" style="color:#48c774;">Active</div>
-                <div class="adshield-stat-label">Embed Protection Shield</div>
-              </div>
-            </div>
-            <p class="adshield-note">
-              AdShield automatically intercepts and destroys rogue ad redirects, tracking popups, and clickjacking scripts so your viewing experience remains clean, isolated, and safe.
-            </p>
-            <button type="button" class="btn btn-primary" style="width:100%;" id="dismissAdShieldBtn">Done</button>
           </div>
         </div>
       </div>
@@ -1241,298 +1017,195 @@
       return STREAM_SERVERS.find((srv) => srv.id === currentServer) || STREAM_SERVERS[0];
     }
 
-    function getServerUrl(ep = currentEp) {
-      const s = getActiveServer();
-      return s.getUrl(alId, ep, currentLang, tmdbId, currentSeason);
-    }
-
-    const video = $('#nativeVideoPlayer', view);
-    const iframe = $('#watchIframe', view);
-    const loader = $('#playerLoader', view);
-    const loaderText = $('#playerLoaderText', view);
-    const wrap = $('#playerWrap', view);
+    const playerBox = $('#playerBox', view);
+    const playerMount = $('#playerMount', view);
+    const playerLoader = $('#playerLoader', view);
+    const playerLoaderMsg = $('#playerLoaderMsg', view);
+    const qualitySection = $('#qualitySection', view);
+    const qualitySelect = $('#playerQualitySelect', view);
     const seasonEpTag = $('#seasonEpTag', view);
     const playerEpTitle = $('#playerEpTitle', view);
     const markWatchedBtn = $('#markWatchedBtn', view);
-    const sourceSelectorBtn = $('#sourceSelectorBtn', view);
-    const activeSourceLabel = $('#activeSourceLabel', view);
-    const adShieldBtn = $('#adShieldBtn', view);
-    const adShieldBadge = $('#adShieldBadge', view);
-    const adShieldModal = $('#adShieldModal', view);
-    const closeAdShieldModal = $('#closeAdShieldModal', view);
-    const dismissAdShieldBtn = $('#dismissAdShieldBtn', view);
-    const modalBlockCount = $('#modalBlockCount', view);
     const theaterToggleBtn = $('#theaterToggleBtn', view);
-    const progressBarFill = $('#progressBarFill', view);
-    const progressPctLabel = $('#progressPctLabel', view);
     const episodesGrid = $('#episodesGrid', view);
-    const seasonSelector = $('#seasonSelector', view);
     const episodesCountBadge = $('#episodesCountBadge', view);
+    const seasonSelector = $('#seasonSelector', view);
 
-    // Custom Player Elements (matching user's screenshots)
-    const playerCenterPlayBtn = $('#playerCenterPlayBtn', view);
-    const playerUnlockFloatingBtn = $('#playerUnlockFloatingBtn', view);
-    const playerTopBar = $('#playerTopBar', view);
-    const playerQualityBtn = $('#playerQualityBtn', view);
-    const playerQualityLabel = $('#playerQualityLabel', view);
-    const playerAudioSubsBtn = $('#playerAudioSubsBtn', view);
-    const playerSettingsMenu = $('#playerSettingsMenu', view);
-    const playerQualityList = $('#playerQualityList', view);
-    const playerServerList = $('#playerServerList', view);
-    const playerAudioSourceList = $('#playerAudioSourceList', view);
-    const playerAudioSubsMenu = $('#playerAudioSubsMenu', view);
-    const audioTracksList = $('#audioTracksList', view);
-    const subtitleTracksList = $('#subtitleTracksList', view);
-    const settingSpeedRow = $('#settingSpeedRow', view);
-    const speedValLabel = $('#speedValLabel', view);
-    const settingSkipRow = $('#settingSkipRow', view);
-    const skipValLabel = $('#skipValLabel', view);
-    const settingBoostRow = $('#settingBoostRow', view);
-    const boostValLabel = $('#boostValLabel', view);
-    const settingVideoFitRow = $('#settingVideoFitRow', view);
-    const videoFitValLabel = $('#videoFitValLabel', view);
+    let activeHls = null;
+    let activeVideo = null;
+    let activeIframe = null;
+    let currentResolveGen = 0;
 
-    const playerBottomBar = $('#playerBottomBar', view);
-    const playerTimeline = $('#playerTimeline', view);
-    const playerTimelineBuffered = $('#playerTimelineBuffered', view);
-    const playerTimelinePlayed = $('#playerTimelinePlayed', view);
-    const playerTimelineThumb = $('#playerTimelineThumb', view);
-    const playerTimelineTooltip = $('#playerTimelineTooltip', view);
-    const playerPlayBtn = $('#playerPlayBtn', view);
-    const playIcon = $('#playIcon', view);
-    const pauseIcon = $('#pauseIcon', view);
-    const playerRewindBtn = $('#playerRewindBtn', view);
-    const playerFwdBtn = $('#playerFwdBtn', view);
-    const playerVolBtn = $('#playerVolBtn', view);
-    const volHighIcon = $('#volHighIcon', view);
-    const volMuteIcon = $('#volMuteIcon', view);
-    const playerVolSlider = $('#playerVolSlider', view);
-    const timeCurrent = $('#timeCurrent', view);
-    const timeDuration = $('#timeDuration', view);
-    const timeEndsAt = $('#timeEndsAt', view);
-    const playerLockBtn = $('#playerLockBtn', view);
-    const playerPipBtn = $('#playerPipBtn', view);
-    const playerFsBtn = $('#playerFsBtn', view);
-
-    let currentHls = null;
-    let audioCtx = null;
-    let gainNode = null;
-    let audioSource = null;
-    let hideControlsTimer = null;
-    let currentSkipInterval = Number(localStorage.getItem('animeverse_skip') || 10);
-    let currentSpeed = Number(localStorage.getItem('animeverse_speed') || 1.0);
-    let currentBoost = Number(localStorage.getItem('animeverse_boost') || 1.0);
-    let currentVideoFit = localStorage.getItem('animeverse_fit') || 'contain';
-
-    function formatTime(sec) {
-      if (!sec || isNaN(sec) || sec < 0) return '0:00';
-      const s = Math.floor(sec);
-      const h = Math.floor(s / 3600);
-      const m = Math.floor((s % 3600) / 60);
-      const remainingS = s % 60;
-      const paddedS = remainingS < 10 ? '0' + remainingS : remainingS;
-      if (h > 0) {
-        const paddedM = m < 10 ? '0' + m : m;
-        return `${h}:${paddedM}:${paddedS}`;
+    // ── Teardown & Clean Up: Guarantees MULTIPLE PLAYERS NEVER RUN AT ONCE ──
+    function teardownPlayer() {
+      if (activeHls) {
+        try {
+          activeHls.stopLoad();
+          activeHls.destroy();
+        } catch (e) {}
+        activeHls = null;
       }
-      return `${m}:${paddedS}`;
+      if (activeVideo) {
+        try {
+          activeVideo.pause();
+          activeVideo.removeAttribute('src');
+          activeVideo.load();
+        } catch (e) {}
+        activeVideo.remove();
+        activeVideo = null;
+      }
+      if (activeIframe) {
+        try {
+          activeIframe.src = 'about:blank';
+        } catch (e) {}
+        activeIframe.remove();
+        activeIframe = null;
+      }
+      if (playerMount) {
+        playerMount.innerHTML = '';
+      }
     }
 
-    function formatEndsAt(secRemaining) {
-      if (!secRemaining || isNaN(secRemaining) || secRemaining <= 0) return '• Ends at --:--';
-      const end = new Date(Date.now() + secRemaining * 1000);
-      let hours = end.getHours();
-      const minutes = end.getMinutes();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      const paddedM = minutes < 10 ? '0' + minutes : minutes;
-      return `• Ends at ${hours}:${paddedM} ${ampm}`;
+    function showLoader(msg = 'Connecting to stream...') {
+      if (playerLoaderMsg) playerLoaderMsg.textContent = msg;
+      if (playerLoader) playerLoader.classList.remove('hidden');
     }
 
-    function applyVolumeBoost(mult) {
-      currentBoost = mult;
-      localStorage.setItem('animeverse_boost', String(mult));
-      if (boostValLabel) boostValLabel.textContent = mult === 1.0 ? 'Off' : `${Math.round(mult * 100)}%`;
-      if (mult <= 1.0) {
-        if (gainNode) gainNode.gain.value = 1.0;
-        return;
+    function hideLoader() {
+      if (playerLoader) playerLoader.classList.add('hidden');
+    }
+
+    // Save exact position safely
+    function savePlaybackProgress(curTime, dur) {
+      if (curTime > 1) {
+        try {
+          localStorage.setItem(storageKeyExactTime(currentEp), curTime.toFixed(2));
+        } catch {}
       }
-      try {
-        if (!audioCtx) {
-          const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
-          if (AudioCtxClass && video) {
-            audioCtx = new AudioCtxClass();
-            audioSource = audioCtx.createMediaElementSource(video);
-            gainNode = audioCtx.createGain();
-            audioSource.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+      if (dur && !isNaN(dur) && dur > 0) {
+        const pct = Math.min(100, Math.floor((curTime / dur) * 100));
+        if (pct > 0) {
+          try {
+            localStorage.setItem(storageKeyProgress(currentEp), String(pct));
+          } catch {}
+        }
+        if (pct >= 85 && !watched.has(currentEp)) {
+          watched.add(currentEp);
+          try {
+            localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
+          } catch {}
+          if (markWatchedBtn) {
+            markWatchedBtn.classList.add('watched');
+            markWatchedBtn.textContent = '✓ Watched';
+          }
+          if (episodesGrid && viewingSeason === currentSeason) {
+            episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
+            attachCardListeners(episodes, currentSeason);
           }
         }
-        if (audioCtx && audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        if (gainNode) {
-          gainNode.gain.value = mult;
-        }
-      } catch (e) {
-        console.warn('Volume boost error:', e);
       }
     }
 
-    function resetControlsTimer() {
-      if (!wrap || wrap.classList.contains('is-locked')) return;
-      wrap.classList.remove('controls-hidden');
-      clearTimeout(hideControlsTimer);
-      if (video && !video.paused) {
-        hideControlsTimer = setTimeout(() => {
-          if (playerSettingsMenu && !playerSettingsMenu.hidden) return;
-          if (playerAudioSubsMenu && !playerAudioSubsMenu.hidden) return;
-          wrap.classList.add('controls-hidden');
-        }, 3200);
-      }
-    }
-
-    if (wrap) {
-      wrap.addEventListener('mousemove', resetControlsTimer);
-      wrap.addEventListener('click', resetControlsTimer);
-      wrap.addEventListener('mouseleave', () => {
-        if (video && !video.paused && !wrap.classList.contains('is-locked')) {
-          wrap.classList.add('controls-hidden');
-        }
-      });
-    }
-
-    cleanup.push(() => {
-      clearTimeout(hideControlsTimer);
-      if (currentHls) {
-        currentHls.destroy();
-        currentHls = null;
-      }
-      if (audioCtx) {
-        try { audioCtx.close(); } catch {}
-        audioCtx = null;
-      }
-      if (video) {
-        video.pause();
-        video.removeAttribute('src');
-        video.load();
-      }
-    });
-
-    if (iframe && loader) {
-      iframe.onload = () => {
-        const s = getActiveServer();
-        if (!s.isNative) {
-          loader.classList.add('hidden');
-        }
-      };
-    }
-
-    let resolveGen = 0;
-
-    async function reloadStream(explicitResumeTime = null) {
-      const thisGen = ++resolveGen;
+    // ── Unified Stream Loader ──
+    async function loadStream(explicitResumeTime = null) {
+      const thisGen = ++currentResolveGen;
       const s = getActiveServer();
 
-      // Read exact resume timestamp in seconds (explicitly passed or from storage)
+      // Read exact resume timestamp in seconds
       const targetResumeSec = explicitResumeTime !== null
         ? explicitResumeTime
         : Number(localStorage.getItem(storageKeyExactTime(currentEp)) || 0);
 
-      if (loader) loader.classList.remove('hidden');
-      if (wrap) wrap.classList.add('is-loading');
-      if (playerCenterPlayBtn) playerCenterPlayBtn.classList.remove('playing');
+      // 1. Fully teardown any existing player first
+      teardownPlayer();
+      showLoader(`Loading ${s.name}...`);
 
-      // Only reset visually if starting from beginning
-      if (!targetResumeSec || targetResumeSec < 1) {
-        if (playerTimelinePlayed) playerTimelinePlayed.style.width = '0%';
-        if (timeCurrent) timeCurrent.textContent = '0:00';
+      // 2. Sync toolbar UI
+      $$('.server-pill', view).forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.serverId === currentServer);
+      });
+      $$('.audio-pill', view).forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.audioLang === currentLang);
+      });
+
+      if (qualitySection) {
+        qualitySection.style.display = s.isNative ? 'flex' : 'none';
       }
 
+      // 3. Mount Native HLS Player
       if (s.isNative) {
-        if (iframe) {
-          iframe.style.display = 'none';
-          iframe.src = 'about:blank';
-        }
-        if (video) {
-          video.style.display = 'block';
-          video.style.objectFit = currentVideoFit;
-          video.playbackRate = currentSpeed;
-        }
-        if (playerCenterPlayBtn) playerCenterPlayBtn.style.display = '';
-        if (playerBottomBar) playerBottomBar.style.display = '';
-
-        if (currentHls) {
-          currentHls.destroy();
-          currentHls = null;
-        }
-        if (video) {
-          video.pause();
-          video.removeAttribute('src');
-          while (video.firstChild) {
-            video.removeChild(video.firstChild);
-          }
-          video.load();
-        }
-
         try {
           const res = await api(
             `/stream/resolve?title=${encodeURIComponent(a.title)}&romaji=${encodeURIComponent(a.titleRomaji || '')}&season=${currentSeason}&episode=${currentEp}&mode=${currentLang}`,
             30 * 60 * 1000
           );
 
-          if (thisGen !== resolveGen) return;
+          if (thisGen !== currentResolveGen) return;
 
           if (!res || !res.streamUrl) {
             throw new Error('No stream URL available');
           }
 
+          const video = document.createElement('video');
+          video.className = 'cinema-video-element';
+          video.controls = true;
+          video.playsInline = true;
+          video.preload = 'auto';
+          video.crossOrigin = 'anonymous';
+
           // Subtitle tracks
-          if (res.subtitles && res.subtitles.length > 0 && video) {
+          if (res.subtitles && res.subtitles.length > 0) {
             res.subtitles.forEach((sub, idx) => {
               const track = document.createElement('track');
               track.kind = 'subtitles';
               track.label = sub.label || sub.lang || `Track ${idx + 1}`;
               track.srclang = sub.lang || 'en';
-              track.src = sub.src;
+              track.src = sub.src.startsWith('http') ? sub.src : `${API_BASE}${sub.src}`;
               if (sub.default) track.default = true;
               video.appendChild(track);
             });
-
-            // Populate Subtitles Popup
-            if (subtitleTracksList) {
-              let subHtml = `
-                <button type="button" class="player-popup-item" data-sub-idx="-1">
-                  <span>Off</span><span class="player-popup-check">✓</span>
-                </button>
-              `;
-              res.subtitles.forEach((sub, idx) => {
-                const isDef = sub.default || idx === 0;
-                subHtml += `
-                  <button type="button" class="player-popup-item${isDef ? ' active' : ''}" data-sub-idx="${idx}">
-                    <span>${esc(sub.label || sub.lang || `Track ${idx + 1}`)}</span>
-                    <span class="player-popup-check">✓</span>
-                  </button>
-                `;
-              });
-              subtitleTracksList.innerHTML = subHtml;
-
-              $$('[data-sub-idx]', subtitleTracksList).forEach((subBtn) => {
-                subBtn.addEventListener('click', () => {
-                  const subIdx = Number(subBtn.dataset.subIdx);
-                  $$('[data-sub-idx]', subtitleTracksList).forEach((b) => {
-                    b.classList.toggle('active', Number(b.dataset.subIdx) === subIdx);
-                  });
-                  if (video && video.textTracks) {
-                    for (let i = 0; i < video.textTracks.length; i++) {
-                      video.textTracks[i].mode = (i === subIdx) ? 'showing' : 'hidden';
-                    }
-                  }
-                });
-              });
-            }
           }
+
+          playerMount.appendChild(video);
+          activeVideo = video;
+
+          // Event listeners for progress & resume
+          const onProgressFlush = () => {
+            if (video && video.currentTime > 1) {
+              savePlaybackProgress(video.currentTime, video.duration);
+            }
+          };
+
+          video.addEventListener('timeupdate', () => {
+            if (video.currentTime > 1) {
+              savePlaybackProgress(video.currentTime, video.duration);
+            }
+          });
+          video.addEventListener('pause', onProgressFlush);
+          video.addEventListener('seeking', onProgressFlush);
+          video.addEventListener('seeked', onProgressFlush);
+          window.addEventListener('beforeunload', onProgressFlush);
+          window.addEventListener('pagehide', onProgressFlush);
+
+          video.addEventListener('ended', () => {
+            watched.add(currentEp);
+            try {
+              localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
+              localStorage.setItem(storageKeyProgress(currentEp), '100');
+            } catch {}
+            if (markWatchedBtn) {
+              markWatchedBtn.classList.add('watched');
+              markWatchedBtn.textContent = '✓ Watched';
+            }
+            if (currentEp < episodes.length) {
+              switchEpisode(currentEp + 1);
+            }
+          });
+
+          // HLS initialization with direct fragment startPosition
+          const finalStreamUrl = res.streamUrl.startsWith('http')
+            ? res.streamUrl
+            : `${API_BASE}${res.streamUrl}`;
 
           if (window.Hls && Hls.isSupported()) {
             const hls = new Hls({
@@ -1546,193 +1219,56 @@
               maxMaxBufferLength: 120,
               backBufferLength: 60,
               maxBufferSize: 60 * 1024 * 1024,
-              maxBufferHole: 0.1,
-              highBufferWatchdogPeriod: 1,
-              nudgeOffset: 0.1,
-              nudgeMaxRetry: 5,
-              abrEwmaDefaultEstimate: 5000000,
-              abrBandWidthFactor: 0.9,
-              abrBandWidthUpFactor: 0.8,
-              capLevelToPlayerSize: false,
               manifestLoadingTimeOut: 20000,
-              manifestLoadingMaxRetry: 4,
-              manifestLoadingRetryDelay: 1000,
               levelLoadingTimeOut: 20000,
-              levelLoadingMaxRetry: 4,
               fragLoadingTimeOut: 25000,
-              fragLoadingMaxRetry: 6,
             });
-            currentHls = hls;
-            hls.loadSource(res.streamUrl);
+
+            activeHls = hls;
+            hls.loadSource(finalStreamUrl);
             hls.attachMedia(video);
 
-            let positionRestored = false;
-            const applySavedPosition = () => {
-              if (positionRestored) return;
+            let restored = false;
+            const applyResume = () => {
+              if (restored) return;
               if (targetResumeSec > 1.5) {
-                if (!video.duration || isNaN(video.duration) || targetResumeSec < video.duration - 5) {
-                  try {
+                try {
+                  if (Math.abs(video.currentTime - targetResumeSec) > 1.5) {
                     video.currentTime = targetResumeSec;
-                    positionRestored = true;
-                    updatePlayerTimeAndProgress();
-                  } catch (e) {}
-                }
+                  }
+                  restored = true;
+                } catch (e) {}
               }
             };
 
-            video.addEventListener('loadedmetadata', applySavedPosition, { once: true });
-            video.addEventListener('canplay', applySavedPosition, { once: true });
-            hls.once(Hls.Events.LEVEL_LOADED, applySavedPosition);
+            video.addEventListener('loadedmetadata', applyResume);
+            video.addEventListener('canplay', applyResume);
+            hls.once(Hls.Events.LEVEL_LOADED, applyResume);
 
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              if (thisGen !== resolveGen) return;
+              if (thisGen !== currentResolveGen) return;
+              applyResume();
+              hideLoader();
+              video.play().catch(() => {});
 
-              applySavedPosition();
-
-              // Reveal player and hide loader
-              if (loader) loader.classList.add('hidden');
-              if (wrap) {
-                wrap.classList.remove('is-loading');
-                wrap.classList.remove('initial-loading');
-              }
-
-              const playPromise = video.play();
-              if (playPromise && typeof playPromise.catch === 'function') {
-                playPromise.then(() => {
-                  applySavedPosition();
-                  if (typeof syncPlayState === 'function') syncPlayState();
-                }).catch(() => {
-                  if (playerCenterPlayBtn) playerCenterPlayBtn.classList.remove('playing');
-                  if (typeof syncPlayState === 'function') syncPlayState();
-                });
-              }
-
-              // Auto-restore preferred quality if previously selected
-              const prefQ = localStorage.getItem('animeverse_preferred_quality');
-              if (prefQ && hls.levels && hls.levels.length > 0) {
-                const targetQ = Number(prefQ);
-                const matchingIdx = hls.levels.findIndex((l) => (l.height || 0) === targetQ);
-                if (matchingIdx !== -1) {
-                  hls.currentLevel = matchingIdx;
-                  if (playerQualityLabel) playerQualityLabel.textContent = `${targetQ}p`;
-                }
-              }
-
-              // Populate Quality column in settings menu
-              if (playerQualityList && hls.levels && hls.levels.length > 0) {
+              // Populate quality dropdown
+              if (qualitySelect && hls.levels && hls.levels.length > 0) {
                 const currentPrefQ = localStorage.getItem('animeverse_preferred_quality');
-                let qHtml = `
-                  <button type="button" class="player-popup-item${!currentPrefQ ? ' active' : ''}" data-quality="-1">
-                    <span>Auto</span><span class="player-popup-check">✓</span>
-                  </button>
-                `;
+                let optsHtml = '<option value="-1">Auto</option>';
                 const sorted = hls.levels.map((lvl, idx) => ({ lvl, idx })).sort((a, b) => (b.lvl.height || 0) - (a.lvl.height || 0));
                 sorted.forEach(({ lvl, idx }) => {
                   const h = lvl.height || 1080;
-                  const isAct = currentPrefQ && Number(currentPrefQ) === h;
-                  qHtml += `
-                    <button type="button" class="player-popup-item${isAct ? ' active' : ''}" data-quality="${idx}" data-height="${h}">
-                      <span>${h}p</span><span class="player-popup-check">✓</span>
-                    </button>
-                  `;
+                  const isSel = currentPrefQ && Number(currentPrefQ) === h;
+                  optsHtml += `<option value="${idx}" ${isSel ? 'selected' : ''}>${h}p</option>`;
                 });
-                playerQualityList.innerHTML = qHtml;
+                qualitySelect.innerHTML = optsHtml;
 
-                $$('[data-quality]', playerQualityList).forEach((qBtn) => {
-                  qBtn.addEventListener('click', () => {
-                    const qIdx = Number(qBtn.dataset.quality);
-                    if (!hls) return;
-
-                    // Seamless background level switch: NO blocking loader!
-                    if (qIdx === -1) {
-                      hls.currentLevel = -1;
-                      localStorage.removeItem('animeverse_preferred_quality');
-                      if (playerQualityLabel) {
-                        const cur = hls.levels[hls.currentLevel];
-                        playerQualityLabel.textContent = cur?.height ? `AUTO (${cur.height}p)` : 'AUTO';
-                      }
-                    } else {
-                      hls.currentLevel = qIdx;
-                      const h = Number(qBtn.dataset.height || hls.levels[qIdx]?.height || 1080);
-                      localStorage.setItem('animeverse_preferred_quality', String(h));
-                      if (playerQualityLabel) {
-                        playerQualityLabel.textContent = `${h}p`;
-                      }
-                    }
-
-                    $$('[data-quality]', playerQualityList).forEach((b) => {
-                      b.classList.toggle('active', Number(b.dataset.quality) === qIdx);
-                    });
-                  });
-                });
-              }
-
-              // Multi-audio tracks from HLS if available
-              if (hls.audioTracks && hls.audioTracks.length > 1 && audioTracksList) {
-                let aHtml = '';
-                hls.audioTracks.forEach((t, idx) => {
-                  const isAct = hls.audioTrack === idx;
-                  aHtml += `
-                    <button type="button" class="player-popup-item${isAct ? ' active' : ''}" data-hls-audio="${idx}">
-                      <span>${esc(t.name || t.lang || `Audio ${idx + 1}`)}</span>
-                      <span class="player-popup-check">✓</span>
-                    </button>
-                  `;
-                });
-                audioTracksList.innerHTML = aHtml;
-                $$('[data-hls-audio]', audioTracksList).forEach((aBtn) => {
-                  aBtn.addEventListener('click', () => {
-                    const aIdx = Number(aBtn.dataset.hlsAudio);
-                    if (!hls) return;
-                    const wasPlaying = !video.paused;
-                    if (loader) loader.classList.remove('hidden');
-                    if (wrap) wrap.classList.add('is-loading');
-
-                    hls.audioTrack = aIdx;
-                    $$('[data-hls-audio]', audioTracksList).forEach((b) => {
-                      b.classList.toggle('active', Number(b.dataset.hlsAudio) === aIdx);
-                    });
-
-                    const resumeAudio = () => {
-                      if (loader) loader.classList.add('hidden');
-                      if (wrap) {
-                        wrap.classList.remove('is-loading');
-                        wrap.classList.remove('initial-loading');
-                      }
-                      if (wasPlaying && video.paused) {
-                        video.play().catch(() => {});
-                      }
-                      if (typeof syncPlayState === 'function') syncPlayState();
-                    };
-
-                    const audioTimer = setTimeout(resumeAudio, 450);
-                    const cleanAudioResume = () => {
-                      clearTimeout(audioTimer);
-                      resumeAudio();
-                    };
-
-                    hls.once(Hls.Events.AUDIO_TRACK_SWITCHED, cleanAudioResume);
-                    video.addEventListener('canplay', cleanAudioResume, { once: true });
-                  });
-                });
-              }
-            });
-
-            hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
-              const currentLvl = hls.levels[data.level];
-              if (playerQualityLabel) {
-                if (hls.autoLevelEnabled) {
-                  playerQualityLabel.textContent = currentLvl?.height ? `AUTO (${currentLvl.height}p)` : 'AUTO';
-                } else {
-                  playerQualityLabel.textContent = currentLvl?.height ? `${currentLvl.height}p` : 'HD';
+                if (currentPrefQ) {
+                  const targetQ = Number(currentPrefQ);
+                  const match = hls.levels.findIndex((l) => (l.height || 0) === targetQ);
+                  if (match !== -1) hls.currentLevel = match;
                 }
               }
-              if (loader) loader.classList.add('hidden');
-              if (wrap) {
-                wrap.classList.remove('is-loading');
-                wrap.classList.remove('initial-loading');
-              }
-              if (typeof syncPlayState === 'function') syncPlayState();
             });
 
             hls.on(Hls.Events.ERROR, (evt, errData) => {
@@ -1750,711 +1286,142 @@
                 }
               }
             });
-          } else if (video && video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = res.streamUrl;
+          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = finalStreamUrl;
             video.addEventListener('loadedmetadata', () => {
-              if (thisGen !== resolveGen) return;
-              if (loader) loader.classList.add('hidden');
-              if (wrap) wrap.classList.remove('is-loading');
-              if (savedPct > 0 && savedPct < 95 && video.duration) {
-                video.currentTime = (savedPct / 100) * video.duration;
-              }
+              if (thisGen !== currentResolveGen) return;
+              hideLoader();
+              if (targetResumeSec > 1.5) video.currentTime = targetResumeSec;
               video.play().catch(() => {});
             }, { once: true });
-          } else {
-            throw new Error('HLS playback is not supported by your browser.');
           }
         } catch (err) {
-          if (thisGen !== resolveGen) return;
-          console.warn('[Player] Native stream resolution failed:', err.message);
-          if (loader) loader.classList.add('hidden');
-          if (wrap) {
-            wrap.classList.remove('is-loading');
-            wrap.classList.remove('initial-loading');
-            const prevErr = wrap.querySelector('.player-error-overlay');
-            if (prevErr) prevErr.remove();
-            const errOverlay = document.createElement('div');
-            errOverlay.className = 'player-error-overlay';
-            errOverlay.innerHTML = `
-              <div class="player-error-box">
-                <p style="font-size:15px;font-weight:700;margin-bottom:6px;">Stream currently unavailable</p>
-                <p style="font-size:12px;color:#aaa;margin-bottom:14px;">${esc(err.message || 'Could not load native stream.')}</p>
-                <div style="display:flex;gap:10px;justify-content:center;">
+          if (thisGen !== currentResolveGen) return;
+          console.warn('[Player] Native stream failed:', err.message);
+          hideLoader();
+          if (playerMount) {
+            playerMount.innerHTML = `
+              <div class="player-error-view">
+                <p class="err-title">Stream currently unavailable on HiAnime</p>
+                <p class="err-desc">${esc(err.message || 'Could not resolve video stream.')}</p>
+                <div class="err-actions">
                   <button type="button" class="btn btn-red" id="retryStreamBtn">Retry</button>
-                  <button type="button" class="btn btn-ghost" id="tryVidLinkBtn">Try VidLink</button>
+                  <button type="button" class="btn btn-ghost" id="fallbackVidLinkBtn">Switch to VidLink</button>
+                  <button type="button" class="btn btn-ghost" id="fallbackVidSrcBtn">Switch to VidSrc</button>
                 </div>
               </div>
             `;
-            wrap.appendChild(errOverlay);
-            $('#retryStreamBtn', errOverlay)?.addEventListener('click', () => reloadStream());
-            $('#tryVidLinkBtn', errOverlay)?.addEventListener('click', () => {
-              currentServer = 'vidlink';
-              sessionStorage.setItem('animeverse_server_session', 'vidlink');
-              reloadStream();
-            });
+            $('#retryStreamBtn', playerMount)?.addEventListener('click', () => loadStream());
+            $('#fallbackVidLinkBtn', playerMount)?.addEventListener('click', () => switchServer('vidlink'));
+            $('#fallbackVidSrcBtn', playerMount)?.addEventListener('click', () => switchServer('vidsrc'));
           }
         }
       } else {
-        // Fallback iframe
-        if (currentHls) {
-          currentHls.destroy();
-          currentHls = null;
-        }
-        if (video) {
-          video.pause();
-          video.style.display = 'none';
-        }
-        if (playerCenterPlayBtn) playerCenterPlayBtn.style.display = 'none';
-        if (playerBottomBar) playerBottomBar.style.display = 'none';
+        // 4. Mount Embed Iframe (VidLink, VidSrc, Vidfast, Vidnest, AutoEmbed)
+        const embedUrl = s.getUrl(alId, currentEp, currentLang, tmdbId, currentSeason);
+        const iframe = document.createElement('iframe');
+        iframe.className = 'cinema-iframe-element';
+        iframe.title = `${a.title} - S${currentSeason}E${currentEp}`;
+        iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+        iframe.referrerPolicy = 'no-referrer';
+        iframe.allowFullscreen = true;
+        iframe.src = embedUrl;
 
-        if (iframe) {
-          iframe.style.display = 'block';
-          iframe.src = s.getUrl(alId, currentEp, currentLang, tmdbId, currentSeason);
-          const hideLoader = () => {
-            if (thisGen !== resolveGen) return;
-            if (loader) loader.classList.add('hidden');
-            if (wrap) wrap.classList.remove('is-loading');
-          };
-          iframe.onload = hideLoader;
-          setTimeout(hideLoader, 2000);
-        }
+        playerMount.appendChild(iframe);
+        activeIframe = iframe;
+
+        iframe.onload = () => {
+          if (thisGen !== currentResolveGen) return;
+          hideLoader();
+        };
+        setTimeout(() => {
+          if (thisGen === currentResolveGen) hideLoader();
+        }, 2000);
       }
     }
 
-    // Centralized Play/Pause Sync
-    function syncPlayState() {
-      if (!video) return;
-      const isPlaying = !video.paused && !video.ended && video.readyState > 1;
-      if (playerPlayBtn) {
-        if (isPlaying) {
-          playerPlayBtn.classList.add('is-playing');
-          playerPlayBtn.setAttribute('title', 'Pause (Space)');
-          playerPlayBtn.setAttribute('aria-label', 'Pause');
+    // Quality selection listener
+    if (qualitySelect) {
+      qualitySelect.addEventListener('change', () => {
+        const val = Number(qualitySelect.value);
+        if (!activeHls) return;
+        if (val === -1) {
+          activeHls.currentLevel = -1;
+          localStorage.removeItem('animeverse_preferred_quality');
         } else {
-          playerPlayBtn.classList.remove('is-playing');
-          playerPlayBtn.setAttribute('title', 'Play (Space)');
-          playerPlayBtn.setAttribute('aria-label', 'Play');
-        }
-      }
-      if (playerCenterPlayBtn) {
-        if (isPlaying) {
-          playerCenterPlayBtn.classList.add('playing');
-        } else {
-          playerCenterPlayBtn.classList.remove('playing');
-        }
-      }
-    }
-
-    // Play / Pause Toggle
-    function togglePlay() {
-      if (!video) return;
-      if (video.paused) {
-        video.play().catch(() => {});
-      } else {
-        video.pause();
-      }
-    }
-
-    if (playerCenterPlayBtn) playerCenterPlayBtn.addEventListener('click', togglePlay);
-    if (playerPlayBtn) playerPlayBtn.addEventListener('click', togglePlay);
-    if (video) {
-      video.addEventListener('click', (e) => {
-        if (e.target === video) togglePlay();
-      });
-      video.addEventListener('play', () => {
-        syncPlayState();
-        resetControlsTimer();
-      });
-      video.addEventListener('playing', () => {
-        syncPlayState();
-        if (loader) loader.classList.add('hidden');
-        if (wrap) {
-          wrap.classList.remove('is-loading');
-          wrap.classList.remove('initial-loading');
-        }
-      });
-      video.addEventListener('pause', () => {
-        syncPlayState();
-        showControls();
-      });
-      video.addEventListener('waiting', () => {
-        if (loader) loader.classList.remove('hidden');
-        if (wrap) wrap.classList.add('is-loading');
-      });
-      video.addEventListener('canplay', () => {
-        if (loader) loader.classList.add('hidden');
-        if (wrap) {
-          wrap.classList.remove('is-loading');
-          wrap.classList.remove('initial-loading');
-        }
-        syncPlayState();
-      });
-      video.addEventListener('loadedmetadata', () => {
-        updatePlayerTimeAndProgress();
-        syncPlayState();
-      });
-    }
-
-    // Progress, Scrubber, and Time display updates
-    let isSeeking = false;
-    let seekTargetPct = 0;
-    let lastSavedProgressTime = 0;
-    let lastReportedPct = -1;
-
-    function updatePlayerTimeAndProgress() {
-      if (isSeeking) return;
-      if (!video || !video.duration || isNaN(video.duration)) return;
-      const cur = video.currentTime;
-      const dur = video.duration;
-      const pct = (cur / dur) * 100;
-
-      if (playerTimelinePlayed) playerTimelinePlayed.style.width = `${pct}%`;
-      if (playerTimelineThumb) playerTimelineThumb.style.left = `${pct}%`;
-
-      if (video.buffered && video.buffered.length > 0) {
-        let bufEnd = 0;
-        for (let i = 0; i < video.buffered.length; i++) {
-          if (video.buffered.start(i) <= cur + 1 && video.buffered.end(i) >= cur) {
-            bufEnd = video.buffered.end(i);
-            break;
-          }
-        }
-        if (bufEnd === 0) {
-          bufEnd = video.buffered.end(video.buffered.length - 1);
-        }
-        const bufPct = Math.min(100, (bufEnd / dur) * 100);
-        if (playerTimelineBuffered) playerTimelineBuffered.style.width = `${bufPct}%`;
-      }
-
-      if (timeCurrent) timeCurrent.textContent = formatTime(cur);
-      if (timeDuration) timeDuration.textContent = formatTime(dur);
-      if (timeEndsAt) timeEndsAt.textContent = formatEndsAt(dur - cur);
-
-      if (!video.paused && playerPlayBtn && !playerPlayBtn.classList.contains('is-playing')) {
-        syncPlayState();
-      }
-
-      const roundPct = Math.min(100, Math.floor(pct));
-      if (roundPct > 0) {
-        if (roundPct !== lastReportedPct) {
-          lastReportedPct = roundPct;
-          updateProgressUI(roundPct);
-        }
-
-        // Save exact second position & percentage progress
-        const now = Date.now();
-        if (now - lastSavedProgressTime > 2000) {
-          lastSavedProgressTime = now;
-          try {
-            localStorage.setItem(storageKeyExactTime(currentEp), cur.toFixed(2));
-            localStorage.setItem(storageKeyProgress(currentEp), String(roundPct));
-          } catch {}
-        }
-
-        if (roundPct >= 85 && !watched.has(currentEp)) {
-          watched.add(currentEp);
-          saveWatched();
-          if (markWatchedBtn) {
-            markWatchedBtn.classList.add('watched');
-            markWatchedBtn.textContent = '✓ Watched';
-          }
-          if (episodesGrid && viewingSeason === currentSeason) {
-            episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
-            attachCardListeners(episodes, currentSeason);
-          }
-        }
-      }
-    }
-
-    if (video) {
-      const saveExactCurrentPosition = () => {
-        if (video && video.currentTime > 1) {
-          try {
-            localStorage.setItem(storageKeyExactTime(currentEp), video.currentTime.toFixed(2));
-          } catch {}
-          if (video.duration && !isNaN(video.duration)) {
-            const pct = Math.min(100, Math.floor((video.currentTime / video.duration) * 100));
-            if (pct > 0) {
-              try {
-                localStorage.setItem(storageKeyProgress(currentEp), String(pct));
-              } catch {}
-            }
-          }
-        }
-      };
-
-      window.addEventListener('beforeunload', saveExactCurrentPosition);
-      window.addEventListener('pagehide', saveExactCurrentPosition);
-      video.addEventListener('seeking', saveExactCurrentPosition);
-      video.addEventListener('seeked', saveExactCurrentPosition);
-      video.addEventListener('timeupdate', updatePlayerTimeAndProgress);
-      video.addEventListener('pause', () => {
-        syncPlayState();
-        saveExactCurrentPosition();
-      });
-      video.addEventListener('ended', () => {
-        watched.add(currentEp);
-        saveWatched();
-        localStorage.setItem(storageKeyProgress(currentEp), '100');
-        updateProgressUI(100);
-        if (markWatchedBtn) {
-          markWatchedBtn.classList.add('watched');
-          markWatchedBtn.textContent = '✓ Watched';
-        }
-        if (episodesGrid && viewingSeason === currentSeason) {
-          episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
-          attachCardListeners(episodes, currentSeason);
-        }
-        if (currentEp < episodes.length) {
-          switchEpisode(currentEp + 1);
+          activeHls.currentLevel = val;
+          const h = activeHls.levels[val]?.height || 1080;
+          localStorage.setItem('animeverse_preferred_quality', String(h));
         }
       });
     }
 
-    // Interactive timeline scrubber
-    if (playerTimeline) {
-      function calculatePos(e) {
-        const rect = playerTimeline.getBoundingClientRect();
-        if (!rect.width) return 0;
-        return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      }
-
-      function updateScrubberVisual(pos) {
-        const pct = pos * 100;
-        if (playerTimelinePlayed) playerTimelinePlayed.style.width = `${pct}%`;
-        if (playerTimelineThumb) playerTimelineThumb.style.left = `${pct}%`;
-        if (video && video.duration) {
-          const targetTime = pos * video.duration;
-          if (timeCurrent) timeCurrent.textContent = formatTime(targetTime);
-          if (timeEndsAt) timeEndsAt.textContent = formatEndsAt(video.duration - targetTime);
-          if (playerTimelineTooltip) {
-            playerTimelineTooltip.textContent = formatTime(targetTime);
-            playerTimelineTooltip.style.left = `${pct}%`;
-            playerTimelineTooltip.style.opacity = '1';
-          }
-        }
-      }
-
-      playerTimeline.addEventListener('mousedown', (e) => {
-        if (!video || !video.duration) return;
-        isSeeking = true;
-        playerTimeline.classList.add('is-seeking');
-        const pos = calculatePos(e);
-        seekTargetPct = pos;
-        updateScrubberVisual(pos);
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (!isSeeking) return;
-        const pos = calculatePos(e);
-        seekTargetPct = pos;
-        updateScrubberVisual(pos);
-      });
-
-      window.addEventListener('mouseup', () => {
-        if (!isSeeking) return;
-        isSeeking = false;
-        if (playerTimeline) playerTimeline.classList.remove('is-seeking');
-        if (video && video.duration) {
-          video.currentTime = seekTargetPct * video.duration;
-          updatePlayerTimeAndProgress();
-        }
-      });
-
-      playerTimeline.addEventListener('mousemove', (e) => {
-        if (isSeeking || !video || !video.duration || !playerTimelineTooltip) return;
-        const pos = calculatePos(e);
-        const hoverTime = pos * video.duration;
-        playerTimelineTooltip.textContent = formatTime(hoverTime);
-        playerTimelineTooltip.style.left = `${pos * 100}%`;
-        playerTimelineTooltip.style.opacity = '1';
-      });
-
-      playerTimeline.addEventListener('mouseleave', () => {
-        if (!isSeeking && playerTimelineTooltip) {
-          playerTimelineTooltip.style.opacity = '0';
-        }
-      });
+    // Server selection listener
+    function switchServer(sid) {
+      if (sid === currentServer) return;
+      const currentPos = (activeVideo && activeVideo.currentTime > 1) ? activeVideo.currentTime : null;
+      currentServer = sid;
+      try {
+        localStorage.setItem('animeverse_server', currentServer);
+        sessionStorage.setItem('animeverse_server_session', currentServer);
+      } catch {}
+      loadStream(currentPos);
     }
 
-    // Skip Back / Skip Forward
-    function updateSkipIcons(sec) {
-      const rwText = $('#playerRewindBtn text', view);
-      const fwText = $('#playerFwdBtn text', view);
-      if (rwText) rwText.textContent = String(sec);
-      if (fwText) fwText.textContent = String(sec);
-      if (playerRewindBtn) playerRewindBtn.setAttribute('title', `Rewind ${sec}s (← / J)`);
-      if (playerFwdBtn) playerFwdBtn.setAttribute('title', `Forward ${sec}s (→ / L)`);
-    }
-    updateSkipIcons(currentSkipInterval);
-
-    if (playerRewindBtn) {
-      playerRewindBtn.addEventListener('click', () => {
-        if (video) video.currentTime = Math.max(0, video.currentTime - currentSkipInterval);
-      });
-    }
-    if (playerFwdBtn) {
-      playerFwdBtn.addEventListener('click', () => {
-        if (video) video.currentTime = Math.min(video.duration, video.currentTime + currentSkipInterval);
-      });
-    }
-
-    // Volume & Mute Slider
-    let lastVolume = 1;
-    if (playerVolBtn) {
-      playerVolBtn.addEventListener('click', () => {
-        if (!video) return;
-        if (video.muted || video.volume === 0) {
-          video.muted = false;
-          video.volume = lastVolume || 1;
-          if (playerVolSlider) playerVolSlider.value = String(video.volume);
-          if (volHighIcon) volHighIcon.hidden = false;
-          if (volMuteIcon) volMuteIcon.hidden = true;
-        } else {
-          lastVolume = video.volume;
-          video.muted = true;
-          if (playerVolSlider) playerVolSlider.value = '0';
-          if (volHighIcon) volHighIcon.hidden = true;
-          if (volMuteIcon) volMuteIcon.hidden = false;
-        }
-      });
-    }
-    if (playerVolSlider) {
-      playerVolSlider.addEventListener('input', () => {
-        if (!video) return;
-        video.volume = Number(playerVolSlider.value);
-        video.muted = video.volume === 0;
-        if (volHighIcon) volHighIcon.hidden = video.muted;
-        if (volMuteIcon) volMuteIcon.hidden = !video.muted;
-        if (video.volume > 0) lastVolume = video.volume;
-      });
-    }
-
-    // Settings & Quality Popover Toggle
-    if (playerQualityBtn && playerSettingsMenu) {
-      playerQualityBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (playerAudioSubsMenu) playerAudioSubsMenu.hidden = true;
-        const willShow = playerSettingsMenu.hidden;
-        playerSettingsMenu.hidden = !willShow;
-        playerQualityBtn.classList.toggle('active', willShow);
-      });
-    }
-
-    // Audio & Subtitles Popover Toggle
-    if (playerAudioSubsBtn && playerAudioSubsMenu) {
-      playerAudioSubsBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (playerSettingsMenu) playerSettingsMenu.hidden = true;
-        const willShow = playerAudioSubsMenu.hidden;
-        playerAudioSubsMenu.hidden = !willShow;
-        playerAudioSubsBtn.classList.toggle('active', willShow);
-      });
-    }
-
-    // Close popups on click outside
-    document.addEventListener('click', (e) => {
-      if (playerSettingsMenu && !playerSettingsMenu.contains(e.target) && e.target !== playerQualityBtn) {
-        playerSettingsMenu.hidden = true;
-        if (playerQualityBtn) playerQualityBtn.classList.remove('active');
-      }
-      if (playerAudioSubsMenu && !playerAudioSubsMenu.contains(e.target) && e.target !== playerAudioSubsBtn) {
-        playerAudioSubsMenu.hidden = true;
-        if (playerAudioSubsBtn) playerAudioSubsBtn.classList.remove('active');
-      }
+    $$('.server-pill', view).forEach((btn) => {
+      btn.addEventListener('click', () => switchServer(btn.dataset.serverId));
     });
 
-    // Server list in settings popover
-    if (playerServerList) {
-      $$('[data-server-id]', playerServerList).forEach((sBtn) => {
-        sBtn.addEventListener('click', () => {
-          const sid = sBtn.dataset.serverId;
-          currentServer = sid;
-          localStorage.setItem('animeverse_server', currentServer);
-          sessionStorage.setItem('animeverse_server_session', currentServer);
-          $$('[data-server-id]', playerServerList).forEach((b) => {
-            b.classList.toggle('active', b.dataset.serverId === sid);
-          });
-          if (activeSourceLabel) activeSourceLabel.textContent = sBtn.querySelector('span')?.textContent || sid;
-          if (playerSettingsMenu) playerSettingsMenu.hidden = true;
-          if (playerQualityBtn) playerQualityBtn.classList.remove('active');
-          const currentPos = (video && video.currentTime > 1) ? video.currentTime : null;
-          reloadStream(currentPos);
-        });
-      });
-    }
-
-    // Source / Audio Track list in popups
-    function wireAudioLanguageButtons(container) {
-      if (!container) return;
-      $$('[data-audio-lang]', container).forEach((aBtn) => {
-        aBtn.addEventListener('click', () => {
-          const lang = aBtn.dataset.audioLang;
-          if (lang === currentLang) return;
-          const currentPos = (video && video.currentTime > 1) ? video.currentTime : null;
-          currentLang = lang;
-          localStorage.setItem('animeverse_lang', currentLang);
-          $$('[data-audio-lang]').forEach((b) => {
-            b.classList.toggle('active', b.dataset.audioLang === currentLang);
-          });
-          if (playerSettingsMenu) playerSettingsMenu.hidden = true;
-          if (playerAudioSubsMenu) playerAudioSubsMenu.hidden = true;
-          if (playerQualityBtn) playerQualityBtn.classList.remove('active');
-          if (playerAudioSubsBtn) playerAudioSubsBtn.classList.remove('active');
-          reloadStream(currentPos);
-        });
-      });
-    }
-    wireAudioLanguageButtons(playerAudioSourceList);
-    wireAudioLanguageButtons(audioTracksList);
-
-    // Speed setting row
-    const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
-    if (speedValLabel) speedValLabel.textContent = currentSpeed === 1.0 ? 'Normal' : `${currentSpeed}x`;
-    if (settingSpeedRow) {
-      settingSpeedRow.addEventListener('click', () => {
-        const curIdx = speeds.indexOf(currentSpeed);
-        currentSpeed = speeds[(curIdx + 1) % speeds.length];
-        localStorage.setItem('animeverse_speed', String(currentSpeed));
-        if (video) video.playbackRate = currentSpeed;
-        if (speedValLabel) speedValLabel.textContent = currentSpeed === 1.0 ? 'Normal' : `${currentSpeed}x`;
-      });
-    }
-
-    // Skip interval setting row
-    const skipIntervals = [5, 10, 15, 30, 60];
-    if (skipValLabel) skipValLabel.textContent = `${currentSkipInterval}s`;
-    if (settingSkipRow) {
-      settingSkipRow.addEventListener('click', () => {
-        const curIdx = skipIntervals.indexOf(currentSkipInterval);
-        currentSkipInterval = skipIntervals[(curIdx + 1) % skipIntervals.length];
-        localStorage.setItem('animeverse_skip', String(currentSkipInterval));
-        if (skipValLabel) skipValLabel.textContent = `${currentSkipInterval}s`;
-        updateSkipIcons(currentSkipInterval);
-      });
-    }
-
-    // Volume boost setting row
-    const boosts = [1.0, 1.5, 2.0, 3.0];
-    applyVolumeBoost(currentBoost);
-    if (settingBoostRow) {
-      settingBoostRow.addEventListener('click', () => {
-        const curIdx = boosts.indexOf(currentBoost);
-        const nextBoost = boosts[(curIdx + 1) % boosts.length];
-        applyVolumeBoost(nextBoost);
-      });
-    }
-
-    // Video fit setting row
-    const videoFits = [
-      { id: 'contain', label: 'Fit' },
-      { id: 'cover', label: 'Cover' },
-      { id: 'fill', label: 'Stretch' },
-    ];
-    if (videoFitValLabel) videoFitValLabel.textContent = videoFits.find((f) => f.id === currentVideoFit)?.label || 'Fit';
-    if (settingVideoFitRow) {
-      settingVideoFitRow.addEventListener('click', () => {
-        const curIdx = videoFits.findIndex((f) => f.id === currentVideoFit);
-        const nextFit = videoFits[(curIdx + 1) % videoFits.length];
-        currentVideoFit = nextFit.id;
-        localStorage.setItem('animeverse_fit', currentVideoFit);
-        if (video) video.style.objectFit = currentVideoFit;
-        if (videoFitValLabel) videoFitValLabel.textContent = nextFit.label;
-      });
-    }
-
-    // Lock controls button
-    if (playerLockBtn && wrap) {
-      playerLockBtn.addEventListener('click', () => {
-        wrap.classList.add('is-locked');
-        if (playerUnlockFloatingBtn) playerUnlockFloatingBtn.hidden = false;
-      });
-    }
-    if (playerUnlockFloatingBtn && wrap) {
-      playerUnlockFloatingBtn.addEventListener('click', () => {
-        wrap.classList.remove('is-locked');
-        playerUnlockFloatingBtn.hidden = true;
-        resetControlsTimer();
-      });
-    }
-
-    // Picture in Picture
-    if (playerPipBtn && video) {
-      playerPipBtn.addEventListener('click', async () => {
-        try {
-          if (document.pictureInPictureElement) {
-            await document.exitPictureInPicture();
-          } else if (document.pictureInPictureEnabled) {
-            await video.requestPictureInPicture();
-          }
-        } catch (e) {
-          console.warn('PIP error:', e);
-        }
-      });
-    }
-
-    // Fullscreen Toggle
-    if (playerFsBtn && wrap) {
-      playerFsBtn.addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-          wrap.requestFullscreen().catch(() => {});
-        } else {
-          document.exitFullscreen().catch(() => {});
-        }
-      });
-    }
-
-    // Keyboard Shortcuts
-    function handleKeyDown(e) {
-      // Don't trigger if user is typing in a search or input field
-      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-      if (e.key === ' ' || e.key === 'k' || e.key === 'K') {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.key === 'ArrowLeft' || e.key === 'j' || e.key === 'J') {
-        e.preventDefault();
-        if (video) video.currentTime = Math.max(0, video.currentTime - currentSkipInterval);
-      } else if (e.key === 'ArrowRight' || e.key === 'l' || e.key === 'L') {
-        e.preventDefault();
-        if (video) video.currentTime = Math.min(video.duration, video.currentTime + currentSkipInterval);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (video) {
-          video.volume = Math.min(1, video.volume + 0.1);
-          if (playerVolSlider) playerVolSlider.value = String(video.volume);
-        }
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (video) {
-          video.volume = Math.max(0, video.volume - 0.1);
-          if (playerVolSlider) playerVolSlider.value = String(video.volume);
-        }
-      } else if (e.key === 'm' || e.key === 'M') {
-        if (playerVolBtn) playerVolBtn.click();
-      } else if (e.key === 'f' || e.key === 'F') {
-        if (playerFsBtn) playerFsBtn.click();
-      } else if (e.key === 'c' || e.key === 'C') {
-        // Toggle subtitles
-        if (video && video.textTracks && video.textTracks.length > 0) {
-          const isShowing = video.textTracks[0].mode === 'showing';
-          video.textTracks[0].mode = isShowing ? 'hidden' : 'showing';
-        }
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    cleanup.push(() => window.removeEventListener('keydown', handleKeyDown));
-
-    function updateProgressUI(pct) {
-      if (progressBarFill) progressBarFill.style.width = `${pct}%`;
-      if (progressPctLabel) progressPctLabel.textContent = pct > 0 ? `${pct}% watched` : '';
-    }
-
-    function saveWatched() {
+    // Audio language listener
+    function switchAudio(lang) {
+      if (lang === currentLang) return;
+      const currentPos = (activeVideo && activeVideo.currentTime > 1) ? activeVideo.currentTime : null;
+      currentLang = lang;
       try {
-        localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
+        localStorage.setItem('animeverse_lang', currentLang);
       } catch {}
+      loadStream(currentPos);
     }
 
-    // Toggle watched on button
+    $$('.audio-pill', view).forEach((btn) => {
+      btn.addEventListener('click', () => switchAudio(btn.dataset.audioLang));
+    });
+
+    // Theater mode toggle
+    if (theaterToggleBtn && playerBox) {
+      theaterToggleBtn.addEventListener('click', () => {
+        const isTheater = playerBox.classList.toggle('theater-mode');
+        theaterToggleBtn.classList.toggle('active', isTheater);
+        if (isTheater) playerBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    // Mark watched button
     if (markWatchedBtn) {
       markWatchedBtn.addEventListener('click', () => {
-        const isWatched = watched.has(currentEp);
-        if (isWatched) {
-          watched.delete(currentEp);
-          markWatchedBtn.classList.remove('watched');
-          markWatchedBtn.textContent = '✓ Mark Watched';
-          localStorage.removeItem(storageKeyProgress(currentEp));
-          updateProgressUI(0);
-        } else {
+        const isNowWatched = !watched.has(currentEp);
+        if (isNowWatched) {
           watched.add(currentEp);
           markWatchedBtn.classList.add('watched');
           markWatchedBtn.textContent = '✓ Watched';
-          localStorage.setItem(storageKeyProgress(currentEp), '100');
-          updateProgressUI(100);
+        } else {
+          watched.delete(currentEp);
+          markWatchedBtn.classList.remove('watched');
+          markWatchedBtn.textContent = 'Mark Watched';
         }
-        saveWatched();
+        try {
+          localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
+        } catch {}
         if (episodesGrid && viewingSeason === currentSeason) {
           episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
           attachCardListeners(episodes, currentSeason);
         }
-      });
-    }
-
-    // Progress mark buttons
-    $$('.progress-mark-btn', view).forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const pct = Number(btn.dataset.pct);
-        localStorage.setItem(storageKeyProgress(currentEp), String(pct));
-        updateProgressUI(pct);
-        if (pct >= 90) {
-          watched.add(currentEp);
-          if (markWatchedBtn) {
-            markWatchedBtn.classList.add('watched');
-            markWatchedBtn.textContent = '✓ Watched';
-          }
-          saveWatched();
-        }
-        if (episodesGrid && viewingSeason === currentSeason) {
-          episodesGrid.innerHTML = renderEpisodeCardsHtml(episodes, currentEp, true, currentSeason);
-          attachCardListeners(episodes, currentSeason);
-        }
-      });
-    });
-
-    if (sourceSelectorBtn && playerSettingsMenu) {
-      sourceSelectorBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (playerAudioSubsMenu) playerAudioSubsMenu.hidden = true;
-        const willShow = playerSettingsMenu.hidden;
-        playerSettingsMenu.hidden = !willShow;
-        if (playerQualityBtn) playerQualityBtn.classList.toggle('active', willShow);
-      });
-    }
-
-    // AdShield Modal
-    function openShieldModal() {
-      if (adShieldModal) {
-        if (modalBlockCount) modalBlockCount.textContent = String(window.__adShieldBlockedCount || 0);
-        adShieldModal.hidden = false;
-        adShieldModal.style.display = 'flex';
-      }
-    }
-    function closeShieldModal() {
-      if (adShieldModal) {
-        adShieldModal.hidden = true;
-        adShieldModal.style.display = 'none';
-      }
-    }
-
-    if (adShieldBtn) adShieldBtn.addEventListener('click', openShieldModal);
-    if (closeAdShieldModal) closeAdShieldModal.addEventListener('click', closeShieldModal);
-    if (dismissAdShieldBtn) dismissAdShieldBtn.addEventListener('click', closeShieldModal);
-    if (adShieldModal) {
-      adShieldModal.addEventListener('click', (e) => {
-        if (e.target === adShieldModal) closeShieldModal();
-      });
-    }
-
-    // Live update for AdShield badge
-    window.addEventListener('adshield:blocked', (e) => {
-      if (adShieldBadge) adShieldBadge.textContent = String(e.detail.count);
-      if (modalBlockCount) modalBlockCount.textContent = String(e.detail.count);
-    });
-
-    // Theater mode
-    if (theaterToggleBtn && wrap) {
-      theaterToggleBtn.addEventListener('click', () => {
-        const isTheater = wrap.classList.toggle('theater-mode');
-        theaterToggleBtn.classList.toggle('active', isTheater);
-        if (isTheater) wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     }
 
     function switchEpisode(epNum) {
-      if (video && video.currentTime > 1) {
-        try {
-          localStorage.setItem(storageKeyExactTime(currentEp), video.currentTime.toFixed(2));
-        } catch {}
+      if (activeVideo && activeVideo.currentTime > 1) {
+        savePlaybackProgress(activeVideo.currentTime, activeVideo.duration);
       }
       currentEp = epNum;
       viewingSeason = currentSeason;
@@ -2474,11 +1441,8 @@
       const isWatched = watched.has(currentEp);
       if (markWatchedBtn) {
         markWatchedBtn.classList.toggle('watched', isWatched);
-        markWatchedBtn.textContent = isWatched ? '✓ Watched' : '✓ Mark Watched';
+        markWatchedBtn.textContent = isWatched ? '✓ Watched' : 'Mark Watched';
       }
-
-      const epPct = Number(localStorage.getItem(storageKeyProgress(currentEp)) || (isWatched ? 100 : 0));
-      updateProgressUI(epPct);
 
       // Re-mark playing card in grid and sync active season tab
       if (seasonSelector) {
@@ -2496,7 +1460,7 @@
       window.history.replaceState({}, '', `/watch/${encodeURIComponent(a.id)}?season=${currentSeason}&ep=${currentEp}`);
       document.title = `Watch E${currentEp}: ${a.title} — AnimeVerse`;
 
-      reloadStream();
+      loadStream();
       window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
     }
 
@@ -2563,16 +1527,14 @@
             episodesGrid.innerHTML = renderEpisodeCardsHtml(seasonEpisodes, isPlayingThisSeason ? currentEp : -1, isPlayingThisSeason, viewingSeason);
             attachCardListeners(seasonEpisodes, viewingSeason);
           }
-
-          // Video playback is intentionally NOT interrupted or reset!
-          // The user is just inspecting/browsing the episode list in the bottom section.
         });
       });
     }
 
     // Initialize playback immediately
-    reloadStream();
+    loadStream();
   }
+
 
   function relationsHtml(a) {
     // Seasons, movies and specials already appear in their own rows above.
@@ -3170,6 +2132,8 @@
     { re: /^\/anime\/((?:al)?\d+)\/?$/, nav: null, run: (v, m) => detailPage(v, m[1]) },
     { re: /^\/browse\/?$/, nav: 'browse', run: (v, m, p) => browsePage(v, p) },
     { re: /^\/schedule\/?$/, nav: 'schedule', run: (v, m, p) => schedulePage(v, p) },
+    // Player for licensed streams (public/player.js).
+    { re: /^\/player\/([\w-]{1,40})\/?$/, nav: null, run: (v, m, p) => window.AVPlayer.mount(v, m[1], p, (fn) => cleanup.push(fn)) },
   ];
 
   // Going back restores where you were on the previous page.
@@ -3442,7 +2406,7 @@
   })();
 
   // ---------- Footer status ----------
-  fetch('/api/status').then((r) => r.json()).then((s) => {
+  fetch(`${API_BASE}/api/status`).then((r) => r.json()).then((s) => {
     const prov = s.provider.active === 'jikan' ? 'MyAnimeList (backup source)' : 'AniList';
     $('#footerStatus').textContent = `Live data: ${prov} · artwork: TMDB · ${s.dubs.dubbed.toLocaleString()} dubbed titles tracked${s.imdb === 'enabled' ? ' · IMDb ratings on' : ''}`;
   }).catch(() => {});

@@ -21,3 +21,6 @@ npm-debug.log*
 Thumbs.db
 
 .vercel
+monitor.py
+opencode.jsonc
+

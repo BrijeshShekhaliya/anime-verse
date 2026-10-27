@@ -36,8 +36,11 @@ const isStoryMovie = (a) =>
   a.type === 'Movie' && (a.family || []).some((e) => (e.rel === 'PREQUEL' || e.rel === 'SEQUEL') && MAIN_FORMATS.has(e.format));
 
 // The entry that best stands for the whole series: its first TV season.
+// TV seasons first, then web series (ONA), then films/OVAs/specials; earliest
+// within each. A parody short (ONA) must never stand in for the TV show.
+const TYPE_RANK = { TV: 0, 'TV Short': 1, ONA: 2 };
 function pickRepresentative(members) {
-  const rank = (a) => (MAIN_TYPES.has(a.type) ? 0 : 1) * 1e5 + (a.year || 9999);
+  const rank = (a) => (TYPE_RANK[a.type] ?? 3) * 1e5 + (a.year || 9999);
   return members.reduce((best, a) => (rank(a) < rank(best) ? a : best));
 }
 
