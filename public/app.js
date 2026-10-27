@@ -901,14 +901,13 @@
             style="display:none;"
           ></video>
 
-          <!-- Fallback Embed Player (sandboxed against popups/redirects) -->
+          <!-- Fallback Embed Player -->
           <iframe
             id="watchIframe"
             src=""
             style="display:none;"
             title="${esc(a.title)} - Season ${currentSeason} Episode ${currentEp}"
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            sandbox="allow-scripts allow-same-origin allow-forms"
             referrerpolicy="no-referrer"
             allowfullscreen
           ></iframe>
@@ -1179,7 +1178,7 @@
               </div>
               <div class="adshield-stat-box">
                 <div class="adshield-stat-num" style="color:#48c774;">Active</div>
-                <div class="adshield-stat-label">Sandbox Stream Shield</div>
+                <div class="adshield-stat-label">Embed Protection Shield</div>
               </div>
             </div>
             <p class="adshield-note">
