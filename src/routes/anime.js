@@ -257,7 +257,7 @@ router.get(
     if (req.query.refresh === '1') {
       cache.store?.delete(cacheKey);
     }
-    return cache.getOrSet(cacheKey, 60 * 60, async () => {
+    const result = await cache.getOrSet(cacheKey, 60 * 60, async () => {
       const resolved = await hianime.resolveStream({ title, romaji, season, episode, mode });
       const ref = resolved.referer || 'https://zokoanime.video/';
       const proxiedMaster = `/api/stream/proxy?url=${encodeURIComponent(resolved.masterUrl)}&ref=${encodeURIComponent(ref)}`;
@@ -278,6 +278,13 @@ router.get(
         subtitles: proxiedSubs,
       };
     });
+
+    // Asynchronously pre-warm master playlist and variants in memory so player gets them in 1ms
+    if (result?.rawMasterUrl) {
+      streamProxy.prewarmPlaylist(result.rawMasterUrl, result.referer).catch(() => {});
+    }
+
+    return result;
   })
 );
 
