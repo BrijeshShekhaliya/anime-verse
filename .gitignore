@@ -7,13 +7,10 @@ node_modules/
 npm-debug.log*
 
 # Environment secrets
-.env
-.env.*
 !.env.example
 
 # IDE & Editor folders
 .claude/
-.vscode/
 .idea/
 
 # OS files
@@ -24,3 +21,4 @@ Thumbs.db
 monitor.py
 opencode.jsonc
 
+config.bat
