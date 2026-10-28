@@ -1,25 +1,58 @@
 'use strict';
 
-// Parse HLS audio renditions from provider manifests. Labels and language codes
-// come from actual EXT-X-MEDIA records; no language list is hard-coded.
+// Parse actual audio renditions from an HLS master manifest. Do not fabricate
+// languages: a track is returned only when the manifest declares TYPE=AUDIO.
 function parseHlsAudioTracks(manifestText, manifestUrl) {
-  const lines = String(manifestText || '').replace(/^\\uFEFF/, '').split(/\\r?\\n/);
+  const lines = String(manifestText || '').replace(/^\uFEFF/, '').split(/\r?\n/);
   const tracks = [];
+  const seen = new Set();
+
   for (const line of lines) {
-    if (!/^#EXT-X-MEDIA:/i.test(line) || !/\\bTYPE=AUDIO\\b/i.test(line)) continue;
-    const attrs = {};
+    if (!/^#EXT-X-MEDIA:/i.test(line)) continue;
+
     const raw = line.slice(line.indexOf(':') + 1);
-    const re = /([A-Z0-9-]+)=(?:\"((?:[^\"]|\"\")*)\"|([^,]*))(?:,|$)/gi;
+    const attrs = {};
+    // Quoted attributes may contain commas; unquoted values end at a comma.
+    const attributePattern = /([A-Z0-9-]+)=(?:"((?:[^"]|"")*)"|([^,]*))(?:,|$)/gi;
     let match;
-    while ((match = re.exec(raw))) attrs[match[1].toUpperCase()] = (match[2] ?? match[3] ?? '').replace(/\"\"/g, '\"').trim();
-    const name = attrs.NAME || attrs.LANGUAGE || `Audio ${tracks.length + 1}`;
+    while ((match = attributePattern.exec(raw))) {
+      attrs[match[1].toUpperCase()] = (match[2] ?? match[3] ?? '')
+        .replace(/""/g, '"')
+        .trim();
+    }
+
+    if ((attrs.TYPE || '').toUpperCase() !== 'AUDIO') continue;
+
+    const name = attrs.NAME || attrs.LANGUAGE || 'Audio';
     const language = attrs.LANGUAGE || '';
-    const uri = attrs.URI ? new URL(attrs.URI, manifestUrl).href : null;
-    const identity = [attrs['GROUP-ID'] || '', language.toLowerCase(), name.toLowerCase(), uri || ''].join('|');
-    if (tracks.some((item) => item.identity === identity)) continue;
-    tracks.push({ id: `hls-audio-${tracks.length}`, name, language, groupId: attrs['GROUP-ID'] || null, uri, isDefault: attrs.DEFAULT === 'YES', isAutoselect: attrs.AUTOSELECT === 'YES', channels: attrs.CHANNELS || null, identity });
+    let uri = null;
+    if (attrs.URI) {
+      try {
+        uri = new URL(attrs.URI, manifestUrl).href;
+      } catch {
+        // Ignore malformed URI metadata instead of failing stream resolution.
+        continue;
+      }
+    }
+
+    const groupId = attrs['GROUP-ID'] || null;
+    const identity = [groupId || '', language.toLowerCase(), name.toLowerCase(), uri || ''].join('|');
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+
+    tracks.push({
+      id: 'hls-audio-' + tracks.length,
+      name,
+      language,
+      groupId,
+      uri,
+      isDefault: attrs.DEFAULT === 'YES',
+      isAutoselect: attrs.AUTOSELECT === 'YES',
+      channels: attrs.CHANNELS || null,
+    });
   }
-  return tracks.map(({ identity, ...track }) => track);
+
+  return tracks;
 }
 
 module.exports = { parseHlsAudioTracks };
