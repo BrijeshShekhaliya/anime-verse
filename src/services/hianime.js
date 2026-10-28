@@ -12,6 +12,7 @@ const https = require('https');
 const http = require('http');
 const netMod = require('net');
 const dns = require('dns').promises;
+const { parseHlsAudioTracks } = require('./hlsAudioTracks');
 
 const BASE_URL = 'https://hianime.at';
 const USER_AGENT =
@@ -430,7 +431,18 @@ async function hianimeStream(epId, mode = 'sub') {
   if (!masterUrl) throw new Error('No master.m3u8 stream found in decrypted payload');
   masterUrl = masterUrl.replace(/\\\//g, '/');
 
-  const data = { masterUrl, referer, subtitles, resolution: '1080p' };
+  let audioTracks = [];
+  try {
+    const manifestRes = await curl(masterUrl, { referer }, 7000);
+    if (manifestRes.status === 200) {
+      audioTracks = parseHlsAudioTracks(manifestRes.body, masterUrl);
+    }
+  } catch (err) {
+    // Audio metadata is an enhancement; do not fail otherwise playable streams.
+    console.warn('[hianime] Could not inspect HLS audio tracks:', err.message);
+  }
+
+  const data = { masterUrl, referer, subtitles, audioTracks, resolution: '1080p' };
   _streamCache.set(cacheKey, { ts: Date.now(), data });
   return data;
 }
