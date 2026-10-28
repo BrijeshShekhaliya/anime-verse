@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "node --watch-path=server.js --watch-path=src server.js",
     "desktop": "electron electron-main.js",
-    "test": "echo \"Ready\""
+    "test": "node --test tests/*.test.mjs"
   },
   "keywords": [],
   "author": "",
