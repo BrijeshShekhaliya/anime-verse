@@ -265,6 +265,12 @@ router.get(
         ...s,
         src: `/api/stream/proxy?url=${encodeURIComponent(s.src)}&ref=${encodeURIComponent(ref)}`,
       }));
+      const audioTracks = (resolved.audioTracks || []).map((track) => ({
+        ...track,
+        uri: track.uri
+          ? `/api/stream/proxy?url=${encodeURIComponent(track.uri)}&ref=${encodeURIComponent(ref)}`
+          : null,
+      }));
 
       return {
         success: true,
@@ -276,6 +282,7 @@ router.get(
         rawMasterUrl: resolved.masterUrl,
         referer: ref,
         subtitles: proxiedSubs,
+        audioTracks,
       };
     });
   })
