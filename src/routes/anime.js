@@ -156,39 +156,85 @@ router.get(
     const anime = await getDetail(id);
     const detectedSeason = artwork.detectSeasonNumber ? artwork.detectSeasonNumber(anime.title, anime.titleRomaji) : 1;
     const season = Math.max(1, parseInt(req.query.season, 10) || detectedSeason || 1);
-    return cache.getOrSet(`episodes:${id}:s${season}`, TTL.detail, async () => {
+    const isAiring = !!anime.airing;
+    const cacheTtl = isAiring ? 15 * 60 : TTL.detail; // 15 mins for airing titles to reflect newly released & dubbed episodes
+
+    const cacheKey = `episodes:${id}:s${season}`;
+    if (req.query.refresh === '1') {
+      cache.store?.delete(cacheKey);
+    }
+
+    return cache.getOrSet(cacheKey, cacheTtl, async () => {
       const art = await artwork.artworkFor(anime);
       const tmdbShowId = art?.tmdbKind === 'tv' ? art.tmdbId : (await tmdb.findTmdbShow(anime.title, anime.titleRomaji, anime.year))?.id;
+      let result = null;
       if (tmdbShowId) {
         const tmdbData = await tmdb.getTmdbShowData(tmdbShowId, season, anime);
         if (tmdbData && tmdbData.episodes.length > 0) {
-          return tmdbData;
+          result = tmdbData;
         }
       }
 
       // Fallback: build structured episode list from anime detail
-      const totalEp = anime.episodes && Number(anime.episodes) > 0 ? Number(anime.episodes) : (anime.type === 'Movie' ? 1 : 12);
-      const fallbackEpisodes = [];
-      for (let i = 1; i <= totalEp; i++) {
-        fallbackEpisodes.push({
-          episode_number: i,
-          season_number: 1,
-          name: `Episode ${i}`,
-          overview: anime.synopsis ? (anime.synopsis.slice(0, 160) + '…') : '',
-          still_path: anime.banner || anime.image,
-          air_date: anime.aired || null,
-          runtime: anime.duration ? parseInt(anime.duration, 10) : 24,
-        });
+      if (!result) {
+        let totalEp = anime.episodes && Number(anime.episodes) > 0 ? Number(anime.episodes) : (anime.type === 'Movie' ? 1 : 12);
+        if (anime.airing || anime.status === 'Currently Airing' || anime.status === 'Releasing') {
+          const nextEp = anime.nextEpisode?.episode ? Number(anime.nextEpisode.episode) : 0;
+          if (nextEp > 1) {
+            totalEp = Math.min(totalEp, nextEp - 1);
+          }
+        } else if (anime.status === 'Not yet aired' || anime.status === 'NOT_YET_RELEASED') {
+          totalEp = 0;
+        }
+
+        const fallbackEpisodes = [];
+        for (let i = 1; i <= totalEp; i++) {
+          fallbackEpisodes.push({
+            episode_number: i,
+            season_number: season,
+            name: `Episode ${i}`,
+            overview: anime.synopsis ? (anime.synopsis.slice(0, 160) + '…') : '',
+            still_path: anime.banner || anime.image,
+            air_date: anime.aired || null,
+            runtime: anime.duration ? parseInt(anime.duration, 10) : 24,
+          });
+        }
+
+        result = {
+          tmdbId: null,
+          showName: anime.title,
+          backdrop: anime.banner || null,
+          seasons: [{ season_number: season, name: `Season ${season}`, episode_count: totalEp }],
+          selectedSeason: season,
+          episodes: fallbackEpisodes,
+        };
       }
 
-      return {
-        tmdbId: null,
-        showName: anime.title,
-        backdrop: anime.banner || null,
-        seasons: [{ season_number: 1, name: 'Season 1', episode_count: totalEp }],
-        selectedSeason: 1,
-        episodes: fallbackEpisodes,
-      };
+      // Fetch live HiAnime sub and dub availability
+      let hianimeInfo = null;
+      try {
+        hianimeInfo = await hianime.getHiAnimeDubInfo({
+          title: anime.title,
+          romaji: anime.titleRomaji,
+          season,
+        });
+      } catch (e) {
+        console.warn('[episodes] HiAnime dub info fetch error:', e.message);
+      }
+
+      const dubCount = hianimeInfo?.dubCount ?? (anime.languages?.dub === 'full' ? result.episodes.length : (anime.languages?.dub === 'partial' ? 1 : 0));
+      const subCount = hianimeInfo?.subCount ?? result.episodes.length;
+
+      // Annotate each episode with hasDub and hasSub flags (Crunchyroll style)
+      result.episodes.forEach((ep) => {
+        ep.hasDub = dubCount > 0 && ep.episode_number <= dubCount;
+        ep.hasSub = subCount > 0 ? (ep.episode_number <= subCount) : true;
+      });
+
+      result.dubCount = dubCount;
+      result.subCount = subCount;
+
+      return result;
     });
   })
 );
@@ -208,6 +254,9 @@ router.get(
     const mode = req.query.mode === 'dub' ? 'dub' : 'sub';
 
     const cacheKey = `stream:${title}:${season}:${episode}:${mode}`;
+    if (req.query.refresh === '1') {
+      cache.store?.delete(cacheKey);
+    }
     return cache.getOrSet(cacheKey, 60 * 60, async () => {
       const resolved = await hianime.resolveStream({ title, romaji, season, episode, mode });
       const ref = resolved.referer || 'https://zokoanime.video/';

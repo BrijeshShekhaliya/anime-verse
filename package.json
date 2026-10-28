@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch-path=server.js --watch-path=src server.js",
+    "desktop": "electron electron-main.js",
     "test": "echo \"Ready\""
   },
   "keywords": [],
@@ -16,5 +17,8 @@
     "compression": "^1.8.1",
     "cors": "^2.8.6",
     "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "electron": "^40.10.6"
   }
 }

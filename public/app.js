@@ -57,9 +57,7 @@
   // parts of the page asking for the same thing share it), a short memory so
   // going back and forth doesn't re-download, one quiet retry on a network
   // blip or 5xx, and the last good copy if the server can't answer.
-  const API_BASE = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
-    ? 'https://13.236.161.33.sslip.io'
-    : '';
+  const API_BASE = '';
 
   const inflightApi = new Map();
   async function api(path, ttlMs = 5 * 60 * 1000) {
@@ -625,12 +623,26 @@
     {
       id: 'vidrift',
       name: 'Vidrift',
-      tag: 'Anime • Multi-Audio',
+      tag: 'Anime \u00B7 Multi-Audio',
       supportsDub: true,
       isNative: false,
-      getUrl: (alId, ep, lang, tmdbId, season) => tmdbId
-        ? `https://embed.vidrift.net/embed/tv/${tmdbId}/${season}/${ep}`
-        : `https://embed.vidrift.net/embed/anime/${alId}/${ep}`,
+      getUrl: (alId, ep, lang, tmdbId, season) => {
+        const logoUrl = 'https://api.iconify.design/ri/moon-clear-fill.svg?color=%23ff640a';
+        const params = new URLSearchParams({
+          brand: 'AnimeVerse',
+          brandColor: 'ff640a',
+          brandLogo: logoUrl,
+          watermark: '1',
+          font: 'Inter',
+          controlBg: 'solid',
+          hide: 'episodes,next,server,cast',
+          fs: 'parent',
+        });
+        if (lang === 'dub') params.set('dub', '1');
+        return tmdbId
+          ? `https://embed.vidrift.net/embed/tv/${tmdbId}/${season}/${ep}?${params.toString()}`
+          : `https://embed.vidrift.net/embed/anilist/${alId}/${ep}?${params.toString()}`;
+      },
     },
   ];
 
@@ -692,10 +704,13 @@
       </div>
     `;
 
-    const initialSeasonGuess = Number(params.get('season') || localStorage.getItem(`animeverse_season_${id}`) || 1);
+    const seasonParam = params.get('season');
+    const epUrl = seasonParam
+      ? `/anime/${encodeURIComponent(id)}/episodes?season=${encodeURIComponent(seasonParam)}`
+      : `/anime/${encodeURIComponent(id)}/episodes`;
     const [a, initialEpData] = await Promise.all([
       api(`/anime/${encodeURIComponent(id)}`, 30 * 60 * 1000),
-      api(`/anime/${encodeURIComponent(id)}/episodes?season=${initialSeasonGuess}`, 60 * 60 * 1000).catch(() => null),
+      api(epUrl, 60 * 60 * 1000).catch(() => null),
     ]);
     const alId = a.anilistId || (String(a.id).startsWith('al') ? Number(a.id.slice(2)) : a.id);
     const availableEp = getAvailableEpisodes(a);
@@ -714,12 +729,16 @@
     }
 
     const detectedSeason = detectSeasonNumber(a.title, a.titleRomaji);
-    let currentSeason = Number(params.get('season') || (detectedSeason > 1 ? detectedSeason : (localStorage.getItem(`animeverse_season_${a.id}`) || 1)));
+    const requestedSeason = params.get('season') ? Number(params.get('season')) : null;
+    const isRequestedSeasonValid = requestedSeason && initialEpData?.seasons?.some((s) => s.season_number === requestedSeason);
+    let currentSeason = isRequestedSeasonValid
+      ? requestedSeason
+      : Number(initialEpData?.selectedSeason || (detectedSeason > 1 ? detectedSeason : 1));
     let viewingSeason = currentSeason;
     let currentEp = Number(params.get('ep') || localStorage.getItem(`animeverse_ep_${a.id}`) || 1);
 
     // Reuse prefetched episodes metadata if season matches, else fetch
-    let epData = (currentSeason === initialSeasonGuess && initialEpData)
+    let epData = (initialEpData && (initialEpData.selectedSeason === currentSeason || !params.get('season') || !isRequestedSeasonValid))
       ? initialEpData
       : await api(`/anime/${encodeURIComponent(id)}/episodes?season=${currentSeason}`, 60 * 60 * 1000).catch(() => null);
 
@@ -744,6 +763,21 @@
     // Only filter to available episodes if this season is the currently airing one
     if (currentSeason === detectedSeason && a.airing && availableEp < episodes.length) {
       episodes = episodes.filter((e) => e.episode_number <= availableEp);
+    }
+    // Ensure genuinely released episodes are always included even if metadata lagged
+    if (currentSeason === detectedSeason && a.airing && episodes.length < availableEp) {
+      for (let i = episodes.length + 1; i <= availableEp; i++) {
+        episodes.push({
+          episode_number: i,
+          season_number: currentSeason,
+          name: `Episode ${i}`,
+          overview: a.synopsis || '',
+          still_path: a.banner || a.image,
+          air_date: null,
+          hasDub: epData?.dubCount ? (i <= epData.dubCount) : false,
+          hasSub: true,
+        });
+      }
     }
 
     if (currentEp < 1) currentEp = 1;
@@ -796,7 +830,7 @@
         return `
           <div class="episode-card${isCur ? ' playing' : ''}${isWatched ? ' ep-watched' : ''}" data-ep-card="${ep.episode_number}">
             <div class="episode-thumb">
-              <img src="${esc(thumb)}" alt="Episode ${ep.episode_number}" loading="lazy">
+              <img src="${esc(thumb)}" alt="Episode ${ep.episode_number}" loading="lazy" decoding="async">
               ${isCur ? `
                 <div class="episode-playing-badge">
                   <span class="episode-playing-dot"></span> Playing
@@ -808,6 +842,7 @@
             <div class="episode-info">
               <div class="episode-num">
                 <span>E${ep.episode_number}</span>
+                <span class="ep-lang-tag ${(ep.hasDub !== undefined ? ep.hasDub : (epData?.dubCount ? ep.episode_number <= epData.dubCount : false)) ? 'sub-dub' : 'sub-only'}">${(ep.hasDub !== undefined ? ep.hasDub : (epData?.dubCount ? ep.episode_number <= epData.dubCount : false)) ? 'SUB | DUB' : 'SUB'}</span>
                 ${isWatched ? '<span class="episode-watched-check">✓</span>' : ''}
               </div>
               <div class="episode-name">${esc(ep.name || `Episode ${ep.episode_number}`)}</div>
@@ -849,14 +884,34 @@
             <div class="spinner"></div>
             <p id="playerLoaderMsg">Connecting to stream...</p>
           </div>
+
+          <!-- Up Next Floating Card -->
+          <div class="up-next-card" id="upNextCard">
+            <div class="up-next-thumb-wrap">
+              <img id="upNextThumb" src="" alt="Next Episode">
+            </div>
+            <div class="up-next-info">
+              <div class="up-next-kicker" id="upNextKicker">UP NEXT</div>
+              <div class="up-next-title" id="upNextTitle">Episode Title</div>
+              <div class="up-next-sub" id="upNextSub">STARTS IN 10s</div>
+            </div>
+            <div class="up-next-actions">
+              <button type="button" class="up-next-play-btn" id="upNextPlayBtn">
+                <span class="up-next-progress-fill" id="upNextProgressFill"></span>
+                <span class="up-next-btn-text">Play now</span>
+              </button>
+              <button type="button" class="up-next-cancel-btn" id="upNextCancelBtn">Cancel</button>
+            </div>
+          </div>
+
           <div class="cinema-player-mount" id="playerMount"></div>
         </div>
 
-        <!-- Permanent Server & Audio Bar (OUTSIDE player frame, ALWAYS VISIBLE) -->
+        <!-- Permanent Server Bar (OUTSIDE player frame, ALWAYS VISIBLE) -->
         <div class="player-toolbar" id="playerToolbar">
           <div class="toolbar-section">
             <span class="toolbar-label">
-              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
               SERVER:
             </span>
             <div class="server-pill-list" id="serverSelectorList">
@@ -868,31 +923,27 @@
               `).join('')}
             </div>
           </div>
-
-          <div class="toolbar-section audio-section">
-            <span class="toolbar-label">AUDIO:</span>
+          <div class="toolbar-section audio-section" id="audioSection">
+            <span class="toolbar-label">
+              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              AUDIO:
+            </span>
             <div class="audio-toggle-pills" id="audioToggleList">
               <button type="button" class="audio-pill${currentLang === 'sub' ? ' active' : ''}" data-audio-lang="sub">SUB</button>
-              <button type="button" class="audio-pill${currentLang === 'dub' ? ' active' : ''}" data-audio-lang="dub">DUB</button>
+              <button type="button" class="audio-pill${currentLang === 'dub' ? ' active' : ''}${!(currentEpObj?.hasDub !== undefined ? currentEpObj.hasDub : (epData?.dubCount ? currentEp <= epData.dubCount : false)) ? ' disabled' : ''}" data-audio-lang="dub" id="dubAudioBtn" title="${(currentEpObj?.hasDub !== undefined ? currentEpObj.hasDub : (epData?.dubCount ? currentEp <= epData.dubCount : false)) ? 'English Dub Available' : 'Japanese Audio (Sub) only for this episode'}">DUB</button>
             </div>
           </div>
-
-          <div class="toolbar-section quality-section" id="qualitySection" ${getActiveServer().isNative ? '' : 'style="display:none;"'}>
-            <span class="toolbar-label">QUALITY:</span>
-            <select class="quality-select" id="playerQualitySelect">
-              <option value="-1">Auto</option>
-              <option value="1080">1080p</option>
-              <option value="720">720p</option>
-              <option value="480">480p</option>
-              <option value="360">360p</option>
-            </select>
-          </div>
-
-          <div class="toolbar-section actions-section">
-            <button type="button" class="toolbar-action-btn" id="theaterToggleBtn" title="Toggle Theater Mode">
-              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 4v16M16 4v16"/></svg>
-              Theater
-            </button>
+          <div class="toolbar-section toolbar-section-contrast">
+            <span class="toolbar-label">
+              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"/></svg>
+              CONTRAST:
+            </span>
+            <div class="contrast-pill-list" id="contrastSelectorList">
+              <button type="button" class="contrast-pill active" data-contrast="standard">Standard</button>
+              <button type="button" class="contrast-pill" data-contrast="vivid">Vivid Anime</button>
+              <button type="button" class="contrast-pill" data-contrast="high">High Contrast</button>
+              <button type="button" class="contrast-pill" data-contrast="cinema">Cinema Soft</button>
+            </div>
           </div>
         </div>
 
@@ -938,6 +989,7 @@
       storageKeyWatched,
       storageKeyExactTime,
       renderEpisodeCardsHtml,
+      epData,
     });
 
     return `Watch E${currentEp}: ${a.title} — AnimeVerse`;
@@ -948,12 +1000,12 @@
       view,
       a,
       alId,
-      tmdbId,
       seasons,
       watched,
       storageKeyWatched,
       renderEpisodeCardsHtml,
       detectedSeason,
+      epData,
       availableEp,
     } = ctx;
 
@@ -971,19 +1023,56 @@
       return STREAM_SERVERS.find((srv) => srv.id === currentServer) || STREAM_SERVERS[0];
     }
 
+    let tmdbId = ctx.tmdbId || a.tmdbId || null;
     const playerBox = $('#playerBox', view);
     const playerMount = $('#playerMount', view);
     const playerLoader = $('#playerLoader', view);
     const playerLoaderMsg = $('#playerLoaderMsg', view);
-    const qualitySection = $('#qualitySection', view);
-    const qualitySelect = $('#playerQualitySelect', view);
     const seasonEpTag = $('#seasonEpTag', view);
     const playerEpTitle = $('#playerEpTitle', view);
     const markWatchedBtn = $('#markWatchedBtn', view);
-    const theaterToggleBtn = $('#theaterToggleBtn', view);
     const episodesGrid = $('#episodesGrid', view);
     const episodesCountBadge = $('#episodesCountBadge', view);
     const seasonSelector = $('#seasonSelector', view);
+
+    // Up Next Popup elements & state
+    const upNextCard = $('#upNextCard', view);
+    const upNextThumb = $('#upNextThumb', view);
+    const upNextKicker = $('#upNextKicker', view);
+    const upNextTitle = $('#upNextTitle', view);
+    const upNextSub = $('#upNextSub', view);
+    const upNextPlayBtn = $('#upNextPlayBtn', view);
+    const upNextCancelBtn = $('#upNextCancelBtn', view);
+    const upNextProgressFill = $('#upNextProgressFill', view);
+
+    let upNextActive = false;
+    let upNextCancelled = false;
+    let upNextAnimFrame = null;
+    let upNextStartTime = 0;
+    let playbackCurrentTime = 0;
+    let playbackDuration = 0;
+    const UP_NEXT_DURATION_MS = 10000;
+
+
+    // Contrast & Video Enhancement Engine
+    let currentContrast = localStorage.getItem('animeverse_contrast') || 'standard';
+    function applyContrast(mode) {
+      currentContrast = mode;
+      try { localStorage.setItem('animeverse_contrast', mode); } catch {}
+      if (playerMount) {
+        playerMount.dataset.contrast = mode;
+      }
+      $$('.contrast-pill', view).forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.contrast === mode);
+      });
+    }
+    applyContrast(currentContrast);
+
+    $$('.contrast-pill', view).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        applyContrast(btn.dataset.contrast);
+      });
+    });
 
     let activeHls = null;
     let activeVideo = null;
@@ -1031,6 +1120,8 @@
 
     // Save exact position safely
     function savePlaybackProgress(curTime, dur) {
+      playbackCurrentTime = curTime || 0;
+      playbackDuration = dur || 0;
       if (curTime > 1) {
         try {
           localStorage.setItem(storageKeyExactTime(currentEp), curTime.toFixed(2));
@@ -1060,7 +1151,7 @@
       }
     }
 
-    // ── Unified Stream Loader ──
+    // ── Unified Stream Loader (Seamless Re-use & Fullscreen-Safe) ──
     async function loadStream(explicitResumeTime = null) {
       const thisGen = ++currentResolveGen;
       const s = getActiveServer();
@@ -1070,11 +1161,12 @@
         ? explicitResumeTime
         : Number(localStorage.getItem(storageKeyExactTime(currentEp)) || 0);
 
-      // 1. Fully teardown any existing player first
-      teardownPlayer();
-      showLoader(`Loading ${s.name}...`);
+      cancelUpNext();
+      upNextCancelled = false;
+      playbackCurrentTime = 0;
+      playbackDuration = 0;
 
-      // 2. Sync toolbar UI
+      // 1. Sync toolbar UI
       $$('.server-pill', view).forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.serverId === currentServer);
       });
@@ -1082,12 +1174,16 @@
         btn.classList.toggle('active', btn.dataset.audioLang === currentLang);
       });
 
-      if (qualitySection) {
-        qualitySection.style.display = s.isNative ? 'flex' : 'none';
+      // 2. If switching between server types (Native vs Iframe), teardown the other one
+      if (s.isNative && activeIframe) {
+        teardownPlayer();
+      } else if (!s.isNative && activeVideo) {
+        teardownPlayer();
       }
 
-      // 3. Mount Native HLS Player
+      // 3. Mount / Update Native HLS Player
       if (s.isNative) {
+        showLoader(`Loading ${s.name}...`);
         try {
           const res = await api(
             `/stream/resolve?title=${encodeURIComponent(a.title)}&romaji=${encodeURIComponent(a.titleRomaji || '')}&season=${currentSeason}&episode=${currentEp}&mode=${currentLang}`,
@@ -1100,14 +1196,61 @@
             throw new Error('No stream URL available');
           }
 
-          const video = document.createElement('video');
-          video.className = 'cinema-video-element';
-          video.controls = true;
-          video.playsInline = true;
-          video.preload = 'auto';
-          video.crossOrigin = 'anonymous';
+          const finalStreamUrl = res.streamUrl.startsWith('http')
+            ? res.streamUrl
+            : `${API_BASE}${res.streamUrl}`;
+
+          let video = activeVideo;
+          if (!video) {
+            video = document.createElement('video');
+            video.className = 'cinema-video-element';
+            video.controls = true;
+            video.playsInline = true;
+            video.preload = 'auto';
+            video.crossOrigin = 'anonymous';
+
+            playerMount.appendChild(video);
+            activeVideo = video;
+
+            const onProgressFlush = () => {
+              if (video && video.currentTime > 1) {
+                savePlaybackProgress(video.currentTime, video.duration);
+              }
+            };
+
+            video.addEventListener('timeupdate', () => {
+              if (video.currentTime > 1) {
+                savePlaybackProgress(video.currentTime, video.duration);
+              }
+              // Trigger Up Next card 30 seconds before ending
+              if (video.duration > 35 && (video.duration - video.currentTime) <= 30) {
+                triggerUpNext();
+              }
+            });
+            video.addEventListener('pause', onProgressFlush);
+            video.addEventListener('seeking', onProgressFlush);
+            video.addEventListener('seeked', onProgressFlush);
+            window.addEventListener('beforeunload', onProgressFlush);
+            window.addEventListener('pagehide', onProgressFlush);
+
+            video.addEventListener('ended', () => {
+              watched.add(currentEp);
+              try {
+                localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
+                localStorage.setItem(storageKeyProgress(currentEp), '100');
+              } catch {}
+              if (markWatchedBtn) {
+                markWatchedBtn.classList.add('watched');
+                markWatchedBtn.textContent = '✓ Watched';
+              }
+              triggerUpNext(true);
+            });
+          }
 
           // Subtitle tracks
+          while (video.firstChild) {
+            video.removeChild(video.firstChild);
+          }
           if (res.subtitles && res.subtitles.length > 0) {
             res.subtitles.forEach((sub, idx) => {
               const track = document.createElement('track');
@@ -1120,48 +1263,11 @@
             });
           }
 
-          playerMount.appendChild(video);
-          activeVideo = video;
-
-          // Event listeners for progress & resume
-          const onProgressFlush = () => {
-            if (video && video.currentTime > 1) {
-              savePlaybackProgress(video.currentTime, video.duration);
-            }
-          };
-
-          video.addEventListener('timeupdate', () => {
-            if (video.currentTime > 1) {
-              savePlaybackProgress(video.currentTime, video.duration);
-            }
-          });
-          video.addEventListener('pause', onProgressFlush);
-          video.addEventListener('seeking', onProgressFlush);
-          video.addEventListener('seeked', onProgressFlush);
-          window.addEventListener('beforeunload', onProgressFlush);
-          window.addEventListener('pagehide', onProgressFlush);
-
-          video.addEventListener('ended', () => {
-            watched.add(currentEp);
-            try {
-              localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
-              localStorage.setItem(storageKeyProgress(currentEp), '100');
-            } catch {}
-            if (markWatchedBtn) {
-              markWatchedBtn.classList.add('watched');
-              markWatchedBtn.textContent = '✓ Watched';
-            }
-            if (currentEp < episodes.length) {
-              switchEpisode(currentEp + 1);
-            }
-          });
-
-          // HLS initialization with direct fragment startPosition
-          const finalStreamUrl = res.streamUrl.startsWith('http')
-            ? res.streamUrl
-            : `${API_BASE}${res.streamUrl}`;
-
           if (window.Hls && Hls.isSupported()) {
+            if (activeHls) {
+              try { activeHls.destroy(); } catch {}
+              activeHls = null;
+            }
             const hls = new Hls({
               autoStartLoad: true,
               enableWorker: true,
@@ -1195,8 +1301,8 @@
               }
             };
 
-            video.addEventListener('loadedmetadata', applyResume);
-            video.addEventListener('canplay', applyResume);
+            video.addEventListener('loadedmetadata', applyResume, { once: true });
+            video.addEventListener('canplay', applyResume, { once: true });
             hls.once(Hls.Events.LEVEL_LOADED, applyResume);
 
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -1204,35 +1310,31 @@
               applyResume();
               hideLoader();
               video.play().catch(() => {});
-
-              // Populate quality dropdown
-              if (qualitySelect && hls.levels && hls.levels.length > 0) {
-                const currentPrefQ = localStorage.getItem('animeverse_preferred_quality');
-                let optsHtml = '<option value="-1">Auto</option>';
-                const sorted = hls.levels.map((lvl, idx) => ({ lvl, idx })).sort((a, b) => (b.lvl.height || 0) - (a.lvl.height || 0));
-                sorted.forEach(({ lvl, idx }) => {
-                  const h = lvl.height || 1080;
-                  const isSel = currentPrefQ && Number(currentPrefQ) === h;
-                  optsHtml += `<option value="${idx}" ${isSel ? 'selected' : ''}>${h}p</option>`;
-                });
-                qualitySelect.innerHTML = optsHtml;
-
-                if (currentPrefQ) {
-                  const targetQ = Number(currentPrefQ);
-                  const match = hls.levels.findIndex((l) => (l.height || 0) === targetQ);
-                  if (match !== -1) hls.currentLevel = match;
-                }
-              }
             });
+
+            let netRetries = 0;
+            let medRetries = 0;
+            const MAX_NET_RETRIES = 3;
+            const MAX_MED_RETRIES = 2;
 
             hls.on(Hls.Events.ERROR, (evt, errData) => {
               if (errData.fatal) {
                 switch (errData.type) {
                   case Hls.ErrorTypes.NETWORK_ERROR:
-                    hls.startLoad();
+                    if (netRetries < MAX_NET_RETRIES) {
+                      netRetries++;
+                      hls.startLoad();
+                    } else {
+                      hls.destroy();
+                    }
                     break;
                   case Hls.ErrorTypes.MEDIA_ERROR:
-                    hls.recoverMediaError();
+                    if (medRetries < MAX_MED_RETRIES) {
+                      medRetries++;
+                      hls.recoverMediaError();
+                    } else {
+                      hls.destroy();
+                    }
                     break;
                   default:
                     hls.destroy();
@@ -1269,43 +1371,63 @@
           }
         }
       } else {
-        // 4. Mount Embed Iframe (VidLink, VidSrc, Vidfast, Vidnest, AutoEmbed)
+        // 4. Mount / Update Embed Iframe (Vidrift) — Seamless reuse retains fullscreen!
         const embedUrl = s.getUrl(alId, currentEp, currentLang, tmdbId, currentSeason);
-        const iframe = document.createElement('iframe');
-        iframe.className = 'cinema-iframe-element';
-        iframe.title = `${a.title} - S${currentSeason}E${currentEp}`;
-        iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
-        iframe.referrerPolicy = 'no-referrer';
-        iframe.allowFullscreen = true;
-        iframe.src = embedUrl;
 
-        playerMount.appendChild(iframe);
-        activeIframe = iframe;
-
-        iframe.onload = () => {
-          if (thisGen !== currentResolveGen) return;
-          hideLoader();
+        const notifyNextEp = (win) => {
+          if (!win) return;
+          try {
+            // Send next: null to Vidrift so Vidrift suppresses its duplicate internal Up Next card.
+            // Our custom AnimeVerse floating Up Next card with the 10s progress bar and cancel button
+            // will exclusively handle up next transitions.
+            win.postMessage({ type: 'vidrift:nextup-info', next: null }, 'https://embed.vidrift.net');
+            win.postMessage({
+              type: 'vidrift:fullscreen-state',
+              on: !!(document.fullscreenElement || playerBox?.classList.contains('is-fullscreen')),
+            }, 'https://embed.vidrift.net');
+          } catch (e) {}
         };
-        setTimeout(() => {
-          if (thisGen === currentResolveGen) hideLoader();
-        }, 2000);
-      }
-    }
 
-    // Quality selection listener
-    if (qualitySelect) {
-      qualitySelect.addEventListener('change', () => {
-        const val = Number(qualitySelect.value);
-        if (!activeHls) return;
-        if (val === -1) {
-          activeHls.currentLevel = -1;
-          localStorage.removeItem('animeverse_preferred_quality');
+        if (activeIframe) {
+          // REUSE existing iframe to prevent exiting fullscreen and eliminate delay!
+          activeIframe.title = `${a.title} - S${currentSeason}E${currentEp}`;
+          if (activeIframe.src !== embedUrl) {
+            showLoader(`Loading Episode ${currentEp}...`);
+            activeIframe.onload = () => {
+              if (thisGen !== currentResolveGen) return;
+              hideLoader();
+              notifyNextEp(activeIframe.contentWindow);
+            };
+            activeIframe.src = embedUrl;
+          } else {
+            hideLoader();
+            notifyNextEp(activeIframe.contentWindow);
+          }
+          setTimeout(() => {
+            if (thisGen === currentResolveGen) hideLoader();
+          }, 1500);
         } else {
-          activeHls.currentLevel = val;
-          const h = activeHls.levels[val]?.height || 1080;
-          localStorage.setItem('animeverse_preferred_quality', String(h));
+          showLoader(`Loading ${s.name}...`);
+          const iframe = document.createElement('iframe');
+          iframe.className = 'cinema-iframe-element';
+          iframe.title = `${a.title} - S${currentSeason}E${currentEp}`;
+          iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+          iframe.allowFullscreen = true;
+          iframe.src = embedUrl;
+
+          playerMount.appendChild(iframe);
+          activeIframe = iframe;
+
+          iframe.onload = () => {
+            if (thisGen !== currentResolveGen) return;
+            hideLoader();
+            notifyNextEp(iframe.contentWindow);
+          };
+          setTimeout(() => {
+            if (thisGen === currentResolveGen) hideLoader();
+          }, 2000);
         }
-      });
+      }
     }
 
     // Server selection listener
@@ -1327,6 +1449,27 @@
     // Audio language listener
     function switchAudio(lang) {
       if (lang === currentLang) return;
+
+      // When real alternate audio tracks exist in the HLS manifest, switch in-place
+      if (activeHls && activeHls.audioTracks && activeHls.audioTracks.length > 1) {
+        const targetTrackIdx = activeHls.audioTracks.findIndex((t) => {
+          const l = (t.lang || t.name || '').toLowerCase();
+          return lang === 'dub' ? (l.includes('en') || l.includes('eng')) : (l.includes('ja') || l.includes('jp') || l.includes('sub'));
+        });
+        if (targetTrackIdx !== -1) {
+          activeHls.audioTrack = targetTrackIdx;
+          currentLang = lang;
+          try {
+            localStorage.setItem('animeverse_lang', currentLang);
+          } catch {}
+          $$('.audio-pill', view).forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.audioLang === currentLang);
+          });
+          return;
+        }
+      }
+
+      // Separate-stream fallback
       const currentPos = (activeVideo && activeVideo.currentTime > 1) ? activeVideo.currentTime : null;
       currentLang = lang;
       try {
@@ -1339,13 +1482,268 @@
       btn.addEventListener('click', () => switchAudio(btn.dataset.audioLang));
     });
 
-    // Theater mode toggle
-    if (theaterToggleBtn && playerBox) {
-      theaterToggleBtn.addEventListener('click', () => {
-        const isTheater = playerBox.classList.toggle('theater-mode');
-        theaterToggleBtn.classList.toggle('active', isTheater);
-        if (isTheater) playerBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Up Next Next-Episode Metadata Helper
+    function getNextEpMeta() {
+      if (currentEp < episodes.length) {
+        if (a.airing && currentSeason === detectedSeason && (currentEp + 1) > availableEp) {
+          return null;
+        }
+        const nextEpObj = episodes.find((e) => e.episode_number === currentEp + 1) || {
+          episode_number: currentEp + 1,
+          name: `Episode ${currentEp + 1}`,
+        };
+        return {
+          season: currentSeason,
+          episode: currentEp + 1,
+          name: nextEpObj.name || `Episode ${currentEp + 1}`,
+          still: nextEpObj.still_path || a.banner || a.image,
+          isNextSeason: false,
+        };
+      }
+      const nextSeasonObj = seasons && seasons.find((s) => s.season_number > currentSeason && (s.episode_count || 0) > 0);
+      if (nextSeasonObj) {
+        return {
+          season: nextSeasonObj.season_number,
+          episode: 1,
+          name: `Season ${nextSeasonObj.season_number} Premiere`,
+          still: a.banner || a.image,
+          isNextSeason: true,
+        };
+      }
+      return null;
+    }
+
+    // Up Next Floating Popup with 5-Second Progress Bar
+    function cancelUpNext() {
+      upNextActive = false;
+      upNextCancelled = true;
+      if (upNextAnimFrame) {
+        cancelAnimationFrame(upNextAnimFrame);
+        upNextAnimFrame = null;
+      }
+      if (upNextCard) {
+        upNextCard.classList.remove('visible');
+      }
+    }
+
+    function playNextNow() {
+      cancelUpNext();
+      const nextMeta = getNextEpMeta();
+      if (!nextMeta) return;
+      if (nextMeta.isNextSeason) {
+        switchSeasonAndEpisode(nextMeta.season, 1);
+      } else {
+        switchEpisode(nextMeta.episode);
+      }
+    }
+
+    window.triggerUpNext = triggerUpNext;
+    window.cancelUpNext = cancelUpNext;
+    window.playNextNow = playNextNow;
+
+    function triggerUpNext(force = false) {
+      if (upNextActive || upNextCancelled) return;
+
+      // STRICT TIMING GUARD: Never trigger Up Next if playback is early/mid episode!
+      // Only trigger if remaining time is <= 90s, or position is >= 85% of total duration, or forced on video ended.
+      if (!force) {
+        const cur = (activeVideo ? activeVideo.currentTime : playbackCurrentTime) || 0;
+        const dur = (activeVideo ? activeVideo.duration : playbackDuration) || 0;
+        if (dur > 60) {
+          const remaining = dur - cur;
+          if (remaining > 90 && (cur / dur) < 0.85) {
+            console.log(`[UpNext] Suppressed trigger at ${cur.toFixed(0)}s of ${dur.toFixed(0)}s (remaining: ${remaining.toFixed(0)}s)`);
+            return;
+          }
+        } else if (cur < 900) {
+          // If duration is unknown yet, suppress any trigger unless user has played for at least 15 minutes
+          console.log(`[UpNext] Suppressed trigger at ${cur.toFixed(0)}s (duration unknown or <= 60s)`);
+          return;
+        }
+      }
+
+      const nextMeta = getNextEpMeta();
+      if (!nextMeta || !upNextCard) return;
+
+      upNextActive = true;
+      if (upNextThumb) upNextThumb.src = nextMeta.still || a.image || '';
+      if (upNextKicker) upNextKicker.textContent = `UP NEXT \u00B7 S${nextMeta.season} \u00B7 E${nextMeta.episode}`;
+      if (upNextTitle) upNextTitle.textContent = nextMeta.name;
+      if (upNextSub) upNextSub.textContent = 'STARTS IN 10s';
+      if (upNextProgressFill) upNextProgressFill.style.width = '0%';
+
+      upNextCard.classList.add('visible');
+      upNextStartTime = performance.now();
+
+      function tick(now) {
+        if (!upNextActive) return;
+        const elapsed = now - upNextStartTime;
+        const pct = Math.min(100, (elapsed / UP_NEXT_DURATION_MS) * 100);
+        if (upNextProgressFill) {
+          upNextProgressFill.style.width = `${pct}%`;
+        }
+        const remainingSec = Math.max(1, Math.ceil((UP_NEXT_DURATION_MS - elapsed) / 1000));
+        if (upNextSub) {
+          upNextSub.textContent = `STARTS IN ${remainingSec}s`;
+        }
+
+        if (elapsed >= UP_NEXT_DURATION_MS) {
+          playNextNow();
+        } else {
+          upNextAnimFrame = requestAnimationFrame(tick);
+        }
+      }
+      upNextAnimFrame = requestAnimationFrame(tick);
+    }
+
+    if (upNextPlayBtn) {
+      upNextPlayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playNextNow();
       });
+    }
+
+    if (upNextCancelBtn) {
+      upNextCancelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        cancelUpNext();
+      });
+    }
+
+
+    // Handle Vidrift postMessages (Seamless auto-next & episode switching)
+    function handleVidriftMessage(e) {
+      if (e.origin !== 'https://embed.vidrift.net' && e.origin !== 'https://embed.vidrift.in' && e.origin !== window.location.origin) return;
+      const d = e.data;
+      if (!d || !d.type) return;
+
+      if (d.type === 'vidrift:nextup') {
+        triggerUpNext();
+      } else if (d.type === 'vidrift:nextup-play') {
+        playNextNow();
+      } else if (d.type === 'vidrift:ended') {
+        triggerUpNext(true);
+      } else if (d.type === 'vidrift:fullscreen') {
+        const shouldFs = !!d.on;
+        if (shouldFs) {
+          if (playerBox && !document.fullscreenElement) {
+            playerBox.requestFullscreen().catch(() => {});
+          }
+          playerBox?.classList.add('is-fullscreen');
+          if (window.desktopAPI?.setFullScreen) {
+            window.desktopAPI.setFullScreen(true);
+          }
+        } else {
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          }
+          playerBox?.classList.remove('is-fullscreen');
+          if (window.desktopAPI?.setFullScreen) {
+            window.desktopAPI.setFullScreen(false);
+          }
+        }
+        if (activeIframe && activeIframe.contentWindow) {
+          activeIframe.contentWindow.postMessage({
+            type: 'vidrift:fullscreen-state',
+            on: shouldFs,
+          }, 'https://embed.vidrift.net');
+        }
+      } else if (d.type === 'vidrift:progress') {
+        if (d.currentTime > 1) {
+          savePlaybackProgress(d.currentTime, d.duration);
+        }
+      } else if (d.type === 'vidrift:episode') {
+        if (d.episode && (d.episode !== currentEp || (d.season && d.season !== currentSeason))) {
+          if (d.season && d.season !== currentSeason) {
+            switchSeasonAndEpisode(d.season, d.episode);
+          } else {
+            switchEpisode(d.episode);
+          }
+        }
+      }
+    }
+    window.addEventListener('message', handleVidriftMessage);
+
+    function onFullscreenChange() {
+      const isFs = !!document.fullscreenElement;
+      if (playerBox) {
+        playerBox.classList.toggle('is-fullscreen', isFs);
+      }
+      if (window.desktopAPI?.setFullScreen) {
+        window.desktopAPI.setFullScreen(isFs);
+      }
+      if (activeIframe && activeIframe.contentWindow) {
+        activeIframe.contentWindow.postMessage({
+          type: 'vidrift:fullscreen-state',
+          on: isFs,
+        }, 'https://embed.vidrift.net');
+      }
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+
+    // Global 'F' / 'f' Fullscreen Toggle
+    function onFsKey(e) {
+      if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+        const isFs = !!document.fullscreenElement || playerBox?.classList.contains('is-fullscreen');
+        const nextFs = !isFs;
+        if (nextFs) {
+          if (playerBox) playerBox.requestFullscreen().catch(() => {});
+          playerBox?.classList.add('is-fullscreen');
+          if (window.desktopAPI?.setFullScreen) window.desktopAPI.setFullScreen(true);
+        } else {
+          if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+          playerBox?.classList.remove('is-fullscreen');
+          if (window.desktopAPI?.setFullScreen) window.desktopAPI.setFullScreen(false);
+        }
+        if (activeIframe && activeIframe.contentWindow) {
+          activeIframe.contentWindow.postMessage({
+            type: 'vidrift:fullscreen-state',
+            on: nextFs,
+          }, 'https://embed.vidrift.net');
+        }
+      }
+    }
+    window.addEventListener('keydown', onFsKey);
+    cleanup.push(() => window.removeEventListener('keydown', onFsKey));
+
+    async function switchSeasonAndEpisode(targetSeason, targetEp = 1) {
+      cancelUpNext();
+      upNextCancelled = false;
+      if (targetSeason === currentSeason) {
+        switchEpisode(targetEp);
+        return;
+      }
+      if (activeVideo && activeVideo.currentTime > 1) {
+        savePlaybackProgress(activeVideo.currentTime, activeVideo.duration);
+      }
+      showLoader(`Loading Season ${targetSeason}...`);
+
+      currentSeason = targetSeason;
+      viewingSeason = targetSeason;
+
+      if (seasonSelector) {
+        $$('.season-btn', seasonSelector).forEach((b) => b.classList.toggle('active', Number(b.dataset.seasonNum) === targetSeason));
+      }
+      if (episodesGrid) {
+        episodesGrid.innerHTML = Array.from({ length: 6 }, () => '<div class="sk" style="height:110px;border-radius:8px;"></div>').join('');
+      }
+
+      try {
+        const newEpData = await api(`/anime/${encodeURIComponent(a.id)}/episodes?season=${targetSeason}`, 60 * 60 * 1000);
+        if (newEpData?.tmdbId) tmdbId = newEpData.tmdbId;
+        let seasonEpisodes = (newEpData && newEpData.episodes && newEpData.episodes.length > 0) ? newEpData.episodes : [];
+        if (targetSeason === detectedSeason && a.airing && availableEp < seasonEpisodes.length) {
+          seasonEpisodes = seasonEpisodes.filter((e) => e.episode_number <= availableEp);
+        }
+        if (seasonEpisodes.length > 0) {
+          episodes = seasonEpisodes;
+        }
+      } catch (err) {
+        console.warn('[Player] Failed to load season episodes:', err);
+      }
+
+      switchEpisode(targetEp);
     }
 
     // Mark watched button
@@ -1390,6 +1788,14 @@
       if (seasonEpTag) seasonEpTag.textContent = `Season ${currentSeason} · E${currentEp}`;
       if (playerEpTitle) playerEpTitle.textContent = epObj.name || `Episode ${currentEp}`;
 
+      // Sync Dub audio pill availability for this episode
+      const epHasDub = epObj?.hasDub !== undefined ? epObj.hasDub : (epData?.dubCount ? currentEp <= epData.dubCount : false);
+      const dubBtn = $('#dubAudioBtn', view);
+      if (dubBtn) {
+        dubBtn.classList.toggle('disabled', !epHasDub);
+        dubBtn.title = epHasDub ? 'English Dub Available' : `Episode ${currentEp} is Japanese audio (Sub) only`;
+      }
+
       const isWatched = watched.has(currentEp);
       if (markWatchedBtn) {
         markWatchedBtn.classList.toggle('watched', isWatched);
@@ -1408,12 +1814,11 @@
         attachCardListeners(episodes, currentSeason);
       }
 
-      // Update URL silently
+      // Update URL silently without disrupting scroll or fullscreen
       window.history.replaceState({}, '', `/watch/${encodeURIComponent(a.id)}?season=${currentSeason}&ep=${currentEp}`);
       document.title = `Watch E${currentEp}: ${a.title} — AnimeVerse`;
 
       loadStream();
-      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
     }
 
     function attachCardListeners(cardList = episodes, cardSeason = viewingSeason) {
@@ -2339,12 +2744,35 @@
     }
   });
 
-  // ---------- Nav search hint: cycles through what's trending ----------
+  // ---------- Scroll Hover Glitch Fix: disables pointer-events during active scrolling ----------
+  let isScrollingTimer = null;
+  window.addEventListener('scroll', () => {
+    if (!document.body.classList.contains('is-scrolling')) {
+      document.body.classList.add('is-scrolling');
+    }
+    clearTimeout(isScrollingTimer);
+    isScrollingTimer = setTimeout(() => {
+      document.body.classList.remove('is-scrolling');
+    }, 120);
+  }, { passive: true });
+
+  // ---------- Nav search hint: cycles through trending titles without wasting network calls ----------
   (async () => {
     try {
-      const names = (await api('/home', 10 * 60 * 1000)).trending.slice(0, 8).map((a) => a.title);
+      const defaultHints = ['Jujutsu Kaisen', 'Demon Slayer', 'Solo Leveling', 'Attack on Titan', 'One Piece', 'Chainsaw Man'];
+      let names = defaultHints;
+      // Only fetch /home if on home page or already cached in memory to save backend requests
+      const cachedHome = memo.get('/home');
+      if (cachedHome && cachedHome.trending && cachedHome.trending.length > 0) {
+        names = cachedHome.trending.slice(0, 8).map((a) => a.title);
+      } else if (location.pathname === '/') {
+        const homeData = await api('/home', 10 * 60 * 1000);
+        if (homeData && homeData.trending && homeData.trending.length > 0) {
+          names = homeData.trending.slice(0, 8).map((a) => a.title);
+        }
+      }
       const el = document.getElementById('searchHint');
-      if (!names.length || reduceMotion) return;
+      if (!el || !names.length || reduceMotion) return;
       let i = 0;
       setInterval(() => {
         if (document.hidden || !overlay.hidden) return;
@@ -2357,11 +2785,29 @@
     } catch { /* hint stays static */ }
   })();
 
-  // ---------- Footer status ----------
-  fetch(`${API_BASE}/api/status`).then((r) => r.json()).then((s) => {
-    const prov = s.provider.active === 'jikan' ? 'MyAnimeList (backup source)' : 'AniList';
-    $('#footerStatus').textContent = `Live data: ${prov} · artwork: TMDB · ${s.dubs.dubbed.toLocaleString()} dubbed titles tracked${s.imdb === 'enabled' ? ' · IMDb ratings on' : ''}`;
-  }).catch(() => {});
+  // ---------- Footer status (cached in sessionStorage to eliminate redundant network hits) ----------
+  (() => {
+    const renderStatus = (s) => {
+      const el = $('#footerStatus');
+      if (!el || !s || !s.provider) return;
+      const prov = s.provider.active === 'jikan' ? 'MyAnimeList (backup source)' : 'AniList';
+      el.textContent = `Live data: ${prov} · artwork: TMDB · ${(s.dubs?.dubbed || 0).toLocaleString()} dubbed titles tracked${s.imdb === 'enabled' ? ' · IMDb ratings on' : ''}`;
+    };
+    try {
+      const cached = sessionStorage.getItem('animeverse_status_cache');
+      if (cached) {
+        renderStatus(JSON.parse(cached));
+        return;
+      }
+    } catch {}
+    fetch(`${API_BASE}/api/status`)
+      .then((r) => r.json())
+      .then((s) => {
+        try { sessionStorage.setItem('animeverse_status_cache', JSON.stringify(s)); } catch {}
+        renderStatus(s);
+      })
+      .catch(() => {});
+  })();
 
   // Home data refreshes on its own: re-render quietly every 30 minutes if the user is on the home page.
   setInterval(() => {

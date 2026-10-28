@@ -46,11 +46,25 @@ function seed(endpoint, data) {
   if (!cache.has(endpoint)) remember(endpoint, data);
 }
 
-// True only if air date is strictly in the future
-function isUnreleased(airDate) {
+// True only if air date is strictly in the future (relative to Japan Standard Time, UTC+9)
+// or if animeData explicitly indicates the episode has not aired yet.
+function isUnreleased(airDate, epNum = null, isCurrentSeason = false, animeData = null) {
+  if (isCurrentSeason) {
+    if (animeData?.status === 'Not yet aired' || animeData?.status === 'NOT_YET_RELEASED') {
+      return true;
+    }
+    if (animeData?.nextEpisode?.episode && epNum) {
+      const nextEp = Number(animeData.nextEpisode.episode);
+      if (epNum < nextEp) return false;
+      if (epNum >= nextEp) return true;
+    }
+    if (animeData?.status === 'Finished Airing' || animeData?.status === 'FINISHED') {
+      return false;
+    }
+  }
   if (!airDate) return false;
-  const target = new Date(`${airDate}T23:59:59Z`).getTime();
-  return Date.now() < target;
+  const nowJst = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return airDate > nowJst;
 }
 
 // Search for a TV show or movie by title
@@ -87,7 +101,7 @@ async function getTmdbShowData(tmdbId, seasonNum = 1, animeData = null) {
   try {
     const show = await tmdbFetch(`/tv/${tmdbId}`);
     let validSeasons = (show.seasons || [])
-      .filter((s) => s.season_number > 0)
+      .filter((s) => s.season_number > 0 && (s.episode_count || 0) > 0)
       .map((s) => ({
         season_number: s.season_number,
         name: s.name || `Season ${s.season_number}`,
@@ -104,8 +118,7 @@ async function getTmdbShowData(tmdbId, seasonNum = 1, animeData = null) {
         if (egRes && egRes.results && egRes.results.length > 0) {
           const bestGroup =
             egRes.results.find((g) => g.type === 6 && g.group_count > 1) ||
-            egRes.results.find((g) => (g.name || '').toLowerCase().includes('season') && g.group_count > 1) ||
-            egRes.results.find((g) => g.group_count > 1);
+            egRes.results.find((g) => (g.name || '').toLowerCase().includes('season') && g.group_count > 1);
 
           if (bestGroup) {
             const groupData = await tmdbFetch(`/tv/episode_group/${bestGroup.id}`);
@@ -121,18 +134,50 @@ async function getTmdbShowData(tmdbId, seasonNum = 1, animeData = null) {
 
     if (episodeGroup && episodeGroup.groups && episodeGroup.groups.length > 1) {
       const sortedGroups = [...episodeGroup.groups].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      validSeasons = sortedGroups.map((g, idx) => ({
-        season_number: idx + 1,
-        name: g.name || `Season ${idx + 1}`,
-        episode_count: (g.episodes || []).filter((ep) => !isUnreleased(ep.air_date)).length,
-      }));
 
-      const targetGroup = sortedGroups[seasonNum - 1] || sortedGroups[0];
+      // Filter out Specials for anime to match Streambert and prevent offsetting TV seasons
+      const regularGroups = sortedGroups.filter((g) => {
+        const name = (g.name || '').toLowerCase();
+        return !name.includes('special') && g.order !== 0;
+      });
+      let groupsToUse = regularGroups.length > 0 ? regularGroups : sortedGroups;
+
+      const artworkService = require('./artwork');
+      const detectedSeason = animeData ? artworkService.detectSeasonNumber(animeData.title, animeData.titleRomaji) : 1;
+
+      validSeasons = groupsToUse
+        .map((g, idx) => {
+          const sMatch = (g.name || '').match(/Season\s*(\d+)/i);
+          const sNum = sMatch ? parseInt(sMatch[1], 10) : (idx + 1);
+          return {
+            season_number: sNum,
+            name: g.name || `Season ${sNum}`,
+            episode_count: (g.episodes || []).filter((ep, epIdx) => !isUnreleased(ep.air_date, epIdx + 1, sNum === detectedSeason, animeData)).length,
+          };
+        })
+        .filter((s) => (s.episode_count || 0) > 0);
+
+      // Clamp requested season if it doesn't exist in validSeasons
+      let effectiveSeason = seasonNum;
+      if (validSeasons.length > 0 && !validSeasons.some((s) => s.season_number === seasonNum)) {
+        effectiveSeason = validSeasons.some((s) => s.season_number === detectedSeason)
+          ? detectedSeason
+          : (validSeasons.find((s) => s.season_number <= seasonNum)?.season_number || validSeasons[validSeasons.length - 1].season_number);
+      }
+
+      const targetGroup =
+        groupsToUse.find((g) => {
+          const sMatch = (g.name || '').match(/Season\s*(\d+)/i);
+          return sMatch && parseInt(sMatch[1], 10) === effectiveSeason;
+        }) ||
+        groupsToUse[effectiveSeason - 1] ||
+        groupsToUse[0];
+
       const targetEpisodes = (targetGroup.episodes || [])
-        .filter((ep) => !isUnreleased(ep.air_date))
+        .filter((ep, epIdx) => !isUnreleased(ep.air_date, epIdx + 1, effectiveSeason === detectedSeason, animeData))
         .map((ep, idx) => ({
           episode_number: idx + 1,
-          season_number: seasonNum,
+          season_number: effectiveSeason,
           _tmdbAbsolute: ep.episode_number,
           name: ep.name || `Episode ${idx + 1}`,
           overview: ep.overview || '',
@@ -141,12 +186,33 @@ async function getTmdbShowData(tmdbId, seasonNum = 1, animeData = null) {
           runtime: ep.runtime,
         }));
 
+      // Ensure currently released episodes are present even if TMDB has a delay
+      const nextEpNum = animeData?.nextEpisode?.episode ? Number(animeData.nextEpisode.episode) : 0;
+      const targetAiredCount = nextEpNum > 1 ? nextEpNum - 1 : 0;
+      if (targetAiredCount > targetEpisodes.length) {
+        for (let i = targetEpisodes.length + 1; i <= targetAiredCount; i++) {
+          targetEpisodes.push({
+            episode_number: i,
+            season_number: effectiveSeason,
+            name: `Episode ${i}`,
+            overview: animeData?.synopsis ? (animeData.synopsis.slice(0, 160) + '…') : '',
+            still_path: animeData?.banner || animeData?.image || null,
+            air_date: null,
+            runtime: animeData?.duration ? parseInt(animeData.duration, 10) : 24,
+          });
+        }
+      }
+      const matchedGroupSeason = validSeasons.find((s) => s.season_number === effectiveSeason);
+      if (matchedGroupSeason && targetEpisodes.length > (matchedGroupSeason.episode_count || 0)) {
+        matchedGroupSeason.episode_count = targetEpisodes.length;
+      }
+
       return {
         tmdbId,
         showName: show.name,
         backdrop: show.backdrop_path ? `${IMG_BASE}/w1280${show.backdrop_path}` : null,
         seasons: validSeasons,
-        selectedSeason: seasonNum,
+        selectedSeason: effectiveSeason,
         episodes: targetEpisodes,
       };
     }
@@ -171,19 +237,24 @@ async function getTmdbShowData(tmdbId, seasonNum = 1, animeData = null) {
       let rawEpisodes = [];
       try {
         const sData = await tmdbFetch(`/tv/${tmdbId}/season/1`);
-        rawEpisodes = (sData.episodes || []).filter((ep) => !isUnreleased(ep.air_date));
+        rawEpisodes = (sData.episodes || []).filter((ep) => !isUnreleased(ep.air_date, ep.episode_number, animeData));
       } catch {}
+
+      let effectiveSeason = seasonNum;
+      if (virtualSeasons.length > 0 && !virtualSeasons.some((s) => s.season_number === seasonNum)) {
+        effectiveSeason = 1;
+      }
 
       let offset = 0;
       for (const s of virtualSeasons) {
-        if (s.season_number < seasonNum) offset += s.episode_count || 0;
+        if (s.season_number < effectiveSeason) offset += s.episode_count || 0;
       }
-      const thisCount = virtualSeasons.find((s) => s.season_number === seasonNum)?.episode_count || rawEpisodes.length;
+      const thisCount = virtualSeasons.find((s) => s.season_number === effectiveSeason)?.episode_count || rawEpisodes.length;
       const sliced = rawEpisodes.slice(offset, offset + thisCount);
 
       const mappedEpisodes = (sliced.length > 0 ? sliced : rawEpisodes).map((ep, idx) => ({
         episode_number: idx + 1,
-        season_number: seasonNum,
+        season_number: effectiveSeason,
         _tmdbAbsolute: ep.episode_number,
         name: ep.name || `Episode ${idx + 1}`,
         overview: ep.overview || '',
@@ -197,20 +268,30 @@ async function getTmdbShowData(tmdbId, seasonNum = 1, animeData = null) {
         showName: show.name,
         backdrop: show.backdrop_path ? `${IMG_BASE}/w1280${show.backdrop_path}` : null,
         seasons: virtualSeasons,
-        selectedSeason: seasonNum,
+        selectedSeason: effectiveSeason,
         episodes: mappedEpisodes,
       };
+    }
+
+    // Clamp requested season if it doesn't exist in validSeasons
+    let effectiveSeason = seasonNum;
+    const artworkService = require('./artwork');
+    const detectedSeason = animeData ? artworkService.detectSeasonNumber(animeData.title, animeData.titleRomaji) : 1;
+    if (validSeasons.length > 0 && !validSeasons.some((s) => s.season_number === seasonNum)) {
+      effectiveSeason = validSeasons.some((s) => s.season_number === detectedSeason)
+        ? detectedSeason
+        : (validSeasons.find((s) => s.season_number <= seasonNum)?.season_number || validSeasons[validSeasons.length - 1].season_number);
     }
 
     // Fetch the requested season details
     let seasonEpisodes = [];
     try {
-      const sData = await tmdbFetch(`/tv/${tmdbId}/season/${seasonNum}`);
+      const sData = await tmdbFetch(`/tv/${tmdbId}/season/${effectiveSeason}`);
       seasonEpisodes = (sData.episodes || [])
-        .filter((ep) => !isUnreleased(ep.air_date))
+        .filter((ep) => !isUnreleased(ep.air_date, ep.episode_number, effectiveSeason === detectedSeason, animeData))
         .map((ep) => ({
           episode_number: ep.episode_number,
-          season_number: ep.season_number,
+          season_number: effectiveSeason,
           name: ep.name || `Episode ${ep.episode_number}`,
           overview: ep.overview || '',
           still_path: ep.still_path ? `${IMG_BASE}/w500${ep.still_path}` : null,
@@ -218,7 +299,28 @@ async function getTmdbShowData(tmdbId, seasonNum = 1, animeData = null) {
           runtime: ep.runtime,
         }));
     } catch (e) {
-      console.warn(`[tmdb] Error fetching season ${seasonNum} for show ${tmdbId}:`, e.message);
+      console.warn(`[tmdb] Error fetching season ${effectiveSeason} for show ${tmdbId}:`, e.message);
+    }
+
+    // Ensure currently released episodes are present even if TMDB has a delay
+    const nextEpNum = animeData?.nextEpisode?.episode ? Number(animeData.nextEpisode.episode) : 0;
+    const targetAiredCount = nextEpNum > 1 ? nextEpNum - 1 : 0;
+    if (targetAiredCount > seasonEpisodes.length) {
+      for (let i = seasonEpisodes.length + 1; i <= targetAiredCount; i++) {
+        seasonEpisodes.push({
+          episode_number: i,
+          season_number: effectiveSeason,
+          name: `Episode ${i}`,
+          overview: animeData?.synopsis ? (animeData.synopsis.slice(0, 160) + '…') : '',
+          still_path: animeData?.banner || animeData?.image || null,
+          air_date: null,
+          runtime: animeData?.duration ? parseInt(animeData.duration, 10) : 24,
+        });
+      }
+    }
+    const matchedStdSeason = validSeasons.find((s) => s.season_number === effectiveSeason);
+    if (matchedStdSeason && seasonEpisodes.length > (matchedStdSeason.episode_count || 0)) {
+      matchedStdSeason.episode_count = seasonEpisodes.length;
     }
 
     return {
@@ -226,7 +328,7 @@ async function getTmdbShowData(tmdbId, seasonNum = 1, animeData = null) {
       showName: show.name,
       backdrop: show.backdrop_path ? `${IMG_BASE}/w1280${show.backdrop_path}` : null,
       seasons: validSeasons,
-      selectedSeason: seasonNum,
+      selectedSeason: effectiveSeason,
       episodes: seasonEpisodes,
     };
   } catch (err) {

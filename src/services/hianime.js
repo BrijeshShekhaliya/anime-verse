@@ -297,10 +297,20 @@ async function hianimeSearch(query) {
     const id = href.split('?')[0].replace(/\/+$/, '').split('/').pop();
     if (!id) continue;
     const jname = getAttr(anchor[1], 'data-jname');
+
+    // Parse sub and dub counts from preceding card ticks (e.g. tick-sub 12, tick-dub 10)
+    const cardBefore = main.slice(Math.max(0, m.index - 1200), m.index);
+    const subM = cardBefore.match(/class="[^"]*tick-sub[^"]*"[^>]*>[\s\S]*?(\d+)<\/div>/i);
+    const dubM = cardBefore.match(/class="[^"]*tick-dub[^"]*"[^>]*>[\s\S]*?(\d+)<\/div>/i);
+    const subCount = subM ? parseInt(subM[1], 10) : 0;
+    const dubCount = dubM ? parseInt(dubM[1], 10) : 0;
+
     results.push({
       id,
       title: decodeEntities(title),
       jname: jname ? decodeEntities(jname) : null,
+      subCount,
+      dubCount,
     });
   }
   _searchCache.set(cacheKey, { ts: Date.now(), data: results });
@@ -426,6 +436,34 @@ async function hianimeStream(epId, mode = 'sub') {
 }
 
 // ── High-Level Resolver ───────────────────────────────────────────────────────
+// ── Get HiAnime Dub / Sub Availability for Anime Season ───────────────────────
+async function getHiAnimeDubInfo({ title, romaji, season = 1 }) {
+  const seasonNum = Math.max(1, parseInt(season, 10) || 1);
+  let searchTitle = title;
+  if (seasonNum > 1) {
+    const ani = await anilistSeasonTitle(title, seasonNum).catch(() => null);
+    if (ani && ani.title) searchTitle = ani.title;
+    else searchTitle = `${title} Season ${seasonNum}`;
+  }
+
+  let results = await hianimeSearch(searchTitle);
+  if (!results.length && romaji) {
+    results = await hianimeSearch(romaji);
+  }
+  if (!results.length && seasonNum > 1) {
+    results = await hianimeSearch(title);
+  }
+  if (!results.length) return null;
+
+  const show = results[0];
+  return {
+    showId: show.id,
+    showTitle: show.title,
+    subCount: show.subCount || 0,
+    dubCount: show.dubCount || 0,
+  };
+}
+
 // Given anime title, season (1-based), episode (1-based), and mode ('sub'|'dub'),
 // resolves the stream URL and subtitle tracks.
 async function resolveStream({ title, romaji, season = 1, episode = 1, mode = 'sub' }) {
@@ -468,15 +506,34 @@ async function resolveStream({ title, romaji, season = 1, episode = 1, mode = 's
     throw new Error(`Episode ${epNum} not found for "${show.title}"`);
   }
 
-  // 3. Resolve stream
-  const streamData = await hianimeStream(targetEp.epId, playMode);
+  // 3. Resolve stream (graceful fallback from dub to sub if episode has no dub)
+  let activeMode = playMode;
+  let streamData;
+  let fallbackFromDub = false;
+
+  if (playMode === 'dub') {
+    try {
+      streamData = await hianimeStream(targetEp.epId, 'dub');
+    } catch (err) {
+      console.warn(`[hianime] Dub not available for ep ${epNum}, falling back to sub:`, err.message);
+      streamData = await hianimeStream(targetEp.epId, 'sub');
+      activeMode = 'sub';
+      fallbackFromDub = true;
+    }
+  } else {
+    streamData = await hianimeStream(targetEp.epId, 'sub');
+  }
+
   return {
     showId: show.id,
     showTitle: show.title,
     epId: targetEp.epId,
     episodeNumber: targetEp.number,
     seasonNumber: seasonNum,
-    mode: playMode,
+    mode: activeMode,
+    fallbackFromDub,
+    subCount: show.subCount || 0,
+    dubCount: show.dubCount || 0,
     ...streamData,
   };
 }
@@ -486,5 +543,6 @@ module.exports = {
   hianimeEpisodes,
   hianimeStream,
   resolveStream,
+  getHiAnimeDubInfo,
   assertPublicUrl,
 };
