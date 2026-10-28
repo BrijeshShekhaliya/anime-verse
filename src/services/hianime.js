@@ -376,12 +376,12 @@ async function hianimeStream(epId, mode = 'sub') {
   for (const candidate of candidates) {
     try {
       const embedUrl = Buffer.from(candidate.hash, 'base64').toString('utf8').trim();
-      if (!/^https?:\\/\\//i.test(embedUrl)) throw new Error('Invalid embed URL');
-      const referer = embedUrl.replace(/^(https?:\\/\\/[^/]*).*$/, '$1/');
+      if (!/^https?:\/\//i.test(embedUrl)) throw new Error('Invalid embed URL');
+      const referer = embedUrl.replace(/^(https?:\/\/[^/]*).*$/, '$1/');
       const embedRes = await curl(embedUrl, { referer: BASE_URL + '/' });
       if (embedRes.status !== 200) throw new Error(`Embed returned HTTP ${embedRes.status}`);
 
-      const blobMatch = embedRes.body.match(/window\\.__P="([^"]*)"/);
+      const blobMatch = embedRes.body.match(/window\.__P="([^"]*)"/);
       if (!blobMatch) throw new Error('Embed config (window.__P) not found');
       const jsonText = deobfuscateBlob(blobMatch[1]);
       let masterUrl = null;
@@ -390,14 +390,14 @@ async function hianimeStream(epId, mode = 'sub') {
       try {
         const cfg = JSON.parse(jsonText);
         const findM3u8 = (v) => {
-          if (typeof v === 'string') return /\\.m3u8/i.test(v) ? v : null;
+          if (typeof v === 'string') return /\.m3u8/i.test(v) ? v : null;
           if (Array.isArray(v)) {
             for (const x of v) {
               const result = findM3u8(x);
               if (result) return result;
             }
           } else if (v && typeof v === 'object') {
-            if (typeof v.src === 'string' && /\\.m3u8/i.test(v.src)) return v.src;
+            if (typeof v.src === 'string' && /\.m3u8/i.test(v.src)) return v.src;
             for (const x of Object.values(v)) {
               const result = findM3u8(x);
               if (result) return result;
@@ -412,7 +412,7 @@ async function hianimeStream(epId, mode = 'sub') {
             .map((s) => ({
               lang: s.lang || 'en',
               label: s.label || s.lang || 'Subtitles',
-              src: String(s.src).replace(/\\\\\\//g, '/'),
+              src: String(s.src).replace(/\\\//g, '/'),
               default: Boolean(s.default),
             }));
         }
@@ -422,7 +422,7 @@ async function hianimeStream(epId, mode = 'sub') {
       }
 
       if (!masterUrl) throw new Error('No master.m3u8 stream found in decrypted payload');
-      masterUrl = masterUrl.replace(/\\\\\\//g, '/');
+      masterUrl = masterUrl.replace(/\\\//g, '/');
 
       let audioTracks = [];
       try {
