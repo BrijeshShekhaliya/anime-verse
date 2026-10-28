@@ -12,6 +12,7 @@ const https = require('https');
 const http = require('http');
 const netMod = require('net');
 const dns = require('dns').promises;
+const { parseHlsAudioTracks } = require('./hlsAudioTracks');
 
 const BASE_URL = 'https://hianime.at';
 const USER_AGENT =
@@ -356,83 +357,92 @@ async function hianimeStream(epId, mode = 'sub') {
   if (servRes.status !== 200) throw new Error(`HiAnime server list failed: HTTP ${servRes.status}`);
 
   const html = unwrapApiHtml(servRes.body);
-
-  let hash = null;
+  const candidates = [];
+  const seenHashes = new Set();
   for (const chunk of html.split('server-item').slice(1)) {
-    const type = getAttr(chunk, 'data-type');
-    const sname = getAttr(chunk, 'data-server-name');
-    if (type === mode && sname === SERVER_NAME) {
-      hash = getAttr(chunk, 'data-hash');
-      if (hash) break;
-    }
+    if (getAttr(chunk, 'data-type') !== mode) continue;
+    const hash = getAttr(chunk, 'data-hash');
+    if (!hash || seenHashes.has(hash)) continue;
+    seenHashes.add(hash);
+    candidates.push({ hash, serverName: getAttr(chunk, 'data-server-name') || 'Unknown server' });
   }
 
-  // Fallback to first available server for this mode if ZokoAnime is absent
-  if (!hash) {
-    for (const chunk of html.split('server-item').slice(1)) {
-      if (getAttr(chunk, 'data-type') === mode) {
-        hash = getAttr(chunk, 'data-hash');
-        if (hash) break;
-      }
-    }
-  }
+  // Prefer the historically reliable server first, then try the other HiAnime
+  // mirrors for this same mode if a provider is down or its embed is malformed.
+  candidates.sort((a, b) => Number(b.serverName === SERVER_NAME) - Number(a.serverName === SERVER_NAME));
+  if (!candidates.length) throw new Error(`No compatible stream server found for mode: ${mode}`);
 
-  if (!hash) throw new Error(`No compatible stream server found for mode: ${mode}`);
+  const failures = [];
+  for (const candidate of candidates) {
+    try {
+      const embedUrl = Buffer.from(candidate.hash, 'base64').toString('utf8').trim();
+      if (!/^https?:\/\//i.test(embedUrl)) throw new Error('Invalid embed URL');
+      const referer = embedUrl.replace(/^(https?:\/\/[^/]*).*$/, '$1/');
+      const embedRes = await curl(embedUrl, { referer: BASE_URL + '/' });
+      if (embedRes.status !== 200) throw new Error(`Embed returned HTTP ${embedRes.status}`);
 
-  const embedUrl = Buffer.from(hash, 'base64').toString('utf8').trim();
-  if (!/^https?:\/\//i.test(embedUrl)) throw new Error('Invalid embed url: ' + embedUrl);
+      const blobMatch = embedRes.body.match(/window\.__P="([^"]*)"/);
+      if (!blobMatch) throw new Error('Embed config (window.__P) not found');
+      const jsonText = deobfuscateBlob(blobMatch[1]);
+      let masterUrl = null;
+      let subtitles = [];
 
-  const referer = embedUrl.replace(/^(https?:\/\/[^/]*).*$/, '$1/');
-  const embedRes = await curl(embedUrl);
-  if (embedRes.status !== 200) throw new Error(`Failed to load embed page: HTTP ${embedRes.status}`);
-
-  const blobMatch = embedRes.body.match(/window\.__P="([^"]*)"/);
-  if (!blobMatch) throw new Error('Embed config (window.__P) not found');
-
-  const jsonText = deobfuscateBlob(blobMatch[1]);
-  let masterUrl = null;
-  let subtitles = [];
-
-  try {
-    const cfg = JSON.parse(jsonText);
-    const findM3u8 = (v) => {
-      if (typeof v === 'string') return /\.m3u8/i.test(v) ? v : null;
-      if (Array.isArray(v)) {
-        for (const x of v) {
-          const r = findM3u8(x);
-          if (r) return r;
+      try {
+        const cfg = JSON.parse(jsonText);
+        const findM3u8 = (v) => {
+          if (typeof v === 'string') return /\.m3u8/i.test(v) ? v : null;
+          if (Array.isArray(v)) {
+            for (const x of v) {
+              const result = findM3u8(x);
+              if (result) return result;
+            }
+          } else if (v && typeof v === 'object') {
+            if (typeof v.src === 'string' && /\.m3u8/i.test(v.src)) return v.src;
+            for (const x of Object.values(v)) {
+              const result = findM3u8(x);
+              if (result) return result;
+            }
+          }
+          return null;
+        };
+        masterUrl = findM3u8(cfg);
+        if (Array.isArray(cfg.subtitles)) {
+          subtitles = cfg.subtitles
+            .filter((s) => s && s.src)
+            .map((s) => ({
+              lang: s.lang || 'en',
+              label: s.label || s.lang || 'Subtitles',
+              src: String(s.src).replace(/\\\//g, '/'),
+              default: Boolean(s.default),
+            }));
         }
-      } else if (v && typeof v === 'object') {
-        if (typeof v.src === 'string' && /\.m3u8/i.test(v.src)) return v.src;
-        for (const x of Object.values(v)) {
-          const r = findM3u8(x);
-          if (r) return r;
-        }
+      } catch {
+        const match = jsonText.match(/"src":"([^"]*\\.m3u8[^"]*)"/);
+        masterUrl = match ? match[1] : null;
       }
-      return null;
-    };
-    masterUrl = findM3u8(cfg);
-    if (Array.isArray(cfg.subtitles)) {
-      subtitles = cfg.subtitles
-        .filter((s) => s && s.src)
-        .map((s) => ({
-          lang: s.lang || 'en',
-          label: s.label || s.lang || 'Subtitles',
-          src: s.src.replace(/\\\//g, '/'),
-          default: Boolean(s.default),
-        }));
+
+      if (!masterUrl) throw new Error('No master.m3u8 stream found in decrypted payload');
+      masterUrl = masterUrl.replace(/\\\//g, '/');
+
+      let audioTracks = [];
+      try {
+        const manifestRes = await curl(masterUrl, { referer }, 7000);
+        if (manifestRes.status === 200) audioTracks = parseHlsAudioTracks(manifestRes.body, masterUrl);
+      } catch (err) {
+        // Audio metadata is optional; keep the stream playable if inspection fails.
+        console.warn('[hianime] Could not inspect HLS audio tracks:', err.message);
+      }
+
+      const data = { masterUrl, referer, subtitles, audioTracks, serverName: candidate.serverName, resolution: 'adaptive' };
+      _streamCache.set(cacheKey, { ts: Date.now(), data });
+      return data;
+    } catch (err) {
+      failures.push(`${candidate.serverName}: ${err.message}`);
+      console.warn(`[hianime] Server ${candidate.serverName} failed for ${mode}; trying next mirror:`, err.message);
     }
-  } catch {
-    const m = jsonText.match(/"src":"([^"]*\.m3u8[^"]*)"/);
-    masterUrl = m ? m[1] : null;
   }
 
-  if (!masterUrl) throw new Error('No master.m3u8 stream found in decrypted payload');
-  masterUrl = masterUrl.replace(/\\\//g, '/');
-
-  const data = { masterUrl, referer, subtitles, resolution: '1080p' };
-  _streamCache.set(cacheKey, { ts: Date.now(), data });
-  return data;
+  throw new Error(`All HiAnime ${mode} servers failed: ${failures.join('; ')}`);
 }
 
 // ── High-Level Resolver ───────────────────────────────────────────────────────
