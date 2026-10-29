@@ -4,8 +4,8 @@
   "description": "AnimeVerse - Fast, clean, ad-free anime streaming aggregator with custom OTT cinema player",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch-path=server.js --watch-path=src server.js",
+    "start": "node init && node server.js",
+    "dev": "node init && node --watch-path=server.js --watch-path=src server.js",
     "desktop": "electron electron-main.js",
     "test": "node --test tests/*.test.mjs"
   },

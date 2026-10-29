@@ -50,8 +50,14 @@ function rewritePlaylist(text, playlistUrl, ref) {
         // Rewrite URI attributes in tags like #EXT-X-KEY or #EXT-X-MEDIA
         return line.replace(/URI="([^"]+)"/g, (_, u) => `URI="${proxiedUrl(abs(u), ref)}"`);
       }
-      // Line is a segment or sub-playlist URL
-      return proxiedUrl(abs(t), ref);
+      // Line is a segment or sub-playlist URL.
+      // Proxy sub-playlists (.m3u8), but leave media segments (.ts, .ts.jpg, .m4s, etc.)
+      // pointing directly to the high-speed CDN to avoid Sydney proxy latency bottlenecks.
+      const targetUrl = abs(t);
+      if (/\.m3u8(\?|$)/i.test(targetUrl)) {
+        return proxiedUrl(targetUrl, ref);
+      }
+      return targetUrl;
     })
     .join('\n');
 }
@@ -273,14 +279,14 @@ async function prewarmPlaylist(masterUrl, ref) {
     const masterOutput = await fetchAndRewritePlaylist(masterUrl, ref);
     if (!masterOutput) return;
 
-    // Find all variant playlist URLs inside master
+    // Find all variant playlist and audio playlist URLs inside master
     const lines = masterOutput.split(/\r?\n/);
     const variantUrls = [];
     for (const line of lines) {
       const t = line.trim();
-      if (t && !t.startsWith('#') && t.includes('/api/stream/proxy?url=')) {
+      if (t && t.includes('/api/stream/proxy?url=')) {
         try {
-          const match = t.match(/url=([^&]+)/);
+          const match = t.match(/url=([^&"]+)/);
           if (match) {
             variantUrls.push(decodeURIComponent(match[1]));
           }
@@ -299,4 +305,5 @@ async function prewarmPlaylist(masterUrl, ref) {
 module.exports = {
   handleProxy,
   prewarmPlaylist,
+  rewritePlaylist,
 };
