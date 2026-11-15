@@ -30,8 +30,8 @@ export default function Home() {
     <main>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Anime - Vers home">
-          <span className="brand-mark">A<span>V</span></span>
-          <span>ANIME <b>- VERS</b></span>
+          <img className="brand-logo" src="https://raw.githubusercontent.com/BrijeshShekhaliya/anime-verse-mobile-app/main/assets/logo.png" alt="" width="42" height="42" />
+          <span className="brand-wordmark"><span className="brand-anime">ANIME</span><span className="brand-verse">VERSE</span></span>
         </a>
         <nav className="nav-links" aria-label="Main navigation">
           <a href="#features">Features</a>
@@ -140,7 +140,7 @@ export default function Home() {
       </section>
 
       <footer className="site-footer">
-        <a className="brand" href="#top"><span className="brand-mark">A<span>V</span></span><span>ANIME <b>- VERS</b></span></a>
+        <a className="brand" href="#top" aria-label="Anime - Vers home"><img className="brand-logo" src="https://raw.githubusercontent.com/BrijeshShekhaliya/anime-verse-mobile-app/main/assets/logo.png" alt="" width="42" height="42" /><span className="brand-wordmark"><span className="brand-anime">ANIME</span><span className="brand-verse">VERSE</span></span></a>
         <span className="footer-copy">Made for anime fans. © {new Date().getFullYear()} Anime - Vers.</span>
         <a className="back-top" href="#top">Back to top ↑</a>
       </footer>
