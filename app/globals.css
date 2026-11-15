@@ -102,3 +102,34 @@ h1 em,h2 em{font-style:normal;color:var(--orange)}
 @media(max-width:850px){.hero{grid-template-columns:1fr;gap:0;padding-top:75px}.hero-copy{max-width:620px}.hero-art{height:475px;margin-top:10px}.section-heading{display:block}.section-heading>p{margin-top:25px}.download-panel{padding:45px}.download-stamp{width:190px;height:190px}.faq{gap:40px}.site-footer{margin:0 36px}}
 @media(max-width:600px){.site-header{height:70px;padding:0 20px}.nav-links{display:none}.section-wrap{padding-left:22px;padding-right:22px}.hero{padding-top:62px;min-height:auto}.hero h1{font-size:51px;letter-spacing:-2.8px}.hero-description{font-size:14px}.hero-actions{gap:18px}.hero-art{height:420px;transform:scale(.9);transform-origin:top center;margin-bottom:-28px}.phone-front{transform:translate(25px,0) rotate(5deg)}.phone-back{transform:translate(-105px,25px) rotate(-11deg)}.trust-inner{height:auto;min-height:64px;gap:10px;justify-content:center;flex-wrap:wrap;padding-top:16px;padding-bottom:16px;font-size:8px}.trust-inner span:first-child{width:100%;text-align:center}.features{padding-top:85px;padding-bottom:85px}.section-heading h2,.download-copy h2,.how h2{font-size:43px}.feature-grid{grid-template-columns:1fr}.feature-card{min-height:205px}.download-band{padding-bottom:85px}.download-panel{padding:35px 25px;min-height:0}.download-stamp{display:none}.download-copy h2{font-size:42px}.how{padding-bottom:85px}.steps-grid{grid-template-columns:1fr;gap:25px}.faq{grid-template-columns:1fr;gap:25px;padding-top:70px;padding-bottom:75px}.faq h2{font-size:43px}.site-footer{margin:0 22px;flex-wrap:wrap;gap:15px}.footer-copy{order:3;width:100%}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+
+/* Motion polish: restrained, quick and respectful of reduced-motion settings. */
+@keyframes fade-up { from { opacity: 0; transform: translate3d(0,22px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }
+@keyframes soft-float { 0%,100% { transform: translate3d(28px,8px,0) rotate(5deg); } 50% { transform: translate3d(28px,-5px,0) rotate(4deg); } }
+@keyframes glow-breathe { 0%,100% { opacity:.65; transform:scale(.94); } 50% { opacity:1; transform:scale(1.06); } }
+@keyframes orbit-turn { to { transform:rotate(335deg); } }
+@keyframes pulse-dot { 0%,100% { box-shadow:0 0 0 0 rgba(255,107,53,.42); } 50% { box-shadow:0 0 0 7px rgba(255,107,53,0); } }
+.hero-copy { animation:fade-up .75s cubic-bezier(.2,.7,.2,1) both; }
+.hero-art { animation:fade-up .9s .12s cubic-bezier(.2,.7,.2,1) both; }
+.art-glow { animation:glow-breathe 7s ease-in-out infinite; }
+.orbit-one { animation:orbit-turn 42s linear infinite; }
+.phone-front { animation:soft-float 6s ease-in-out infinite; }
+.live-dot,.caption-dot { animation:pulse-dot 2.5s ease-in-out infinite; }
+.feature-card,.step,.faq-list details { transition:transform .28s ease,border-color .28s ease,background .28s ease; }
+.feature-card:hover { transform:translateY(-7px); border-color:rgba(255,107,53,.42); background:linear-gradient(145deg,#201a1b,#111014); }
+.feature-card:hover .feature-icon { transform:rotate(-8deg) scale(1.08); }
+.feature-icon { transition:transform .3s ease; }
+.step:hover { transform:translateX(6px); border-color:rgba(255,107,53,.55); }
+.faq-list details[open] { padding-left:12px; border-color:rgba(255,107,53,.4); }
+.faq-list summary span { transition:transform .25s ease; }
+.faq-list details[open] summary span { transform:rotate(45deg); }
+.button-primary { position:relative; overflow:hidden; }
+.button-primary:after { content:"";position:absolute;inset:-40% auto -40% -45%;width:28%;transform:skewX(-20deg);background:rgba(255,255,255,.2);transition:left .55s ease; }
+.button-primary:hover:after { left:125%; }
+@supports (animation-timeline:view()) {
+  .feature-card,.step,.faq-list details,.download-panel { animation:fade-up linear both; animation-timeline:view(); animation-range:entry 0% entry 30%; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .hero-copy,.hero-art,.art-glow,.orbit-one,.phone-front,.live-dot,.caption-dot,.feature-card,.step,.faq-list details,.download-panel { animation:none!important; }
+  .feature-card,.step,.faq-list details,.feature-icon { transition:none!important; }
+}
