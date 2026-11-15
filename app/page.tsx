@@ -25,6 +25,16 @@ const steps = [
   ["03", "Press play", "Settle in and enjoy your next episode."],
 ];
 
+const appScreens = [
+  { src: "/images/app-showcase/player.jpg", alt: "Anime - Vers video player with playback controls and quality options", title: "A player built around the episode", description: "Keep playback controls, audio, subtitles and quality close at hand.", wide: true },
+  { src: "/images/app-showcase/details.jpg", alt: "Anime - Vers anime details screen showing Attack on Titan", title: "Discover every detail", description: "Explore a series, see its details and pick up where you left off." },
+  { src: "/images/app-showcase/episodes.jpg", alt: "Anime - Vers episode list for Attack on Titan", title: "Find the right episode", description: "Browse seasons and episodes in a clear, easy-to-follow list." },
+  { src: "/images/app-showcase/recommendations.jpg", alt: "Anime - Vers more like this anime recommendations", title: "Find your next favourite", description: "Discover more series with recommendations based on what you enjoy." },
+  { src: "/images/app-showcase/watchlist.jpg", alt: "Anime - Vers My List screen with saved anime", title: "Your list, your way", description: "Keep the anime you want to watch together in one place." },
+  { src: "/images/app-showcase/history.jpg", alt: "Anime - Vers watch history screen", title: "Pick up where you left off", description: "Quickly revisit the shows you've recently watched." },
+  { src: "/images/app-showcase/settings.jpg", alt: "Anime - Vers settings for audio language, title language and streaming quality", title: "Set it up your way", description: "Choose your preferred languages, streaming quality and launch sound." },
+];
+
 export default function Home() {
   return (
     <main>
@@ -34,6 +44,7 @@ export default function Home() {
           <span className="brand-wordmark"><span className="brand-anime">ANIME</span><span className="brand-verse">VERSE</span></span>
         </a>
         <nav className="nav-links" aria-label="Main navigation">
+          <a href="#screens">App screens</a>
           <a href="#features">Features</a>
           <a href="#how-it-works">How it works</a>
           <a href="#faq">FAQ</a>
@@ -86,6 +97,24 @@ export default function Home() {
 
       <section className="trust-strip">
         <div className="section-wrap trust-inner"><span>BUILT FOR THE WAY YOU WATCH</span><i/><span>DISCOVER</span><i/><span>PRESS PLAY</span><i/><span>REPEAT</span></div>
+      </section>
+
+      <section className="app-showcase section-wrap" id="screens">
+        <div className="showcase-heading">
+          <div><div className="eyebrow">A LOOK INSIDE ANIME - VERS</div><h2>Your anime world,<br/><em>in your hands.</em></h2></div>
+          <p>Take a closer look at the app experience — from discovering a series to settling into an episode.</p>
+        </div>
+        <div className="showcase-grid">
+          {appScreens.map((screen, index) => (
+            <article className={`showcase-card ${screen.wide ? "showcase-wide" : ""}`} key={screen.src}>
+              <div className="showcase-image-wrap">
+                <img src={screen.src} alt={screen.alt} loading="lazy" decoding="async" />
+                <span className="showcase-index">{String(index + 1).padStart(2, "0")}</span>
+              </div>
+              <div className="showcase-caption"><div><h3>{screen.title}</h3><p>{screen.description}</p></div><span aria-hidden="true">↗</span></div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="features section-wrap" id="features">
