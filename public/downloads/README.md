@@ -1,0 +1,1 @@
+Add the production Android APK in this folder and name it anime-vers.apk. The website download buttons already link to /downloads/anime-vers.apk.
