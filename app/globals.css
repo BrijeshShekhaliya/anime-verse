@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Orbitron:wght@900&display=swap');
 
 :root{--bg:#0b0b0e;--panel:#121216;--panel2:#19191f;--text:#f4f1ee;--muted:#a09da5;--orange:#ff6b35;--line:rgba(255,255,255,.1)}
 *{box-sizing:border-box}
@@ -135,7 +135,6 @@ h1 em,h2 em{font-style:normal;color:var(--orange)}
 }
 
 /* Exact mobile-app brand lockup: Orbitron 900, silver ANIME and fire-gradient VERSE. */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
 .brand{gap:8px;letter-spacing:0;font-family:'Orbitron',sans-serif}
 .brand-logo{display:block;width:42px;height:42px;object-fit:contain;flex:0 0 auto}
 .brand-wordmark{display:flex;align-items:center;gap:5px;font-family:'Orbitron',sans-serif;font-size:15px;font-weight:900;line-height:1.25;letter-spacing:1.2px;white-space:nowrap}
