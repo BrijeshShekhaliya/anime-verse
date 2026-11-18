@@ -63,6 +63,18 @@
   async function api(path, ttlMs = 5 * 60 * 1000) {
     const hit = memo.get(path);
     if (hit && Date.now() - hit.t < ttlMs) return hit.data;
+    if (!hit && typeof sessionStorage !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem(`av_api_${path}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && Date.now() - parsed.t < ttlMs) {
+            memo.set(path, parsed);
+            return parsed.data;
+          }
+        }
+      } catch {}
+    }
     if (inflightApi.has(path)) return inflightApi.get(path);
 
     const attempt = async () => {
@@ -86,6 +98,11 @@
           data = await attempt();
         }
         memo.set(path, { t: Date.now(), data });
+        if (typeof sessionStorage !== 'undefined' && !path.includes('/stream/')) {
+          try {
+            sessionStorage.setItem(`av_api_${path}`, JSON.stringify({ t: Date.now(), data }));
+          } catch {}
+        }
         return data;
       } catch (err) {
         if (hit) return hit.data; // stale beats an error page
@@ -1234,6 +1251,16 @@
       return 'SD';
     }
 
+    function setQualityBadgeUI(badge, labelText) {
+      if (chipQualityBadge) {
+        chipQualityBadge.textContent = badge;
+        chipQualityBadge.className = `quality-badge-tag ${badge.toLowerCase()}`;
+      }
+      if (chipQualityLabel) {
+        chipQualityLabel.textContent = labelText;
+      }
+    }
+
     // Contrast & Video Enhancement Engine
     let currentContrast = localStorage.getItem('animeverse_contrast') || 'standard';
     const CONTRAST_LABELS = {
@@ -1246,9 +1273,20 @@
       currentContrast = mode;
       try { localStorage.setItem('animeverse_contrast', mode); } catch {}
       if (playerMount) playerMount.dataset.contrast = mode;
-      if (chipContrastLabel) chipContrastLabel.textContent = CONTRAST_LABELS[mode] || 'Standard';
     }
     applyContrast(currentContrast);
+
+    // Scrubber Reset Helper: Instantly zeroes out progress and times
+    function resetScrubberUI(targetTime = 0) {
+      playbackCurrentTime = targetTime;
+      playbackDuration = 0;
+      if (scrubberProgress) scrubberProgress.style.width = '0%';
+      if (scrubberThumb) scrubberThumb.style.left = '0%';
+      if (scrubberBuffered) scrubberBuffered.style.width = '0%';
+      if (curTimeDisplay) curTimeDisplay.textContent = fmtTime(targetTime);
+      if (durTimeDisplay) durTimeDisplay.textContent = '0:00';
+      if (scrubberBubble) scrubberBubble.textContent = fmtTime(targetTime);
+    }
 
     // Teardown: Guarantees MULTIPLE PLAYERS NEVER RUN AT ONCE
     function teardownPlayer() {
@@ -1271,6 +1309,7 @@
       if (playerMount) {
         playerMount.innerHTML = '';
       }
+      resetScrubberUI(0);
     }
 
     function showLoader(msg = 'Connecting to stream...') {
@@ -1318,7 +1357,19 @@
       let langName = currentLang === 'dub' ? 'English' : 'Japanese';
       let badgeText = currentLang === 'dub' ? 'EN' : 'JP';
       if (activeHls && activeHls.audioTracks && activeHls.audioTracks.length > 1) {
-        const curTrack = activeHls.audioTracks[activeHls.audioTrack] || activeHls.audioTracks[0];
+        let curIdx = activeHls.audioTrack;
+        if (curIdx < 0) {
+          curIdx = activeHls.audioTracks.findIndex((t) => {
+            const raw = `${t.name || ''} ${t.lang || ''}`.toLowerCase();
+            return currentLang === 'dub'
+              ? (raw.includes('en') || raw.includes('eng') || raw.includes('dub'))
+              : (raw.includes('ja') || raw.includes('jp') || raw.includes('sub'));
+          });
+          if (curIdx >= 0) {
+            activeHls.audioTrack = curIdx;
+          }
+        }
+        const curTrack = (curIdx >= 0 && activeHls.audioTracks[curIdx]) || null;
         if (curTrack) {
           const raw = `${curTrack.name || ''} ${curTrack.lang || ''}`.toLowerCase();
           if (raw.includes('en') || raw.includes('eng')) {
@@ -1450,7 +1501,12 @@
 
     // Scrubber & Progress Bar
     function updateScrubberUI(cur, dur, buf) {
-      if (!dur || isNaN(dur) || dur <= 0) return;
+      if (!dur || isNaN(dur) || dur <= 0) {
+        if (!isScrubbing && curTimeDisplay) {
+          curTimeDisplay.textContent = fmtTime(cur);
+        }
+        return;
+      }
       const curPct = Math.min(100, Math.max(0, (cur / dur) * 100));
       if (!isScrubbing) {
         if (scrubberProgress) scrubberProgress.style.width = `${curPct}%`;
@@ -1697,9 +1753,16 @@
         `;
         autoBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (activeHls) activeHls.currentLevel = -1;
-          if (chipQualityBadge) chipQualityBadge.textContent = 'AUTO';
-          if (chipQualityLabel) chipQualityLabel.textContent = 'Auto';
+          if (activeHls) {
+            activeHls.currentLevel = -1;
+            const lvlIdx = activeHls.loadLevel !== -1 ? activeHls.loadLevel : (activeHls.levels.length - 1);
+            const lvl = activeHls.levels[lvlIdx];
+            if (lvl && lvl.height) {
+              setQualityBadgeUI(qualityBadgeName(lvl.height), `${lvl.height}p`);
+            } else {
+              setQualityBadgeUI('AUTO', 'Auto');
+            }
+          }
           closeMiniMenu();
         });
         miniMenuOptions.appendChild(autoBtn);
@@ -1718,8 +1781,7 @@
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (activeHls) activeHls.currentLevel = idx;
-            if (chipQualityBadge) chipQualityBadge.textContent = badge;
-            if (chipQualityLabel) chipQualityLabel.textContent = `${lvl.height}p`;
+            setQualityBadgeUI(badge, `${lvl.height}p`);
             closeMiniMenu();
           });
           miniMenuOptions.appendChild(btn);
@@ -1983,7 +2045,7 @@
       }
     }
 
-    // Unified Stream Loader (HLS Native OTT Pipeline with 120s buffer & zero browser controls)
+    // Unified Stream Loader (HLS Native OTT Pipeline with snappy buffer & zero browser controls)
     async function loadStream(explicitResumeTime = null) {
       const thisGen = ++currentResolveGen;
       const s = getActiveServer();
@@ -1994,10 +2056,14 @@
 
       cancelUpNext();
       upNextCancelled = false;
-      playbackCurrentTime = 0;
+      playbackCurrentTime = targetResumeSec;
       playbackDuration = 0;
       cachedSubtitles = [];
       activeSubIndex = -1;
+
+      // Teardown stale previous video and immediately zero out progress/time UI
+      teardownPlayer();
+      resetScrubberUI(targetResumeSec);
 
       // Sync audio badge
       syncAudioBadge();
@@ -2115,13 +2181,15 @@
             autoStartLoad: true,
             enableWorker: true,
             startPosition: targetResumeSec > 1.5 ? targetResumeSec : -1,
-            startFragPrefetch: true,
+            startFragPrefetch: false,
             progressive: false,
             lowLatencyMode: false,
-            maxBufferLength: 120, // 2 minutes forward buffer
-            maxMaxBufferLength: 300, // up to 5 minutes
-            backBufferLength: 120, // 2 minutes back buffer for instant backward scrubbing
-            maxBufferSize: 128 * 1024 * 1024, // 128 MB buffer
+            maxBufferLength: 30, // 30s forward buffer
+            maxMaxBufferLength: 60, // capped at 60s
+            backBufferLength: 30, // 30s back buffer
+            maxBufferSize: 30 * 1024 * 1024, // 30 MB buffer
+            maxBufferHole: 0.5,
+            highBufferWatchdogPeriod: 2,
             manifestLoadingTimeOut: 20000,
             levelLoadingTimeOut: 20000,
             fragLoadingTimeOut: 25000,
@@ -2130,6 +2198,21 @@
           activeHls = hls;
           hls.loadSource(finalStreamUrl);
           hls.attachMedia(video);
+
+          const updateActiveQualityChip = () => {
+            if (!activeHls || !activeHls.levels || activeHls.levels.length === 0) return;
+            const lvlIdx = activeHls.currentLevel !== -1
+              ? activeHls.currentLevel
+              : (activeHls.loadLevel !== -1 ? activeHls.loadLevel : (activeHls.levels.length - 1));
+            const lvl = activeHls.levels[lvlIdx];
+            if (lvl && lvl.height) {
+              const badge = qualityBadgeName(lvl.height);
+              setQualityBadgeUI(badge, `${lvl.height}p`);
+            }
+          };
+
+          hls.on(Hls.Events.LEVEL_SWITCHED, updateActiveQualityChip);
+          hls.on(Hls.Events.LEVEL_LOADED, updateActiveQualityChip);
 
           let restored = false;
           const applyResume = () => {
@@ -2152,13 +2235,7 @@
             if (thisGen !== currentResolveGen) return;
             applyResume();
             hideLoader();
-
-            if (hls.levels && hls.levels.length > 0) {
-              const bestLevel = hls.levels[hls.levels.length - 1];
-              if (chipQualityBadge) {
-                chipQualityBadge.textContent = qualityBadgeName(bestLevel.height);
-              }
-            }
+            updateActiveQualityChip();
 
             if (hls.audioTracks && hls.audioTracks.length > 1) {
               const targetTrackIdx = hls.audioTracks.findIndex((t) => {
@@ -2283,9 +2360,6 @@
     // Up Next Next-Episode Metadata Helper
     function getNextEpMeta() {
       if (currentEp < episodes.length) {
-        if (a.airing && currentSeason === detectedSeason && (currentEp + 1) > availableEp) {
-          return null;
-        }
         const nextEpObj = episodes.find((e) => e.episode_number === currentEp + 1) || {
           episode_number: currentEp + 1,
           name: `Episode ${currentEp + 1}`,
@@ -2327,11 +2401,23 @@
     function playNextNow() {
       cancelUpNext();
       const nextMeta = getNextEpMeta();
-      if (!nextMeta) return;
-      if (nextMeta.isNextSeason) {
-        switchSeasonAndEpisode(nextMeta.season, 1);
-      } else {
-        switchEpisode(nextMeta.episode);
+      if (nextMeta) {
+        if (nextMeta.isNextSeason) {
+          switchSeasonAndEpisode(nextMeta.season, 1);
+        } else {
+          switchEpisode(nextMeta.episode);
+        }
+        return;
+      }
+      // Direct fallback if getNextEpMeta returns null
+      if (currentEp < episodes.length) {
+        switchEpisode(currentEp + 1);
+        return;
+      }
+      const nextSeason = seasons && seasons.find((s) => s.season_number > currentSeason);
+      if (nextSeason) {
+        switchSeasonAndEpisode(nextSeason.season_number, 1);
+        return;
       }
     }
 
@@ -2432,6 +2518,18 @@
         localStorage.setItem(`animeverse_season_${a.id}`, String(currentSeason));
         localStorage.setItem(`animeverse_ep_${a.id}`, String(currentEp));
       } catch {}
+
+      // CRITICAL: Synchronously reset scrubber UI and times to 0:00 to prevent old episode timestamp from lingering
+      resetScrubberUI(0);
+
+      // Update next episode buttons visibility
+      const hasNext = currentEp < episodes.length || Boolean(seasons && seasons.find((s) => s.season_number > currentSeason));
+      if (chipNextEp) {
+        chipNextEp.style.display = hasNext ? 'inline-flex' : 'none';
+      }
+      if (btnNextTop) {
+        btnNextTop.style.display = hasNext ? 'inline-flex' : 'none';
+      }
 
       const epObj = episodes.find((e) => e.episode_number === currentEp) || {
         episode_number: currentEp,

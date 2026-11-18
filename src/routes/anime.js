@@ -43,9 +43,10 @@ const getDetail = (id) => fresh(`detail:${id}`, TTL.detail, KEEP.detail, () => p
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
-function handle(fn) {
+function handle(fn, cacheControl = null) {
   return async (req, res) => {
     try {
+      if (cacheControl) res.set('Cache-Control', cacheControl);
       res.json(await fn(req, res));
     } catch (err) {
       console.error(`[api] ${req.originalUrl}: ${err.message}`);
@@ -55,16 +56,23 @@ function handle(fn) {
   };
 }
 
-// Runs the loaders one after another (both APIs are rate limited) and keeps
-// whatever succeeded so one failing row never blanks the home page.
+// Runs the loaders concurrently with safe fallback so one failing row never blanks the home page.
 async function settle(entries) {
   const out = {};
-  for (const [key, loader] of entries) {
-    try {
-      out[key] = await loader();
-    } catch (err) {
-      console.warn(`[home] ${key} failed: ${err.message}`);
-      out[key] = [];
+  const results = await Promise.allSettled(
+    entries.map(async ([key, loader]) => {
+      try {
+        const val = await loader();
+        return { key, val };
+      } catch (err) {
+        console.warn(`[home] ${key} failed: ${err.message}`);
+        return { key, val: [] };
+      }
+    })
+  );
+  for (const r of results) {
+    if (r.status === 'fulfilled') {
+      out[r.value.key] = r.value.val;
     }
   }
   return out;
@@ -118,7 +126,7 @@ function warmUp() {
 }
 
 router.get('/', (req, res) => res.json({ status: 'ok', name: 'AnimeVerse API' }));
-router.get('/home', handle(() => getHome()));
+router.get('/home', handle(() => getHome(), 'public, s-maxage=1800, stale-while-revalidate=86400'));
 
 router.get(
   '/anime/:id',
@@ -140,7 +148,7 @@ router.get(
       return { ...anime, ...visuals, tmdbPoster: null, seasonCount: null, episodeCount: null, tmdbStatus: null, imdb: imdbRating };
     }
     return { ...anime, ...visuals, ...(art ? artwork.seriesFacts(art, anime) : {}), imdb: imdbRating };
-  })
+  }, 'public, s-maxage=3600, stale-while-revalidate=86400')
 );
 
 router.get(
@@ -149,7 +157,7 @@ router.get(
     const id = req.params.id;
     // A failure is not cached as "no cast", so the next visit tries again.
     return fresh(`extras:${id}`, TTL.detail, KEEP.detail, () => provider.extras(id));
-  })
+  }, 'public, s-maxage=3600, stale-while-revalidate=86400')
 );
 
 router.get(
@@ -239,7 +247,7 @@ router.get(
 
       return result;
     });
-  })
+  }, 'public, s-maxage=1800, stale-while-revalidate=86400')
 );
 
 router.get(
@@ -341,7 +349,7 @@ router.get(
       page: Math.max(1, Math.min(200, parseInt(req.query.page, 10) || 1)),
     };
     return loadSearch(params);
-  })
+  }, 'public, s-maxage=900, stale-while-revalidate=3600')
 );
 
 router.get(
@@ -354,12 +362,12 @@ router.get(
       throw err;
     }
     return fresh(`schedule:${day}`, TTL.schedule, KEEP.schedule, () => provider.schedule(day));
-  })
+  }, 'public, s-maxage=3600, stale-while-revalidate=86400')
 );
 
 router.get(
   '/genres',
-  handle(() => fresh('genres', TTL.genres, KEEP.genres, () => provider.genres()))
+  handle(() => fresh('genres', TTL.genres, KEEP.genres, () => provider.genres()), 'public, s-maxage=86400, stale-while-revalidate=604800')
 );
 
 router.get('/status', (req, res) => {

@@ -3098,9 +3098,38 @@ body.is-scrolling * {
   font-weight: 800;
   color: #4ADE80;
   background: rgba(74, 222, 128, 0.16);
+  border: 1px solid rgba(74, 222, 128, 0.3);
   border-radius: 3px;
   padding: 1px 4px;
   line-height: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.quality-badge-tag.fhd,
+.quality-badge-tag.2k,
+.quality-badge-tag.4k {
+  color: #4ADE80;
+  background: rgba(74, 222, 128, 0.18);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+}
+
+.quality-badge-tag.hd {
+  color: #60A5FA;
+  background: rgba(96, 165, 250, 0.18);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+}
+
+.quality-badge-tag.sd {
+  color: #FBBF24;
+  background: rgba(251, 191, 36, 0.18);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.quality-badge-tag.auto {
+  color: #A78BFA;
+  background: rgba(167, 139, 250, 0.18);
+  border: 1px solid rgba(167, 139, 250, 0.35);
 }
 
 .enhance-chip {
