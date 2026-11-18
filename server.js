@@ -59,18 +59,25 @@ app.use((req, res, next) => {
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
-dubs.start();
-animeRoutes.warmUp();
+if (require.main === module) {
+  dubs.start();
+  animeRoutes.warmUp();
 
-app.listen(PORT, (err) => {
-  if (err) {
-    console.error(`Could not start on port ${PORT}: ${err.message}`);
-    console.error('Stop the other server using this port, or run with a different PORT.');
-    process.exit(1);
-  }
-  console.log('=======================================================');
-  console.log(' AnimeVerse is running');
-  console.log(` Open:  http://localhost:${PORT}`);
-  console.log(` API:   http://localhost:${PORT}/api/home`);
-  console.log('=======================================================');
-});
+  app.listen(PORT, (err) => {
+    if (err) {
+      console.error(`Could not start on port ${PORT}: ${err.message}`);
+      console.error('Stop the other server using this port, or run with a different PORT.');
+      process.exit(1);
+    }
+    console.log('=======================================================');
+    console.log(' AnimeVerse is running');
+    console.log(` Open:  http://localhost:${PORT}`);
+    console.log(` API:   http://localhost:${PORT}/api/home`);
+    console.log('=======================================================');
+  });
+} else {
+  dubs.start();
+  animeRoutes.warmUp();
+}
+
+module.exports = app;

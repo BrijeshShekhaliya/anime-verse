@@ -1,17 +1,19 @@
 {
   "version": 2,
-  "framework": null,
-  "outputDirectory": "public",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "https://13.236.161.33.sslip.io/api/:match*"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     },
     {
-      "source": "/:path*",
-      "destination": "/"
+      "source": "/api",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/((?!api/|.*\\.[\\w]+$).*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [

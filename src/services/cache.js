@@ -80,19 +80,45 @@ class InMemoryCache {
 }
 
 // Small JSON snapshots so a restart can serve the last good page immediately.
-const SNAPSHOT_DIR = path.join(__dirname, '..', '..', '.cache');
+const os = require('os');
+const BUNDLED_SNAPSHOT_DIR = path.join(__dirname, '..', '..', '.cache');
+const SEED_SNAPSHOT_DIR = path.join(__dirname, '..', 'data');
+const WRITABLE_SNAPSHOT_DIR = process.env.VERCEL
+  ? path.join(os.tmpdir(), '.cache')
+  : BUNDLED_SNAPSHOT_DIR;
+
 const snapshot = {
   read(name) {
+    // 1. Try writable directory (e.g. updated in current container lifecycle)
     try {
-      return JSON.parse(fs.readFileSync(path.join(SNAPSHOT_DIR, `${name}.json`), 'utf8'));
-    } catch {
-      return null;
-    }
+      const writableFile = path.join(WRITABLE_SNAPSHOT_DIR, `${name}.json`);
+      if (fs.existsSync(writableFile)) {
+        return JSON.parse(fs.readFileSync(writableFile, 'utf8'));
+      }
+    } catch {}
+
+    // 2. Try repo cache directory (if present in local dev)
+    try {
+      const bundledFile = path.join(BUNDLED_SNAPSHOT_DIR, `${name}.json`);
+      if (fs.existsSync(bundledFile)) {
+        return JSON.parse(fs.readFileSync(bundledFile, 'utf8'));
+      }
+    } catch {}
+
+    // 3. Try bundled static seed directory (src/data/home-seed.json)
+    try {
+      const seedFile = path.join(SEED_SNAPSHOT_DIR, `${name}-seed.json`);
+      if (fs.existsSync(seedFile)) {
+        return JSON.parse(fs.readFileSync(seedFile, 'utf8'));
+      }
+    } catch {}
+
+    return null;
   },
   write(name, data) {
     fs.promises
-      .mkdir(SNAPSHOT_DIR, { recursive: true })
-      .then(() => fs.promises.writeFile(path.join(SNAPSHOT_DIR, `${name}.json`), JSON.stringify(data)))
+      .mkdir(WRITABLE_SNAPSHOT_DIR, { recursive: true })
+      .then(() => fs.promises.writeFile(path.join(WRITABLE_SNAPSHOT_DIR, `${name}.json`), JSON.stringify(data)))
       .catch((err) => console.warn(`[cache] snapshot ${name} not saved: ${err.message}`));
   },
 };

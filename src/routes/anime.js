@@ -9,6 +9,7 @@ const tmdb = require('../services/tmdb');
 const artwork = require('../services/artwork');
 const hianime = require('../services/hianime');
 const streamProxy = require('../services/streamProxy');
+const animerulz = require('../services/animerulz');
 
 const TTL = {
   home: 30 * 60, // home rows refresh on their own every 30 minutes
@@ -48,7 +49,8 @@ function handle(fn) {
       res.json(await fn(req, res));
     } catch (err) {
       console.error(`[api] ${req.originalUrl}: ${err.message}`);
-      res.status(err.status === 404 ? 404 : 502).json({ error: 'Anime data is temporarily unavailable. Please try again shortly.' });
+      const status = typeof err.status === 'number' && err.status >= 400 && err.status < 600 ? err.status : 502;
+      res.status(status).json({ error: err.status === 400 ? err.message : 'Anime data is temporarily unavailable. Please try again shortly.' });
     }
   };
 }
@@ -253,12 +255,31 @@ router.get(
     const episode = Math.max(1, parseInt(req.query.episode, 10) || 1);
     const mode = req.query.mode === 'dub' ? 'dub' : 'sub';
 
-    const cacheKey = `stream:${title}:${season}:${episode}:${mode}`;
+    const anilistId = (req.query.id || req.query.anilistId || '').trim();
+    const cacheKey = `stream:${anilistId || title}:${season}:${episode}:${mode}`;
     if (req.query.refresh === '1') {
       cache.store?.delete(cacheKey);
     }
     const result = await cache.getOrSet(cacheKey, 60 * 60, async () => {
-      const resolved = await hianime.resolveStream({ title, romaji, season, episode, mode });
+      let resolved = null;
+      let sourceName = 'AnimeVerse (Fast Stream)';
+
+      // 1. Primary: AnimeRulz Multi-Audio Indian Server (in-band Hindi, English, Japanese, Tamil, Telugu)
+      try {
+        resolved = await animerulz.resolveAnimeRulzStream({ anilistId, title, episode, season });
+        if (resolved?.masterUrl) {
+          sourceName = resolved.source || 'AnimeVerse (Multi-Audio)';
+        }
+      } catch (err) {
+        // Transparent fallback to HiAnime
+      }
+
+      // 2. Fallback: HiAnime Direct Resolver
+      if (!resolved || !resolved.masterUrl) {
+        resolved = await hianime.resolveStream({ title, romaji, season, episode, mode });
+        sourceName = 'AnimeVerse (Fast Stream)';
+      }
+
       const ref = resolved.referer || 'https://zokoanime.video/';
       const proxiedMaster = `/api/stream/proxy?url=${encodeURIComponent(resolved.masterUrl)}&ref=${encodeURIComponent(ref)}`;
       const proxiedSubs = (resolved.subtitles || []).map((s) => ({
@@ -274,10 +295,10 @@ router.get(
 
       return {
         success: true,
-        source: 'HiAnime (Native)',
-        mode: resolved.mode,
-        seasonNumber: resolved.seasonNumber,
-        episodeNumber: resolved.episodeNumber,
+        source: sourceName,
+        mode: resolved.mode || mode,
+        seasonNumber: resolved.seasonNumber || season,
+        episodeNumber: resolved.episodeNumber || episode,
         streamUrl: proxiedMaster,
         rawMasterUrl: resolved.masterUrl,
         referer: ref,
