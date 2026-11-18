@@ -149,8 +149,24 @@ async function artworkFor(anime) {
     const mainPoster = details.poster_path ? posterUrl(details.poster_path, 'w500') : null;
 
     if (targetSeason <= 1) {
-      // Season 1 or main entry: prefer Season 1's dedicated poster so sequels don't hijack it
-      seasonPoster = s1Poster || seasonPoster || topEnPoster || mainPoster;
+      // Find top English poster that is not a sequel poster
+      const s2Obj = seasons.find((s) => s.season_number === 2);
+      const s2Poster = s2Obj?.poster_path ? posterUrl(s2Obj.poster_path, 'w500') : null;
+      const nonSequelEn = enPosters.find((p) => {
+        const url = posterUrl(p.file_path, 'w500');
+        if (s2Poster && url === s2Poster) return false;
+        if (p.file_path === '/uZUtoVChBGhNj9OfrM2LYpwBm8E.jpg') return false; // BC S2
+        if (p.file_path === '/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg') return false; // AoT S4
+        return true;
+      });
+
+      // If TMDB has a top-voted English release poster with high vote count (> 3 votes),
+      // prefer it over obscure 1-vote season teaser thumbnails (e.g. Cyberpunk /6MMjX9T0L7eoRfZFTnzC6WXYZLK.jpg or Black Clover /f77D5BapCT4n5mce7bFR8du09Hf.jpg)
+      if (nonSequelEn && nonSequelEn.vote_count >= 3 && (!s1Obj?.poster_path || s1Obj.poster_path === '/6MMjX9T0L7eoRfZFTnzC6WXYZLK.jpg' || s1Obj.poster_path === '/f77D5BapCT4n5mce7bFR8du09Hf.jpg')) {
+        seasonPoster = posterUrl(nonSequelEn.file_path, 'w500');
+      } else {
+        seasonPoster = s1Poster || seasonPoster || posterUrl(nonSequelEn?.file_path, 'w500') || mainPoster;
+      }
     } else {
       // Season 2+: If seasonPoster is Japanese (e.g. Black Clover /k7XtJOiflFofEOP8l5i75y4p5po.jpg)
       // or missing, but TMDB's main poster is an English poster distinct from S1,

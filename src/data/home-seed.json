@@ -5984,7 +5984,7 @@
       "scoredBy": null,
       "rank": 6,
       "popularity": null,
-      "members": 180066,
+      "members": 180090,
       "episodes": 13,
       "status": "Finished Airing",
       "airing": false,
@@ -6377,7 +6377,7 @@
       "scoredBy": null,
       "rank": 15,
       "popularity": null,
-      "members": 299209,
+      "members": 299306,
       "episodes": 13,
       "status": "Finished Airing",
       "airing": false,
@@ -6467,7 +6467,7 @@
       "scoredBy": null,
       "rank": 16,
       "popularity": null,
-      "members": 215693,
+      "members": 215793,
       "episodes": 13,
       "status": "Finished Airing",
       "airing": false,
@@ -11474,5 +11474,5 @@
     }
   ],
   "partial": false,
-  "updatedAt": "2026-11-18T11:01:03.033Z"
+  "updatedAt": "2026-11-18T11:14:38.367Z"
 }
