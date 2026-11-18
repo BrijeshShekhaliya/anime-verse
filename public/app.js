@@ -910,7 +910,7 @@
 
           <!-- Master OTT Player Controls Overlay (Fades out after 3.2s inactivity) -->
           <div class="cinema-player-overlay" id="playerOverlay">
-            <!-- Top Bar -->
+            <!-- Top Bar (Clean Mobile Layout: Back, Title, Next Ep, Autoplay Switch, Fit Button) -->
             <div class="overlay-top-bar">
               <div class="top-bar-left">
                 <a href="/anime/${esc(a.id)}" class="player-icon-btn back-btn" id="overlayBackBtn" title="Back to Anime" data-link>
@@ -918,88 +918,55 @@
                 </a>
                 <div class="player-title-block">
                   <div class="player-anime-name" id="overlayAnimeTitle">${esc(a.title)}</div>
-                  <div class="player-ep-sub">
-                    <span class="ep-badge" id="overlayEpBadge">S${currentSeason} · E${currentEp}</span>
-                    <span id="overlayEpName">${esc(currentEpObj.name || `Episode ${currentEp}`)}</span>
+                  <div class="player-ep-sub" id="overlayEpTitle">
+                    ${currentEpObj.name ? `E${currentEp} · ${esc(currentEpObj.name)}` : `Episode ${currentEp}`}
                   </div>
                 </div>
               </div>
-              <div class="quick-chips">
-                <button type="button" class="quick-chip" id="chipAudio" data-chip="audio" title="Audio Language">
-                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                  <span id="chipAudioLabel">Audio</span>
-                  <span class="chip-badge chip-badge-blue" id="chipAudioBadge">${currentLang === 'dub' ? 'EN' : 'JP'}</span>
-                </button>
-                <button type="button" class="quick-chip" id="chipQuality" data-chip="quality" title="Video Quality">
-                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                  <span id="chipQualityLabel">Quality</span>
-                  <span class="chip-badge chip-badge-green" id="chipQualityBadge">AUTO</span>
-                </button>
-                <button type="button" class="quick-chip" id="chipSubtitles" data-chip="subtitles" title="Subtitles">
-                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FDE047" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg>
-                  <span id="chipSubtitlesLabel">Subtitles</span>
-                  <span class="chip-badge chip-badge-yellow" id="chipSubtitlesBadge">EN</span>
-                </button>
-                <button type="button" class="quick-chip" id="chipSpeed" data-chip="speed" title="Playback Speed">
-                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FB923C" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <span id="chipSpeedLabel">1.0x</span>
-                </button>
-                <button type="button" class="quick-chip" id="chipContrast" data-chip="contrast" title="Video Enhancement">
-                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FFC12E" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z" fill="#FFC12E"/></svg>
-                  <span id="chipContrastLabel">Standard</span>
-                </button>
+              <div class="top-bar-right">
                 ${currentEp < episodes.length ? `
-                <button type="button" class="quick-chip next-ep-chip" id="chipNextEp" title="Next Episode">
-                  <span>Next Ep</span>
-                  <svg class="chip-ic" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
+                <button type="button" class="player-icon-btn top-next-btn" id="btnNextTop" title="Next Episode">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
                 </button>` : ''}
+                <button type="button" class="mobile-switch-wrap active" id="btnAutoplay" title="Autoplay Next Episode">
+                  <div class="mobile-switch-track">
+                    <div class="mobile-switch-knob"></div>
+                  </div>
+                </button>
+                <button type="button" class="player-fit-btn" id="btnFit" title="Screen Fit">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <rect x="2.5" y="5" width="19" height="14" rx="2.5" stroke="#2DD4BF" stroke-width="1.8" />
+                  </svg>
+                </button>
               </div>
             </div>
 
-            <!-- Center Action Zone -->
+            <!-- Center Action Zone: Rewind 10s, Pure White Play/Pause Glyph, Forward 10s -->
             <div class="overlay-center-zone">
-              <button type="button" class="center-btn prev-ep-btn" id="centerPrevEp" title="Previous Episode">
-                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.5"/></svg>
-              </button>
               <button type="button" class="center-btn seek-btn" id="centerSeekBack" title="Rewind 10s">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
                 <span class="seek-num">10</span>
               </button>
-              <button type="button" class="center-btn big-play-btn" id="centerPlayPause" title="Play / Pause">
-                <svg id="centerPlayIcon" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-                <svg id="centerPauseIcon" class="hidden" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              <button type="button" class="center-btn big-play-glyph" id="centerPlayPause" title="Play / Pause">
+                <svg id="centerPlayIcon" viewBox="0 0 24 24" fill="#ffffff"><polygon points="7 4 20 12 7 20 7 4"/></svg>
+                <svg id="centerPauseIcon" class="hidden" viewBox="0 0 24 24" fill="#ffffff"><rect x="6" y="4" width="4.5" height="16" rx="1.5"/><rect x="13.5" y="4" width="4.5" height="16" rx="1.5"/></svg>
               </button>
               <button type="button" class="center-btn seek-btn" id="centerSeekFwd" title="Forward 10s">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><polyline points="21 3 21 8 16 8"/></svg>
                 <span class="seek-num">10</span>
               </button>
-              <button type="button" class="center-btn next-ep-btn" id="centerNextEp" title="Next Episode">
-                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
-              </button>
             </div>
 
-            <!-- Bottom Bar -->
+            <!-- Bottom Bar (Mobile Architecture: Time + Fullscreen, Scrubber, Quick Chips Row) -->
             <div class="overlay-bottom-bar">
-              <!-- Scrubber -->
-              <div class="scrubber-container" id="playerScrubber">
-                <div class="scrubber-bubble" id="scrubberBubble">00:00</div>
-                <div class="scrubber-track">
-                  <div class="scrubber-buffered" id="scrubberBuffered"></div>
-                  <div class="scrubber-progress" id="scrubberProgress"></div>
-                  <div class="scrubber-thumb" id="scrubberThumb"></div>
+              <!-- Line 1: Time readout + Volume & Fullscreen -->
+              <div class="bottom-hud-row">
+                <div class="time-display">
+                  <span id="curTimeDisplay">0:00</span>
+                  <span class="time-dim"> / </span>
+                  <span class="time-dim" id="durTimeDisplay">00:00</span>
                 </div>
-              </div>
-
-              <!-- Bottom Controls Row -->
-              <div class="bottom-controls-row">
-                <div class="bottom-left-controls">
-                  <button type="button" class="player-icon-btn" id="btnPlayPause" title="Play / Pause (Space)">
-                    <svg id="bottomPlayIcon" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-                    <svg id="bottomPauseIcon" class="hidden" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-                  </button>
-                  <button type="button" class="player-icon-btn" id="btnNextEpBottom" title="Next Episode (N)">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
-                  </button>
+                <div class="bottom-hud-right">
                   <div class="volume-slider-group" id="volumeGroup">
                     <button type="button" class="player-icon-btn" id="btnMuteToggle" title="Mute / Unmute (M)">
                       <svg id="volIconHigh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
@@ -1011,28 +978,57 @@
                       </div>
                     </div>
                   </div>
-                  <div class="time-display">
-                    <span id="curTimeDisplay">00:00</span>
-                    <span class="time-sep">/</span>
-                    <span class="time-dur" id="durTimeDisplay">00:00</span>
-                  </div>
-                </div>
-
-                <div class="bottom-right-controls">
-                  <button type="button" class="player-toggle-btn active" id="btnAutoplay" title="Autoplay Next Episode">
-                    <span class="toggle-dot"></span><span>Autoplay</span>
-                  </button>
-                  <button type="button" class="player-icon-btn" id="btnPip" title="Picture-in-Picture">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor"/></svg>
-                  </button>
-                  <button type="button" class="player-icon-btn" id="btnTheater" title="Theater Mode (T)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="8" x2="22" y2="8"/></svg>
-                  </button>
                   <button type="button" class="player-icon-btn" id="btnFullscreen" title="Fullscreen (F)">
-                    <svg id="fsEnterIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><polyline points="21 15 21 21 15 21"/><polyline points="3 9 3 3 9 3"/></svg>
-                    <svg id="fsExitIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><polyline points="14 20 14 14 20 14"/><polyline points="10 4 10 10 4 10"/></svg>
+                    <svg id="fsEnterIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><polyline points="21 15 21 21 15 21"/><polyline points="3 9 3 3 9 3"/></svg>
+                    <svg id="fsExitIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><polyline points="14 20 14 14 20 14"/><polyline points="10 4 10 10 4 10"/></svg>
                   </button>
                 </div>
+              </div>
+
+              <!-- Line 2: Scrubber Track -->
+              <div class="scrubber-container" id="playerScrubber">
+                <div class="scrubber-bubble" id="scrubberBubble">00:00</div>
+                <div class="scrubber-track">
+                  <div class="scrubber-buffered" id="scrubberBuffered"></div>
+                  <div class="scrubber-progress" id="scrubberProgress"></div>
+                  <div class="scrubber-thumb" id="scrubberThumb"></div>
+                </div>
+              </div>
+
+              <!-- Line 3: Quick Chips Under Scrubber (Audio, Subtitles, Speed, Quality, Enhance, Next Episode) -->
+              <div class="bottom-chip-row">
+                <button type="button" class="mobile-chip" id="chipAudio" data-chip="audio" title="Audio Language">
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                  <span class="chip-label-text" id="chipAudioLabel">${currentLang === 'dub' ? 'English' : 'Japanese'}</span>
+                </button>
+
+                <button type="button" class="mobile-chip" id="chipSubtitles" data-chip="subtitles" title="Subtitles">
+                  <span class="sub-cc-tag">CC</span>
+                  <span class="chip-label-text" id="chipSubLabel">Off</span>
+                </button>
+
+                <button type="button" class="mobile-chip" id="chipSpeed" data-chip="speed" title="Playback Speed">
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FB923C" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span class="chip-label-text" id="chipSpeedLabel">1x</span>
+                </button>
+
+                <button type="button" class="mobile-chip" id="chipQuality" data-chip="quality" title="Video Quality">
+                  <span class="quality-badge-tag" id="chipQualityBadge">FHD</span>
+                  <span class="chip-label-text" id="chipQualityLabel">1080p</span>
+                </button>
+
+                <button type="button" class="mobile-chip enhance-chip" id="chipEnhance" data-chip="contrast" title="View Enhancement">
+                  <svg class="enhance-star" width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9L12 2z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg>
+                  <span class="enhance-text">Enhance</span>
+                </button>
+
+                <div class="chip-spacer"></div>
+
+                ${currentEp < episodes.length ? `
+                <button type="button" class="next-ep-pill" id="chipNextEp" title="Next Episode">
+                  <span>Next episode</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
+                </button>` : ''}
               </div>
             </div>
 
@@ -1147,27 +1143,31 @@
     const episodesCountBadge = $('#episodesCountBadge', view);
     const seasonSelector = $('#seasonSelector', view);
 
-    // Quick Chips
+    // Top Bar Actions
+    const btnNextTop = $('#btnNextTop', view);
+    const btnFit = $('#btnFit', view);
+
+    // Bottom Quick Chips
     const chipAudio = $('#chipAudio', view);
+    const chipAudioLabel = $('#chipAudioLabel', view);
     const chipAudioBadge = $('#chipAudioBadge', view);
     const chipQuality = $('#chipQuality', view);
     const chipQualityBadge = $('#chipQualityBadge', view);
+    const chipQualityLabel = $('#chipQualityLabel', view);
     const chipSubtitles = $('#chipSubtitles', view);
+    const chipSubLabel = $('#chipSubLabel', view);
     const chipSubtitlesBadge = $('#chipSubtitlesBadge', view);
     const chipSpeed = $('#chipSpeed', view);
     const chipSpeedLabel = $('#chipSpeedLabel', view);
-    const chipContrast = $('#chipContrast', view);
-    const chipContrastLabel = $('#chipContrastLabel', view);
+    const chipEnhance = $('#chipEnhance', view);
     const chipNextEp = $('#chipNextEp', view);
 
     // Center Action Buttons
-    const centerPrevEp = $('#centerPrevEp', view);
     const centerSeekBack = $('#centerSeekBack', view);
     const centerPlayPause = $('#centerPlayPause', view);
     const centerPlayIcon = $('#centerPlayIcon', view);
     const centerPauseIcon = $('#centerPauseIcon', view);
     const centerSeekFwd = $('#centerSeekFwd', view);
-    const centerNextEp = $('#centerNextEp', view);
 
     // Scrubber
     const playerScrubber = $('#playerScrubber', view);
@@ -1334,44 +1334,48 @@
     }
 
     function syncAudioBadge() {
-      if (!chipAudioBadge) return;
+      let langName = currentLang === 'dub' ? 'English' : 'Japanese';
+      let badgeText = currentLang === 'dub' ? 'EN' : 'JP';
       if (activeHls && activeHls.audioTracks && activeHls.audioTracks.length > 1) {
         const curTrack = activeHls.audioTracks[activeHls.audioTrack] || activeHls.audioTracks[0];
         if (curTrack) {
           const raw = `${curTrack.name || ''} ${curTrack.lang || ''}`.toLowerCase();
           if (raw.includes('en') || raw.includes('eng')) {
-            chipAudioBadge.textContent = 'EN';
-            return;
-          }
-          if (raw.includes('hi') || raw.includes('hin')) {
-            chipAudioBadge.textContent = 'HI';
-            return;
-          }
-          if (raw.includes('ja') || raw.includes('jp')) {
-            chipAudioBadge.textContent = 'JP';
-            return;
-          }
-          if (raw.includes('ta')) {
-            chipAudioBadge.textContent = 'TA';
-            return;
-          }
-          if (raw.includes('te')) {
-            chipAudioBadge.textContent = 'TE';
-            return;
-          }
-          if (curTrack.lang && curTrack.lang.length <= 3) {
-            chipAudioBadge.textContent = curTrack.lang.toUpperCase();
-            return;
+            langName = 'English';
+            badgeText = 'EN';
+          } else if (raw.includes('hi') || raw.includes('hin')) {
+            langName = 'Hindi';
+            badgeText = 'HI';
+          } else if (raw.includes('ja') || raw.includes('jp')) {
+            langName = 'Japanese';
+            badgeText = 'JP';
+          } else if (raw.includes('ta')) {
+            langName = 'Tamil';
+            badgeText = 'TA';
+          } else if (raw.includes('te')) {
+            langName = 'Telugu';
+            badgeText = 'TE';
+          } else if (curTrack.name) {
+            langName = curTrack.name;
+            badgeText = (curTrack.lang || 'AUD').slice(0, 3).toUpperCase();
           }
         }
       }
-      chipAudioBadge.textContent = currentLang === 'dub' ? 'EN' : 'JP';
+      if (chipAudioLabel) chipAudioLabel.textContent = langName;
+      if (chipAudioBadge) chipAudioBadge.textContent = badgeText;
     }
 
     if (chipNextEp) {
       chipNextEp.addEventListener('click', (e) => {
         e.stopPropagation();
-        nextEp();
+        playNextNow();
+      });
+    }
+
+    if (btnNextTop) {
+      btnNextTop.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playNextNow();
       });
     }
 
@@ -1577,7 +1581,7 @@
       isMenuOpen = false;
       activeMenuKey = null;
       playerMiniMenu?.classList.remove('open');
-      $$('.quick-chip', playerOverlay).forEach((c) => c.classList.remove('active'));
+      $$('.mobile-chip, .quick-chip', playerOverlay).forEach((c) => c.classList.remove('active'));
       resetIdleTimer();
     }
 
@@ -1593,17 +1597,18 @@
       for (let i = 0; i < tracks.length; i++) {
         tracks[i].mode = (i === index) ? 'showing' : 'disabled';
       }
-      if (chipSubtitlesBadge) {
-        if (index === -1) {
-          chipSubtitlesBadge.textContent = 'OFF';
-        } else {
-          const sub = cachedSubtitles[index];
-          chipSubtitlesBadge.textContent = (sub?.lang || 'EN').slice(0, 3).toUpperCase();
-        }
+      if (index === -1) {
+        if (chipSubLabel) chipSubLabel.textContent = 'Off';
+        if (chipSubtitlesBadge) chipSubtitlesBadge.textContent = 'OFF';
+      } else {
+        const sub = cachedSubtitles[index];
+        const name = sub?.label || sub?.lang || 'English';
+        if (chipSubLabel) chipSubLabel.textContent = name;
+        if (chipSubtitlesBadge) chipSubtitlesBadge.textContent = (sub?.lang || 'EN').slice(0, 3).toUpperCase();
       }
     }
 
-    function openMiniMenu(key) {
+    function openMiniMenu(key, chipEl) {
       if (isMenuOpen && activeMenuKey === key) {
         closeMiniMenu();
         return;
@@ -1612,12 +1617,24 @@
       activeMenuKey = key;
       showOverlay();
 
-      $$('.quick-chip', playerOverlay).forEach((c) => {
+      $$('.mobile-chip, .quick-chip', playerOverlay).forEach((c) => {
         c.classList.toggle('active', c.dataset.chip === key);
       });
 
       if (!playerMiniMenu || !miniMenuTitle || !miniMenuOptions) return;
       miniMenuOptions.innerHTML = '';
+
+      // Position mini menu dynamically directly above clicked chip
+      const targetChip = chipEl || $(`[data-chip="${key}"]`, playerOverlay);
+      if (targetChip && playerOverlay) {
+        const chipRect = targetChip.getBoundingClientRect();
+        const overlayRect = playerOverlay.getBoundingClientRect();
+        const left = Math.max(12, Math.min(chipRect.left - overlayRect.left, overlayRect.width - 264));
+        playerMiniMenu.style.left = `${left}px`;
+        playerMiniMenu.style.bottom = '58px';
+        playerMiniMenu.style.top = 'auto';
+        playerMiniMenu.style.right = 'auto';
+      }
 
       if (key === 'audio') {
         miniMenuTitle.textContent = 'Audio Track';
@@ -1701,6 +1718,7 @@
           e.stopPropagation();
           if (activeHls) activeHls.currentLevel = -1;
           if (chipQualityBadge) chipQualityBadge.textContent = 'AUTO';
+          if (chipQualityLabel) chipQualityLabel.textContent = 'Auto';
           closeMiniMenu();
         });
         miniMenuOptions.appendChild(autoBtn);
@@ -1719,7 +1737,8 @@
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (activeHls) activeHls.currentLevel = idx;
-            if (chipQualityBadge) chipQualityBadge.textContent = `${lvl.height}p`;
+            if (chipQualityBadge) chipQualityBadge.textContent = badge;
+            if (chipQualityLabel) chipQualityLabel.textContent = `${lvl.height}p`;
             closeMiniMenu();
           });
           miniMenuOptions.appendChild(btn);
@@ -1811,16 +1830,28 @@
       playerMiniMenu.classList.add('open');
     }
 
-    $$('.quick-chip', playerOverlay).forEach((chip) => {
+    $$('.mobile-chip, .quick-chip', playerOverlay).forEach((chip) => {
       chip.addEventListener('click', (e) => {
         e.stopPropagation();
-        openMiniMenu(chip.dataset.chip);
+        openMiniMenu(chip.dataset.chip, chip);
       });
     });
 
     document.addEventListener('click', (e) => {
-      if (isMenuOpen && !playerMiniMenu?.contains(e.target) && !e.target.closest('.quick-chip')) {
+      if (isMenuOpen && !playerMiniMenu?.contains(e.target) && !e.target.closest('.mobile-chip, .quick-chip')) {
         closeMiniMenu();
+      }
+    });
+
+    // Screen Fit
+    const fitModes = ['contain', 'cover', 'fill'];
+    let fitIndex = 0;
+    btnFit?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fitIndex = (fitIndex + 1) % fitModes.length;
+      const mode = fitModes[fitIndex];
+      if (activeVideo) {
+        activeVideo.style.objectFit = mode;
       }
     });
 
