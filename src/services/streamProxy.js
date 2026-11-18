@@ -36,7 +36,7 @@ function setCachedPlaylist(url, data) {
 }
 
 function proxiedUrl(targetUrl, ref) {
-  return `/api/stream/proxy?url=${encodeURIComponent(targetUrl)}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}`;
+  return `/api/stream/proxy?url=${encodeURIComponent(targetUrl)}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}&v=2`;
 }
 
 function rewritePlaylist(text, playlistUrl, ref) {
@@ -78,7 +78,7 @@ async function handleProxy(req, res, hops = 0) {
         'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
         'Access-Control-Allow-Headers': 'Range, Accept, Origin, Content-Type',
         'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
-        'Cache-Control': 'public, max-age=1800',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
         'X-Content-Type-Options': 'nosniff',
       });
       return res.end(cached);
@@ -163,7 +163,7 @@ async function handleProxy(req, res, hops = 0) {
 
           res.writeHead(200, {
             'Content-Type': 'application/vnd.apple.mpegurl',
-            'Cache-Control': 'public, max-age=1800',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
             'X-Content-Type-Options': 'nosniff',
           });
           res.end(output);

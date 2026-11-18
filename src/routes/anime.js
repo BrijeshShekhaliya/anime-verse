@@ -289,15 +289,15 @@ router.get(
       }
 
       const ref = resolved.referer || 'https://zokoanime.video/';
-      const proxiedMaster = `/api/stream/proxy?url=${encodeURIComponent(resolved.masterUrl)}&ref=${encodeURIComponent(ref)}`;
+      const proxiedMaster = `/api/stream/proxy?url=${encodeURIComponent(resolved.masterUrl)}&ref=${encodeURIComponent(ref)}&v=2`;
       const proxiedSubs = (resolved.subtitles || []).map((s) => ({
         ...s,
-        src: `/api/stream/proxy?url=${encodeURIComponent(s.src)}&ref=${encodeURIComponent(ref)}`,
+        src: `/api/stream/proxy?url=${encodeURIComponent(s.src)}&ref=${encodeURIComponent(ref)}&v=2`,
       }));
       const audioTracks = (resolved.audioTracks || []).map((track) => ({
         ...track,
         uri: track.uri
-          ? `/api/stream/proxy?url=${encodeURIComponent(track.uri)}&ref=${encodeURIComponent(ref)}`
+          ? `/api/stream/proxy?url=${encodeURIComponent(track.uri)}&ref=${encodeURIComponent(ref)}&v=2`
           : null,
       }));
 
