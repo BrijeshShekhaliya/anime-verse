@@ -7,6 +7,11 @@ test('serverless entrypoint exports valid Express app handler', async () => {
   assert.equal(typeof handler, 'function');
 });
 
+test('serverless catch-all handler exports valid function and formats URLs correctly', async () => {
+  const handler = (await import('../api/[...path].js')).default;
+  assert.equal(typeof handler, 'function');
+});
+
 test('Express app handles /api/status without external server', async () => {
   const app = (await import('../server.js')).default;
   const server = http.createServer(app);

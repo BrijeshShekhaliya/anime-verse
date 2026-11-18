@@ -117,6 +117,7 @@ function warmUp() {
   );
 }
 
+router.get('/', (req, res) => res.json({ status: 'ok', name: 'AnimeVerse API' }));
 router.get('/home', handle(() => getHome()));
 
 router.get(
