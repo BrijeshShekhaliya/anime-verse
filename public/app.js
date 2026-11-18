@@ -3293,7 +3293,10 @@
       if (token !== renderToken) return;
       console.error(err);
       view.innerHTML = `<div class="state"><h2>Something went wrong</h2><p>${esc(err.message)}</p><button class="btn btn-primary" id="retryPage">Try again</button></div>`;
-      $('#retryPage', view).addEventListener('click', () => { memo.clear(); render(); });
+      $('#retryPage', view)?.addEventListener('click', () => {
+        try { sessionStorage.clear(); } catch {}
+        window.location.reload();
+      });
     }
   }
 
