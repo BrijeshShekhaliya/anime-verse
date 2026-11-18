@@ -36,18 +36,20 @@
     shield: svg(`<path ${tint} d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.4-7.5 9.8-4.4-1.4-7.5-5.2-7.5-9.8V5.8z"/><path d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.4-7.5 9.8-4.4-1.4-7.5-5.2-7.5-9.8V5.8z"/>`),
   };
 
-  // Detect season number from anime title or romaji (e.g. "Season 2", "2nd Season", "Part 3")
+  // Detect season number from anime title or romaji (e.g. "Season 2", "2nd Season", "Part 3", "2", "II")
   function detectSeasonNumber(title, romaji = '') {
-    const combined = `${title || ''} ${romaji || ''}`;
+    const combined = `${title || ''} ${romaji || ''}`.trim();
     const m1 = combined.match(/\b(?:Season|Part|Cour)\s*(\d+)\b/i);
     if (m1) return parseInt(m1[1], 10);
-    const m2 = combined.match(/\b(\d+)(?:st|nd|rd|th)\s+Season\b/i);
+    const m2 = combined.match(/\b(\d+)(?:st|nd|rd|th)(?:\s+Season)?\b/i);
     if (m2) return parseInt(m2[1], 10);
-    const m3 = combined.match(/\b(?:Season|Part)\s*(II|III|IV|V|VI)\b/i);
-    if (m3) {
-      const roman = { II: 2, III: 3, IV: 4, V: 5, VI: 6 };
-      return roman[m3[1].toUpperCase()] || 1;
+    const m3 = combined.match(/\b(?:Season|Part)?\s*(II|III|IV|V|VI|VII|VIII|IX|X)\b/i);
+    if (m3 && m3[1]) {
+      const roman = { II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10 };
+      if (roman[m3[1].toUpperCase()]) return roman[m3[1].toUpperCase()];
     }
+    const m4 = combined.match(/[\s:_-]([2-9]|1[0-2])\s*$/i);
+    if (m4) return parseInt(m4[1], 10);
     return 1;
   }
 

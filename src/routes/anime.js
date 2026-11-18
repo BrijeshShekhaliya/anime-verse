@@ -143,11 +143,42 @@ router.get(
       artwork.artworkFor(anime),
     ]);
     const visuals = art || {};
-    if (art && (artwork.isSeasonEntry(anime.title) || !artwork.SERIES_TYPES.has(anime.type) && art.tmdbKind === 'tv')) {
-      // Keep the shared banner/logo, drop series-wide totals and poster.
-      return { ...anime, ...visuals, tmdbPoster: null, seasonCount: null, episodeCount: null, tmdbStatus: null, imdb: imdbRating };
+    const isSeason = artwork.isSeasonEntry(anime.title, anime.titleRomaji) || (art && (art.isSeason || art.targetSeason > 1));
+
+    if (art && (isSeason || (!artwork.SERIES_TYPES.has(anime.type) && art.tmdbKind === 'tv'))) {
+      // It is a specific season or non-series TV entry:
+      // Keep its own season cover (AniList anime.image or season-specific poster),
+      // Prefer anime.banner if available (so sequel doesn't show Season 1's backdrop),
+      // Drop series-wide season count and status so it doesn't show "2 Seasons | 20 Episodes | Airing".
+      const seasonPoster = visuals.seasonPoster || anime.image;
+      return {
+        ...anime,
+        ...visuals,
+        image: seasonPoster,
+        tmdbPoster: seasonPoster,
+        banner: anime.banner || visuals.backdrop,
+        backdrop: anime.banner || visuals.backdrop,
+        backdropHd: anime.banner || visuals.backdropHd,
+        seasonCount: null,
+        episodeCount: anime.episodes || null,
+        tmdbStatus: anime.status || null,
+        imdb: imdbRating,
+      };
     }
-    return { ...anime, ...visuals, ...(art ? artwork.seriesFacts(art, anime) : {}), imdb: imdbRating };
+    // Main show entry (Season 1):
+    // Use season 1 poster (visuals.seasonPoster) if available to avoid TMDB whole-show poster being hijacked by sequels,
+    // otherwise fallback to visuals.tmdbPoster or anime.image.
+    const mainPoster = visuals.seasonPoster || visuals.tmdbPoster || anime.image;
+    return {
+      ...anime,
+      ...visuals,
+      image: mainPoster,
+      tmdbPoster: mainPoster,
+      backdrop: visuals.backdrop || anime.banner,
+      backdropHd: visuals.backdropHd || anime.banner,
+      ...(art ? artwork.seriesFacts(art, anime) : {}),
+      imdb: imdbRating,
+    };
   }, 'public, s-maxage=3600, stale-while-revalidate=86400')
 );
 

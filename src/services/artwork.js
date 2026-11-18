@@ -15,7 +15,7 @@ function seriesTitle(title) {
     .replace(/[:\s-]*(Season|Part|Cour)\s*\d+.*$/i, '')
     .replace(/[:\s-]*(The\s+)?Final\s+(Season|Chapters?).*$/i, '')
     .replace(/\s+(2nd|3rd|\dth)\s+Season.*$/i, '')
-    .replace(/\s+(II|III|IV|V)$/i, '')
+    .replace(/[\s:_-]+([2-9]|1[0-2]|II|III|IV|V|VI|VII|VIII|IX|X)\s*$/i, '')
     .trim();
 }
 
@@ -67,8 +67,14 @@ function ageRating(kind, d) {
 }
 
 // "Black Clover Season 2", "AoT Final Season Part 2": an entry for one season,
-// which keeps its own season cover instead of the series poster.
-const isSeasonEntry = (title) => /\b(season|part|cour|final)\b|\b(2nd|3rd|\dth)\b/i.test(title || '');
+// Detects whether an entry represents a particular sequel or season (e.g. "Season 2", "Part 2", "2nd Season", "2", "II")
+const isSeasonEntry = (title, romaji = '') => {
+  const combined = `${title || ''} ${romaji || ''}`;
+  if (/\b(season|part|cour|final)\b/i.test(combined)) return true;
+  if (/\b(\d+(?:st|nd|rd|th))\b/i.test(combined)) return true;
+  if (/[\s:_-]([2-9]|1[0-2]|II|III|IV|V|VI)\s*$/i.test(combined)) return true;
+  return false;
+};
 
 // The TMDB title an anime maps to. Cached, so cards, search and the detail
 // page all share one lookup per show.
@@ -109,7 +115,10 @@ async function artworkFor(anime) {
   const titles = [anime.title, anime.titleRomaji].filter(Boolean);
   if (!titles.length) return null;
   const isMovie = anime.type === 'Movie';
-  const key = `art:${isMovie ? 'm' : 't'}:${seriesTitle(titles[0]).toLowerCase()}`;
+  const targetSeason = detectSeasonNumber(anime.title, anime.titleRomaji);
+  const isSeason = isSeasonEntry(anime.title, anime.titleRomaji) || targetSeason > 1;
+  const baseTitle = seriesTitle(titles[0]).toLowerCase();
+  const key = `art:${isMovie ? 'm' : 't'}:${baseTitle}:s${targetSeason}`;
 
   return cache.getOrSet(key, TTL, async () => {
     const match = await matchFor(anime);
@@ -122,6 +131,11 @@ async function artworkFor(anime) {
     const images = details.images || {};
     const seasons = (details.seasons || []).filter((x) => x.season_number > 0 && x.episode_count > 0);
 
+    // Look for season-specific poster in TMDB seasons
+    const seasonObj = seasons.find((s) => s.season_number === targetSeason) ||
+                      seasons.find((s) => anime.year && s.air_date && s.air_date.startsWith(String(anime.year)));
+    const seasonPoster = seasonObj?.poster_path ? posterUrl(seasonObj.poster_path, 'w500') : null;
+
     // Same banner Streambert shows: TMDB's own default backdrop for the title.
     // Falls back to the best textless backdrop when TMDB has no default.
     const textless = (images.backdrops || [])
@@ -132,14 +146,25 @@ async function artworkFor(anime) {
       .filter((l) => l.iso_639_1 === 'en' && l.file_path.endsWith('.png'))
       .sort((a, b) => b.vote_average - a.vote_average)[0];
 
+    // For a specific season (Season 2+ or distinct season entry):
+    // Use season-specific poster if available, or null (so it keeps its own AniList cover).
+    // For Season 1 / main entry: prefer seasonPoster if available so it's not hijacked by newer season posters,
+    // otherwise fallback to item/details poster.
+    const poster = isSeason
+      ? (seasonPoster || null)
+      : (seasonPoster || posterUrl(item.poster_path || details.poster_path, 'w500'));
+
     return {
       tmdbId: item.id,
       tmdbKind: kind,
+      targetSeason,
+      isSeason,
+      seasonPoster,
       backdrop: backdropPath ? `${IMG_BASE}/w1280${backdropPath}` : null,
       backdropHd: backdropPath ? `${IMG_BASE}/original${backdropPath}` : null,
-      logo: logo ? `${IMG_BASE}/w500${logo.file_path}` : null,
+      logo: isSeason && targetSeason > 1 ? null : (logo ? `${IMG_BASE}/w500${logo.file_path}` : null),
       logoAspect: logo ? logo.aspect_ratio : null,
-      tmdbPoster: posterUrl(item.poster_path || details.poster_path, 'w500'),
+      tmdbPoster: poster,
       seasonCount: kind === 'tv' ? seasons.length || null : null,
       episodeCount: kind === 'tv' ? seasons.reduce((n, x) => n + x.episode_count, 0) || null : null,
       tmdbStatus: kind === 'tv' ? TV_STATUS[details.status] || details.status || null : null,
@@ -158,16 +183,22 @@ async function artworkFor(anime) {
 async function withPosters(items, { budgetMs = 0 } = {}) {
   // A series' main entry is flagged until its series totals are known, so a card
   // never shows Season 1's own episode count where the page shows the series total.
-  const out = items.map((a) => (!isSeasonEntry(a.title) && SERIES_TYPES.has(a.type) ? { ...a, factsPending: true } : a));
+  const out = items.map((a) => (!isSeasonEntry(a.title, a.titleRomaji) && SERIES_TYPES.has(a.type) ? { ...a, factsPending: true } : a));
   const jobs = items.map(async (a, i) => {
-    if (isSeasonEntry(a.title)) return;
+    if (isSeasonEntry(a.title, a.titleRomaji)) return;
     const match = await matchFor(a).catch(() => null);
     const poster = posterUrl(match?.item?.poster_path);
     if (poster) out[i] = { ...out[i], cover: a.image, image: poster, image2x: posterUrl(match.item.poster_path, 'w500') };
     // A series card shows the same facts as the series page (seasons, total
     // episodes, status). Same cached TMDB details the anime page uses.
     let facts = {};
-    if (match?.kind === 'tv' && SERIES_TYPES.has(a.type)) facts = seriesFacts(await artworkFor(a), a);
+    if (match?.kind === 'tv' && SERIES_TYPES.has(a.type)) {
+      const art = await artworkFor(a);
+      facts = seriesFacts(art, a);
+      if (art?.seasonPoster) {
+        out[i] = { ...out[i], cover: a.image, image: art.seasonPoster, image2x: art.seasonPoster };
+      }
+    }
     out[i] = { ...out[i], ...facts, factsPending: false };
   });
   let done = false;
@@ -204,16 +235,18 @@ async function withArtwork(items, concurrency = 4) {
 }
 
 function detectSeasonNumber(title, romaji = '') {
-  const combined = `${title || ''} ${romaji || ''}`;
+  const combined = `${title || ''} ${romaji || ''}`.trim();
   const m1 = combined.match(/\b(?:Season|Part|Cour)\s*(\d+)\b/i);
   if (m1) return parseInt(m1[1], 10);
-  const m2 = combined.match(/\b(\d+)(?:st|nd|rd|th)\s+Season\b/i);
+  const m2 = combined.match(/\b(\d+)(?:st|nd|rd|th)(?:\s+Season)?\b/i);
   if (m2) return parseInt(m2[1], 10);
-  const m3 = combined.match(/\b(?:Season|Part)\s*(II|III|IV|V|VI)\b/i);
-  if (m3) {
-    const roman = { II: 2, III: 3, IV: 4, V: 5, VI: 6 };
-    return roman[m3[1].toUpperCase()] || 1;
+  const m3 = combined.match(/\b(?:Season|Part)?\s*(II|III|IV|V|VI|VII|VIII|IX|X)\b/i);
+  if (m3 && m3[1]) {
+    const roman = { II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7, VIII: 8, IX: 9, X: 10 };
+    if (roman[m3[1].toUpperCase()]) return roman[m3[1].toUpperCase()];
   }
+  const m4 = combined.match(/[\s:_-]([2-9]|1[0-2])\s*$/i);
+  if (m4) return parseInt(m4[1], 10);
   return 1;
 }
 
