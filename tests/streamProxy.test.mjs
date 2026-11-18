@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import streamProxy from '../src/services/streamProxy.js';
 
-test('rewritePlaylist proxies sub-playlists but preserves direct CDN URLs for media segments', () => {
+test('rewritePlaylist proxies both sub-playlists and media segments with Referer and CORS', () => {
   const masterManifest = `#EXTM3U
 #EXT-X-VERSION:4
 #EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud",NAME="Japanese",DEFAULT=YES,URI="aud/a0/index.m3u8"
@@ -34,8 +34,7 @@ https://hls1.drama1.cfd/s/test/1080/seg_001.ts.jpg`;
     'https://zokoanime.video/'
   );
 
-  // Segment URLs must NOT be proxied through /api/stream/proxy; they must point directly to CDN
-  assert.ok(rewrittenVariant.includes('https://hls1.drama1.cfd/s/test/1080/seg_000.ts.jpg'));
-  assert.ok(rewrittenVariant.includes('https://hls1.drama1.cfd/s/test/1080/seg_001.ts.jpg'));
-  assert.strictEqual(rewrittenVariant.includes('/api/stream/proxy?url='), false);
+  // Segment URLs MUST be proxied with Referer to avoid 403 Forbidden on CDNs
+  assert.ok(rewrittenVariant.includes('/api/stream/proxy?url=https%3A%2F%2Fhls1.drama1.cfd%2Fs%2Ftest%2F1080%2Fseg_000.ts.jpg'));
+  assert.ok(rewrittenVariant.includes('/api/stream/proxy?url=https%3A%2F%2Fhls1.drama1.cfd%2Fs%2Ftest%2F1080%2Fseg_001.ts.jpg'));
 });

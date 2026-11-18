@@ -29,6 +29,10 @@
   color-scheme: dark;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* ============ Global Scrollbar Hiding ============ */
 *, *::before, *::after {
   box-sizing: border-box;

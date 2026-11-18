@@ -51,13 +51,10 @@ function rewritePlaylist(text, playlistUrl, ref) {
         return line.replace(/URI="([^"]+)"/g, (_, u) => `URI="${proxiedUrl(abs(u), ref)}"`);
       }
       // Line is a segment or sub-playlist URL.
-      // Proxy sub-playlists (.m3u8), but leave media segments (.ts, .ts.jpg, .m4s, etc.)
-      // pointing directly to the high-speed CDN to avoid Sydney proxy latency bottlenecks.
+      // Proxy both sub-playlists and media segments through /api/stream/proxy
+      // so upstream CDNs receive the required Referer and the browser receives CORS headers without 403.
       const targetUrl = abs(t);
-      if (/\.m3u8(\?|$)/i.test(targetUrl)) {
-        return proxiedUrl(targetUrl, ref);
-      }
-      return targetUrl;
+      return proxiedUrl(targetUrl, ref);
     })
     .join('\n');
 }

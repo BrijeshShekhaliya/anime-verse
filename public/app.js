@@ -2178,7 +2178,10 @@
               }
             }
 
-            video.play().catch(() => {});
+            video.play().catch((err) => {
+              console.log('[Player] Autoplay waiting for user gesture:', err?.message || err);
+              syncPlayState(false);
+            });
           });
 
           hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
@@ -2226,7 +2229,10 @@
             if (thisGen !== currentResolveGen) return;
             hideLoader();
             if (targetResumeSec > 1.5) video.currentTime = targetResumeSec;
-            video.play().catch(() => {});
+            video.play().catch((err) => {
+              console.log('[Player] Autoplay waiting for user gesture:', err?.message || err);
+              syncPlayState(false);
+            });
           }, { once: true });
         }
       } catch (err) {
