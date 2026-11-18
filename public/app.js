@@ -1163,11 +1163,13 @@
     const chipNextEp = $('#chipNextEp', view);
 
     // Center Action Buttons
+    const centerPrevEp = $('#centerPrevEp', view);
     const centerSeekBack = $('#centerSeekBack', view);
     const centerPlayPause = $('#centerPlayPause', view);
     const centerPlayIcon = $('#centerPlayIcon', view);
     const centerPauseIcon = $('#centerPauseIcon', view);
     const centerSeekFwd = $('#centerSeekFwd', view);
+    const centerNextEp = $('#centerNextEp', view);
 
     // Scrubber
     const playerScrubber = $('#playerScrubber', view);
