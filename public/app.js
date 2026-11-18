@@ -610,19 +610,12 @@
     return [...pool].sort((x, y) => rank(x.name) - rank(y.name))[0] || null;
   }
 
-  // ---------- AnimeVerse OTT Watch Engine (Native Dual-Resolver) ----------
+  // ---------- AnimeVerse OTT Watch Engine ----------
   const STREAM_SERVERS = [
     {
       id: 'multiaudio',
-      name: 'AnimeVerse (Multi-Audio)',
-      tag: 'Hindi • Eng • Jap • Indian Server',
-      supportsDub: true,
-      isNative: true,
-    },
-    {
-      id: 'fast',
-      name: 'AnimeVerse (Fast Stream)',
-      tag: '1080p • 0 Ads • Direct Stream',
+      name: 'AnimeVerse',
+      tag: 'Multi-Audio • 1080p • 0 Ads',
       supportsDub: true,
       isNative: true,
     },
@@ -951,10 +944,6 @@
                   <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FB923C" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span id="chipSpeedLabel">1.0x</span>
                 </button>
-                <button type="button" class="quick-chip" id="chipServer" data-chip="server" title="Stream Server">
-                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
-                  <span id="chipServerLabel">${currentServer === 'fast' ? 'Fast Stream' : 'Multi-Audio'}</span>
-                </button>
                 <button type="button" class="quick-chip" id="chipContrast" data-chip="contrast" title="Video Enhancement">
                   <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FFC12E" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z" fill="#FFC12E"/></svg>
                   <span id="chipContrastLabel">Standard</span>
@@ -1053,22 +1042,8 @@
           </div>
         </div>
 
-        <!-- Permanent Server Bar (OUTSIDE player frame, ALWAYS VISIBLE) -->
+        <!-- Permanent Audio & Contrast Bar (OUTSIDE player frame, ALWAYS VISIBLE) -->
         <div class="player-toolbar" id="playerToolbar">
-          <div class="toolbar-section">
-            <span class="toolbar-label">
-              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-              SERVER:
-            </span>
-            <div class="server-pill-list" id="serverSelectorList">
-              ${STREAM_SERVERS.map((s) => `
-                <button type="button" class="server-pill${s.id === currentServer ? ' active' : ''}" data-server-id="${s.id}">
-                  <span class="server-dot"></span>
-                  ${esc(s.name)}
-                </button>
-              `).join('')}
-            </div>
-          </div>
           <div class="toolbar-section audio-section" id="audioSection">
             <span class="toolbar-label">
               <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
@@ -1202,8 +1177,6 @@
     const chipSubtitlesBadge = $('#chipSubtitlesBadge', view);
     const chipSpeed = $('#chipSpeed', view);
     const chipSpeedLabel = $('#chipSpeedLabel', view);
-    const chipServer = $('#chipServer', view);
-    const chipServerLabel = $('#chipServerLabel', view);
     const chipContrast = $('#chipContrast', view);
     const chipContrastLabel = $('#chipContrastLabel', view);
 
@@ -1771,27 +1744,6 @@
           });
           miniMenuOptions.appendChild(btn);
         });
-      } else if (key === 'server') {
-        miniMenuTitle.textContent = 'Stream Server';
-        STREAM_SERVERS.forEach((srv) => {
-          const isActive = srv.id === currentServer;
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
-          btn.innerHTML = `
-            <div>
-              <div style="font-weight:700;">${esc(srv.name)}</div>
-              <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${esc(srv.tag || '')}</div>
-            </div>
-            ${isActive ? '<span class="item-check">✓</span>' : ''}
-          `;
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            switchServer(srv.id);
-            closeMiniMenu();
-          });
-          miniMenuOptions.appendChild(btn);
-        });
       } else if (key === 'contrast') {
         miniMenuTitle.textContent = 'Video Enhancement';
         const modes = [
@@ -2001,10 +1953,6 @@
       activeSubIndex = -1;
 
       // Sync chips & pills
-      if (chipServerLabel) chipServerLabel.textContent = s.id === 'fast' ? 'Fast Stream' : 'Multi-Audio';
-      $$('.server-pill', view).forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.serverId === currentServer);
-      });
       $$('.audio-pill', view).forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.audioLang === currentLang);
       });
@@ -2242,37 +2190,17 @@
         if (playerMount) {
           playerMount.innerHTML = `
             <div class="player-error-view">
-              <p class="err-title">Stream unavailable on ${esc(s.name)}</p>
+              <p class="err-title">Stream temporarily unavailable</p>
               <p class="err-desc">${esc(err.message || 'Could not resolve stream URL.')}</p>
               <div class="err-actions">
                 <button type="button" class="btn btn-red" id="retryStreamBtn">Retry</button>
-                <button type="button" class="btn btn-ghost" id="fallbackServerBtn">Switch to ${currentServer === 'multiaudio' ? 'Fast Stream' : 'Multi-Audio'}</button>
               </div>
             </div>
           `;
           $('#retryStreamBtn', playerMount)?.addEventListener('click', () => loadStream());
-          $('#fallbackServerBtn', playerMount)?.addEventListener('click', () => {
-            switchServer(currentServer === 'multiaudio' ? 'fast' : 'multiaudio');
-          });
         }
       }
     }
-
-    // Server selection listener
-    function switchServer(sid) {
-      if (sid === currentServer) return;
-      const currentPos = (activeVideo && activeVideo.currentTime > 1) ? activeVideo.currentTime : null;
-      currentServer = sid;
-      try {
-        localStorage.setItem('animeverse_server', currentServer);
-        sessionStorage.setItem('animeverse_server_session', currentServer);
-      } catch {}
-      loadStream(currentPos);
-    }
-
-    $$('.server-pill', view).forEach((btn) => {
-      btn.addEventListener('click', () => switchServer(btn.dataset.serverId));
-    });
 
     // Audio language listener
     function switchAudio(lang) {
