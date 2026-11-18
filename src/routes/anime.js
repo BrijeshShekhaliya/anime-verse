@@ -256,7 +256,8 @@ router.get(
     const mode = req.query.mode === 'dub' ? 'dub' : 'sub';
 
     const anilistId = (req.query.id || req.query.anilistId || '').trim();
-    const cacheKey = `stream:${anilistId || title}:${season}:${episode}:${mode}`;
+    const serverPref = (req.query.server || '').trim().toLowerCase();
+    const cacheKey = `stream:${anilistId || title}:${season}:${episode}:${mode}:${serverPref}`;
     if (req.query.refresh === '1') {
       cache.store?.delete(cacheKey);
     }
@@ -264,20 +265,26 @@ router.get(
       let resolved = null;
       let sourceName = 'AnimeVerse (Fast Stream)';
 
-      // 1. Primary: AnimeRulz Multi-Audio Indian Server (in-band Hindi, English, Japanese, Tamil, Telugu)
-      try {
-        resolved = await animerulz.resolveAnimeRulzStream({ anilistId, title, episode, season });
-        if (resolved?.masterUrl) {
-          sourceName = resolved.source || 'AnimeVerse (Multi-Audio)';
-        }
-      } catch (err) {
-        // Transparent fallback to HiAnime
-      }
-
-      // 2. Fallback: HiAnime Direct Resolver
-      if (!resolved || !resolved.masterUrl) {
+      if (serverPref === 'fast') {
+        // Direct HiAnime request
         resolved = await hianime.resolveStream({ title, romaji, season, episode, mode });
         sourceName = 'AnimeVerse (Fast Stream)';
+      } else {
+        // 1. Primary: AnimeRulz Multi-Audio Indian Server (in-band Hindi, English, Japanese, Tamil, Telugu)
+        try {
+          resolved = await animerulz.resolveAnimeRulzStream({ anilistId, title, episode, season });
+          if (resolved?.masterUrl) {
+            sourceName = resolved.source || 'AnimeVerse (Multi-Audio)';
+          }
+        } catch (err) {
+          // Transparent fallback to HiAnime
+        }
+
+        // 2. Fallback: HiAnime Direct Resolver
+        if (!resolved || !resolved.masterUrl) {
+          resolved = await hianime.resolveStream({ title, romaji, season, episode, mode });
+          sourceName = 'AnimeVerse (Fast Stream)';
+        }
       }
 
       const ref = resolved.referer || 'https://zokoanime.video/';

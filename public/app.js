@@ -610,39 +610,21 @@
     return [...pool].sort((x, y) => rank(x.name) - rank(y.name))[0] || null;
   }
 
-  // ---------- Streambert OTT Style Watch Engine (Ad-Shielded) ----------
+  // ---------- AnimeVerse OTT Watch Engine (Native Dual-Resolver) ----------
   const STREAM_SERVERS = [
     {
-      id: 'hianime',
-      name: 'HiAnime (Native)',
-      tag: '1080p • 0 Ads',
+      id: 'multiaudio',
+      name: 'AnimeVerse (Multi-Audio)',
+      tag: 'Hindi • Eng • Jap • Indian Server',
       supportsDub: true,
       isNative: true,
-      getUrl: () => '',
     },
     {
-      id: 'vidrift',
-      name: 'Vidrift',
-      tag: 'Anime \u00B7 Multi-Audio',
+      id: 'fast',
+      name: 'AnimeVerse (Fast Stream)',
+      tag: '1080p • 0 Ads • Direct Stream',
       supportsDub: true,
-      isNative: false,
-      getUrl: (alId, ep, lang, tmdbId, season) => {
-        const logoUrl = 'https://api.iconify.design/ri/moon-clear-fill.svg?color=%23ff640a';
-        const params = new URLSearchParams({
-          brand: 'AnimeVerse',
-          brandColor: 'ff640a',
-          brandLogo: logoUrl,
-          watermark: '1',
-          font: 'Inter',
-          controlBg: 'solid',
-          hide: 'episodes,next,server,cast',
-          fs: 'parent',
-        });
-        if (lang === 'dub') params.set('dub', '1');
-        return tmdbId
-          ? `https://embed.vidrift.net/embed/tv/${tmdbId}/${season}/${ep}?${params.toString()}`
-          : `https://embed.vidrift.net/embed/anilist/${alId}/${ep}?${params.toString()}`;
-      },
+      isNative: true,
     },
   ];
 
@@ -783,12 +765,12 @@
     if (currentEp < 1) currentEp = 1;
     if (currentEp > episodes.length) currentEp = episodes.length;
 
-    let currentServer = 'hianime';
-    const savedServer = sessionStorage.getItem('animeverse_server_session');
-    if (savedServer && ['hianime', 'vidrift'].includes(savedServer)) {
+    let currentServer = 'multiaudio';
+    const savedServer = sessionStorage.getItem('animeverse_server_session') || localStorage.getItem('animeverse_server');
+    if (savedServer && ['multiaudio', 'fast'].includes(savedServer)) {
       currentServer = savedServer;
     } else {
-      localStorage.setItem('animeverse_server', 'hianime');
+      localStorage.setItem('animeverse_server', 'multiaudio');
     }
     let currentLang = localStorage.getItem('animeverse_lang') || 'sub';
 
@@ -807,10 +789,6 @@
       return STREAM_SERVERS.find((srv) => srv.id === currentServer) || STREAM_SERVERS[0];
     }
 
-    function getServerUrl(ep = currentEp) {
-      const s = getActiveServer();
-      return s.getUrl(alId, ep, currentLang, tmdbId, currentSeason);
-    }
 
     const currentEpObj = episodes.find((e) => e.episode_number === currentEp) || {
       episode_number: currentEp,
@@ -904,7 +882,175 @@
             </div>
           </div>
 
+          <!-- Cinema Player Mount (Holds Native Video Element) -->
           <div class="cinema-player-mount" id="playerMount"></div>
+
+          <!-- Transparent Gesture Surface for Double-Tap & Tap Seeking -->
+          <div class="player-gesture-surface" id="playerGestureSurface">
+            <div class="gesture-zone gesture-left" id="gestureLeft" title="Double tap: -10s"></div>
+            <div class="gesture-zone gesture-center" id="gestureCenter" title="Click: Play/Pause"></div>
+            <div class="gesture-zone gesture-right" id="gestureRight" title="Double tap: +10s"></div>
+          </div>
+
+          <!-- Double-Tap Seek Feedback Ripples -->
+          <div class="seek-ripple seek-ripple-left" id="seekRippleLeft">
+            <div class="ripple-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
+            </div>
+            <div class="ripple-text">-10s</div>
+          </div>
+          <div class="seek-ripple seek-ripple-right" id="seekRippleRight">
+            <div class="ripple-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 17 5-5-5-5M13 17l5-5-5-5"/></svg>
+            </div>
+            <div class="ripple-text">+10s</div>
+          </div>
+
+          <!-- Volume / Action HUD -->
+          <div class="player-hud" id="playerHud">
+            <div class="hud-icon" id="hudIcon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            </div>
+            <div class="hud-bar"><div class="hud-bar-fill" id="hudBarFill" style="width: 100%;"></div></div>
+            <div class="hud-value" id="hudValue">100%</div>
+          </div>
+
+          <!-- Master OTT Player Controls Overlay (Fades out after 3.2s inactivity) -->
+          <div class="cinema-player-overlay" id="playerOverlay">
+            <!-- Top Bar -->
+            <div class="overlay-top-bar">
+              <div class="top-bar-left">
+                <a href="/anime/${esc(a.id)}" class="player-icon-btn back-btn" id="overlayBackBtn" title="Back to Anime" data-link>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                </a>
+                <div class="player-title-block">
+                  <div class="player-anime-name" id="overlayAnimeTitle">${esc(a.title)}</div>
+                  <div class="player-ep-sub">
+                    <span class="ep-badge" id="overlayEpBadge">S${currentSeason} · E${currentEp}</span>
+                    <span id="overlayEpName">${esc(currentEpObj.name || `Episode ${currentEp}`)}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="quick-chips">
+                <button type="button" class="quick-chip" id="chipAudio" data-chip="audio" title="Audio Language">
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                  <span id="chipAudioLabel">Audio</span>
+                  <span class="chip-badge chip-badge-blue" id="chipAudioBadge">JP</span>
+                </button>
+                <button type="button" class="quick-chip" id="chipQuality" data-chip="quality" title="Video Quality">
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  <span id="chipQualityLabel">Quality</span>
+                  <span class="chip-badge chip-badge-green" id="chipQualityBadge">AUTO</span>
+                </button>
+                <button type="button" class="quick-chip" id="chipSubtitles" data-chip="subtitles" title="Subtitles">
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FDE047" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg>
+                  <span id="chipSubtitlesLabel">Subtitles</span>
+                  <span class="chip-badge chip-badge-yellow" id="chipSubtitlesBadge">EN</span>
+                </button>
+                <button type="button" class="quick-chip" id="chipSpeed" data-chip="speed" title="Playback Speed">
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FB923C" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span id="chipSpeedLabel">1.0x</span>
+                </button>
+                <button type="button" class="quick-chip" id="chipServer" data-chip="server" title="Stream Server">
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span id="chipServerLabel">${currentServer === 'fast' ? 'Fast Stream' : 'Multi-Audio'}</span>
+                </button>
+                <button type="button" class="quick-chip" id="chipContrast" data-chip="contrast" title="Video Enhancement">
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FFC12E" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z" fill="#FFC12E"/></svg>
+                  <span id="chipContrastLabel">Standard</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Center Action Zone -->
+            <div class="overlay-center-zone">
+              <button type="button" class="center-btn prev-ep-btn" id="centerPrevEp" title="Previous Episode">
+                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.5"/></svg>
+              </button>
+              <button type="button" class="center-btn seek-btn" id="centerSeekBack" title="Rewind 10s">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+                <span class="seek-num">10</span>
+              </button>
+              <button type="button" class="center-btn big-play-btn" id="centerPlayPause" title="Play / Pause">
+                <svg id="centerPlayIcon" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                <svg id="centerPauseIcon" class="hidden" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              </button>
+              <button type="button" class="center-btn seek-btn" id="centerSeekFwd" title="Forward 10s">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><polyline points="21 3 21 8 16 8"/></svg>
+                <span class="seek-num">10</span>
+              </button>
+              <button type="button" class="center-btn next-ep-btn" id="centerNextEp" title="Next Episode">
+                <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
+              </button>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="overlay-bottom-bar">
+              <!-- Scrubber -->
+              <div class="scrubber-container" id="playerScrubber">
+                <div class="scrubber-bubble" id="scrubberBubble">00:00</div>
+                <div class="scrubber-track">
+                  <div class="scrubber-buffered" id="scrubberBuffered"></div>
+                  <div class="scrubber-progress" id="scrubberProgress"></div>
+                  <div class="scrubber-thumb" id="scrubberThumb"></div>
+                </div>
+              </div>
+
+              <!-- Bottom Controls Row -->
+              <div class="bottom-controls-row">
+                <div class="bottom-left-controls">
+                  <button type="button" class="player-icon-btn" id="btnPlayPause" title="Play / Pause (Space)">
+                    <svg id="bottomPlayIcon" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                    <svg id="bottomPauseIcon" class="hidden" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                  </button>
+                  <button type="button" class="player-icon-btn" id="btnNextEpBottom" title="Next Episode (N)">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
+                  </button>
+                  <div class="volume-slider-group" id="volumeGroup">
+                    <button type="button" class="player-icon-btn" id="btnMuteToggle" title="Mute / Unmute (M)">
+                      <svg id="volIconHigh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                      <svg id="volIconMuted" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                    </button>
+                    <div class="volume-track-wrap" id="volTrackWrap">
+                      <div class="volume-track" id="volTrack">
+                        <div class="volume-fill" id="volFill" style="width: 100%;"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="time-display">
+                    <span id="curTimeDisplay">00:00</span>
+                    <span class="time-sep">/</span>
+                    <span class="time-dur" id="durTimeDisplay">00:00</span>
+                  </div>
+                </div>
+
+                <div class="bottom-right-controls">
+                  <button type="button" class="player-toggle-btn active" id="btnAutoplay" title="Autoplay Next Episode">
+                    <span class="toggle-dot"></span><span>Autoplay</span>
+                  </button>
+                  <button type="button" class="player-icon-btn" id="btnPip" title="Picture-in-Picture">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="12" y="9" width="8" height="6" rx="1" fill="currentColor"/></svg>
+                  </button>
+                  <button type="button" class="player-icon-btn" id="btnTheater" title="Theater Mode (T)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="8" x2="22" y2="8"/></svg>
+                  </button>
+                  <button type="button" class="player-icon-btn" id="btnFullscreen" title="Fullscreen (F)">
+                    <svg id="fsEnterIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><polyline points="21 15 21 21 15 21"/><polyline points="3 9 3 3 9 3"/></svg>
+                    <svg id="fsExitIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><polyline points="14 20 14 14 20 14"/><polyline points="10 4 10 10 4 10"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Glassmorphic Popover Mini-Menu -->
+            <div class="player-popover-menu" id="playerMiniMenu">
+              <div class="mini-menu-header">
+                <span class="mini-menu-title" id="miniMenuTitle">Audio</span>
+                <button type="button" class="mini-menu-close" id="miniMenuClose">✕</button>
+              </div>
+              <div class="mini-menu-options" id="miniMenuOptions"></div>
+            </div>
+          </div>
         </div>
 
         <!-- Permanent Server Bar (OUTSIDE player frame, ALWAYS VISIBLE) -->
@@ -1015,6 +1161,7 @@
     let currentServer = ctx.currentServer;
     let currentLang = ctx.currentLang;
     let episodes = ctx.episodes;
+    let tmdbId = ctx.tmdbId || a.tmdbId || null;
 
     const storageKeyProgress = (ep, s = currentSeason) => `animeverse_prog_${a.id}_s${s}_e${ep}`;
     const storageKeyExactTime = ctx.storageKeyExactTime || ((ep, s = currentSeason) => `animeverse_time_${a.id}_s${s}_e${ep}`);
@@ -1023,17 +1170,83 @@
       return STREAM_SERVERS.find((srv) => srv.id === currentServer) || STREAM_SERVERS[0];
     }
 
-    let tmdbId = ctx.tmdbId || a.tmdbId || null;
+    // DOM Element References
     const playerBox = $('#playerBox', view);
     const playerMount = $('#playerMount', view);
     const playerLoader = $('#playerLoader', view);
     const playerLoaderMsg = $('#playerLoaderMsg', view);
+    const gestureLeft = $('#gestureLeft', view);
+    const gestureCenter = $('#gestureCenter', view);
+    const gestureRight = $('#gestureRight', view);
+    const seekRippleLeft = $('#seekRippleLeft', view);
+    const seekRippleRight = $('#seekRippleRight', view);
+    const playerHud = $('#playerHud', view);
+    const hudBarFill = $('#hudBarFill', view);
+    const hudValue = $('#hudValue', view);
+    const playerOverlay = $('#playerOverlay', view);
+    const overlayEpBadge = $('#overlayEpBadge', view);
+    const overlayEpName = $('#overlayEpName', view);
     const seasonEpTag = $('#seasonEpTag', view);
     const playerEpTitle = $('#playerEpTitle', view);
     const markWatchedBtn = $('#markWatchedBtn', view);
     const episodesGrid = $('#episodesGrid', view);
     const episodesCountBadge = $('#episodesCountBadge', view);
     const seasonSelector = $('#seasonSelector', view);
+
+    // Quick Chips
+    const chipAudio = $('#chipAudio', view);
+    const chipAudioBadge = $('#chipAudioBadge', view);
+    const chipQuality = $('#chipQuality', view);
+    const chipQualityBadge = $('#chipQualityBadge', view);
+    const chipSubtitles = $('#chipSubtitles', view);
+    const chipSubtitlesBadge = $('#chipSubtitlesBadge', view);
+    const chipSpeed = $('#chipSpeed', view);
+    const chipSpeedLabel = $('#chipSpeedLabel', view);
+    const chipServer = $('#chipServer', view);
+    const chipServerLabel = $('#chipServerLabel', view);
+    const chipContrast = $('#chipContrast', view);
+    const chipContrastLabel = $('#chipContrastLabel', view);
+
+    // Center Action Buttons
+    const centerPrevEp = $('#centerPrevEp', view);
+    const centerSeekBack = $('#centerSeekBack', view);
+    const centerPlayPause = $('#centerPlayPause', view);
+    const centerPlayIcon = $('#centerPlayIcon', view);
+    const centerPauseIcon = $('#centerPauseIcon', view);
+    const centerSeekFwd = $('#centerSeekFwd', view);
+    const centerNextEp = $('#centerNextEp', view);
+
+    // Scrubber
+    const playerScrubber = $('#playerScrubber', view);
+    const scrubberBubble = $('#scrubberBubble', view);
+    const scrubberBuffered = $('#scrubberBuffered', view);
+    const scrubberProgress = $('#scrubberProgress', view);
+    const scrubberThumb = $('#scrubberThumb', view);
+
+    // Bottom Controls
+    const btnPlayPause = $('#btnPlayPause', view);
+    const bottomPlayIcon = $('#bottomPlayIcon', view);
+    const bottomPauseIcon = $('#bottomPauseIcon', view);
+    const btnNextEpBottom = $('#btnNextEpBottom', view);
+    const btnMuteToggle = $('#btnMuteToggle', view);
+    const volIconHigh = $('#volIconHigh', view);
+    const volIconMuted = $('#volIconMuted', view);
+    const volTrack = $('#volTrack', view);
+    const volFill = $('#volFill', view);
+    const curTimeDisplay = $('#curTimeDisplay', view);
+    const durTimeDisplay = $('#durTimeDisplay', view);
+    const btnAutoplay = $('#btnAutoplay', view);
+    const btnPip = $('#btnPip', view);
+    const btnTheater = $('#btnTheater', view);
+    const btnFullscreen = $('#btnFullscreen', view);
+    const fsEnterIcon = $('#fsEnterIcon', view);
+    const fsExitIcon = $('#fsExitIcon', view);
+
+    // Popover Mini-Menu
+    const playerMiniMenu = $('#playerMiniMenu', view);
+    const miniMenuTitle = $('#miniMenuTitle', view);
+    const miniMenuClose = $('#miniMenuClose', view);
+    const miniMenuOptions = $('#miniMenuOptions', view);
 
     // Up Next Popup elements & state
     const upNextCard = $('#upNextCard', view);
@@ -1053,15 +1266,53 @@
     let playbackDuration = 0;
     const UP_NEXT_DURATION_MS = 10000;
 
+    let activeHls = null;
+    let activeVideo = null;
+    let currentResolveGen = 0;
+    let isScrubbing = false;
+    let isMenuOpen = false;
+    let activeMenuKey = null;
+    let idleTimer = null;
+    let hudTimer = null;
+    let leftRippleTimer = null;
+    let rightRippleTimer = null;
+    let lastTapLeft = 0;
+    let lastTapRight = 0;
+    let cachedSubtitles = [];
+    let activeSubIndex = -1; // -1 = Off
+    let autoplayNext = localStorage.getItem('animeverse_autoplay') !== 'false';
+    if (btnAutoplay) btnAutoplay.classList.toggle('active', autoplayNext);
+
+    function fmtTime(sec) {
+      const t = Math.max(0, Math.floor(sec || 0));
+      const h = Math.floor(t / 3600);
+      const m = Math.floor((t % 3600) / 60);
+      const s = String(t % 60).padStart(2, '0');
+      return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+    }
+
+    function qualityBadgeName(h) {
+      if (!h || isNaN(h)) return 'AUTO';
+      if (h >= 2160) return '4K';
+      if (h >= 1440) return '2K';
+      if (h >= 1080) return 'FHD';
+      if (h >= 720) return 'HD';
+      return 'SD';
+    }
 
     // Contrast & Video Enhancement Engine
     let currentContrast = localStorage.getItem('animeverse_contrast') || 'standard';
+    const CONTRAST_LABELS = {
+      standard: 'Standard',
+      vivid: 'Vivid Anime',
+      high: 'High Contrast',
+      cinema: 'Cinema Soft',
+    };
     function applyContrast(mode) {
       currentContrast = mode;
       try { localStorage.setItem('animeverse_contrast', mode); } catch {}
-      if (playerMount) {
-        playerMount.dataset.contrast = mode;
-      }
+      if (playerMount) playerMount.dataset.contrast = mode;
+      if (chipContrastLabel) chipContrastLabel.textContent = CONTRAST_LABELS[mode] || 'Standard';
       $$('.contrast-pill', view).forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.contrast === mode);
       });
@@ -1069,17 +1320,10 @@
     applyContrast(currentContrast);
 
     $$('.contrast-pill', view).forEach((btn) => {
-      btn.addEventListener('click', () => {
-        applyContrast(btn.dataset.contrast);
-      });
+      btn.addEventListener('click', () => applyContrast(btn.dataset.contrast));
     });
 
-    let activeHls = null;
-    let activeVideo = null;
-    let activeIframe = null;
-    let currentResolveGen = 0;
-
-    // ── Teardown & Clean Up: Guarantees MULTIPLE PLAYERS NEVER RUN AT ONCE ──
+    // Teardown: Guarantees MULTIPLE PLAYERS NEVER RUN AT ONCE
     function teardownPlayer() {
       if (activeHls) {
         try {
@@ -1097,13 +1341,6 @@
         activeVideo.remove();
         activeVideo = null;
       }
-      if (activeIframe) {
-        try {
-          activeIframe.src = 'about:blank';
-        } catch (e) {}
-        activeIframe.remove();
-        activeIframe = null;
-      }
       if (playerMount) {
         playerMount.innerHTML = '';
       }
@@ -1118,7 +1355,603 @@
       if (playerLoader) playerLoader.classList.add('hidden');
     }
 
-    // Save exact position safely
+    function showOverlay() {
+      if (!playerOverlay) return;
+      playerOverlay.classList.remove('idle-hidden');
+      resetIdleTimer();
+    }
+
+    function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      if (!activeVideo || activeVideo.paused || isScrubbing || isMenuOpen) return;
+      idleTimer = setTimeout(() => {
+        if (activeVideo && !activeVideo.paused && !isScrubbing && !isMenuOpen) {
+          playerOverlay?.classList.add('idle-hidden');
+        }
+      }, 3200);
+    }
+
+    playerBox?.addEventListener('pointermove', showOverlay);
+    playerBox?.addEventListener('pointerdown', showOverlay);
+    playerOverlay?.addEventListener('pointermove', showOverlay);
+
+    function syncPlayState(playing) {
+      if (centerPlayIcon) centerPlayIcon.classList.toggle('hidden', playing);
+      if (centerPauseIcon) centerPauseIcon.classList.toggle('hidden', !playing);
+      if (bottomPlayIcon) bottomPlayIcon.classList.toggle('hidden', playing);
+      if (bottomPauseIcon) bottomPauseIcon.classList.toggle('hidden', !playing);
+      if (!playing) {
+        showOverlay();
+      } else {
+        resetIdleTimer();
+      }
+    }
+
+    function togglePlay() {
+      if (!activeVideo) return;
+      if (activeVideo.paused) {
+        activeVideo.play().catch(() => {});
+      } else {
+        activeVideo.pause();
+      }
+    }
+
+    centerPlayPause?.addEventListener('click', (e) => { e.stopPropagation(); togglePlay(); });
+    btnPlayPause?.addEventListener('click', (e) => { e.stopPropagation(); togglePlay(); });
+
+    // Double-Tap Seeking & Ripples
+    function triggerRipple(side, text = '10s') {
+      const el = side === 'left' ? seekRippleLeft : seekRippleRight;
+      if (!el) return;
+      const t = el.querySelector('.ripple-text');
+      if (t) t.textContent = side === 'left' ? `-${text}` : `+${text}`;
+      el.classList.add('active');
+      if (side === 'left') {
+        clearTimeout(leftRippleTimer);
+        leftRippleTimer = setTimeout(() => el.classList.remove('active'), 650);
+      } else {
+        clearTimeout(rightRippleTimer);
+        rightRippleTimer = setTimeout(() => el.classList.remove('active'), 650);
+      }
+    }
+
+    function seekRelative(deltaSec) {
+      if (!activeVideo) return;
+      const dur = activeVideo.duration || playbackDuration || 0;
+      const cur = activeVideo.currentTime || 0;
+      const target = Math.max(0, Math.min(dur || cur + deltaSec, cur + deltaSec));
+      activeVideo.currentTime = target;
+      showOverlay();
+    }
+
+    gestureLeft?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const now = performance.now();
+      if (now - lastTapLeft < 320) {
+        seekRelative(-10);
+        triggerRipple('left', '10s');
+        lastTapLeft = 0;
+      } else {
+        lastTapLeft = now;
+        showOverlay();
+      }
+    });
+
+    gestureRight?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const now = performance.now();
+      if (now - lastTapRight < 320) {
+        seekRelative(10);
+        triggerRipple('right', '10s');
+        lastTapRight = 0;
+      } else {
+        lastTapRight = now;
+        showOverlay();
+      }
+    });
+
+    gestureCenter?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isMenuOpen) {
+        closeMiniMenu();
+        return;
+      }
+      if (playerOverlay?.classList.contains('idle-hidden')) {
+        showOverlay();
+      } else {
+        togglePlay();
+      }
+    });
+
+    centerSeekBack?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      seekRelative(-10);
+      triggerRipple('left', '10s');
+    });
+
+    centerSeekFwd?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      seekRelative(10);
+      triggerRipple('right', '10s');
+    });
+
+    // Scrubber & Progress Bar
+    function updateScrubberUI(cur, dur, buf) {
+      if (!dur || isNaN(dur) || dur <= 0) return;
+      const curPct = Math.min(100, Math.max(0, (cur / dur) * 100));
+      if (!isScrubbing) {
+        if (scrubberProgress) scrubberProgress.style.width = `${curPct}%`;
+        if (scrubberThumb) scrubberThumb.style.left = `${curPct}%`;
+        if (curTimeDisplay) curTimeDisplay.textContent = fmtTime(cur);
+      }
+      if (durTimeDisplay) durTimeDisplay.textContent = fmtTime(dur);
+
+      if (buf !== undefined && scrubberBuffered) {
+        const bufPct = Math.min(100, Math.max(0, (buf / dur) * 100));
+        scrubberBuffered.style.width = `${bufPct}%`;
+      }
+    }
+
+    function getScrubberFraction(e) {
+      if (!playerScrubber) return 0;
+      const rect = playerScrubber.getBoundingClientRect();
+      const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+      return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    }
+
+    playerScrubber?.addEventListener('pointermove', (e) => {
+      const frac = getScrubberFraction(e);
+      const dur = activeVideo?.duration || playbackDuration || 0;
+      if (scrubberBubble) {
+        scrubberBubble.textContent = fmtTime(frac * dur);
+        scrubberBubble.style.left = `${frac * 100}%`;
+      }
+      if (isScrubbing && activeVideo && dur > 0) {
+        const targetTime = frac * dur;
+        if (scrubberProgress) scrubberProgress.style.width = `${frac * 100}%`;
+        if (scrubberThumb) scrubberThumb.style.left = `${frac * 100}%`;
+        if (curTimeDisplay) curTimeDisplay.textContent = fmtTime(targetTime);
+      }
+    });
+
+    playerScrubber?.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      isScrubbing = true;
+      playerScrubber.classList.add('is-scrubbing');
+      playerScrubber.setPointerCapture(e.pointerId);
+      const frac = getScrubberFraction(e);
+      const dur = activeVideo?.duration || playbackDuration || 0;
+      if (dur > 0 && activeVideo) {
+        activeVideo.currentTime = frac * dur;
+        if (scrubberProgress) scrubberProgress.style.width = `${frac * 100}%`;
+        if (scrubberThumb) scrubberThumb.style.left = `${frac * 100}%`;
+      }
+    });
+
+    playerScrubber?.addEventListener('pointerup', (e) => {
+      if (!isScrubbing) return;
+      isScrubbing = false;
+      playerScrubber.classList.remove('is-scrubbing');
+      try { playerScrubber.releasePointerCapture(e.pointerId); } catch {}
+      const frac = getScrubberFraction(e);
+      const dur = activeVideo?.duration || playbackDuration || 0;
+      if (dur > 0 && activeVideo) {
+        activeVideo.currentTime = frac * dur;
+        savePlaybackProgress(activeVideo.currentTime, activeVideo.duration);
+      }
+      resetIdleTimer();
+    });
+
+    // Volume & HUD Controls
+    function showHud(percent) {
+      if (!playerHud) return;
+      if (hudBarFill) hudBarFill.style.width = `${percent}%`;
+      if (hudValue) hudValue.textContent = `${percent}%`;
+      playerHud.classList.add('active');
+      clearTimeout(hudTimer);
+      hudTimer = setTimeout(() => playerHud.classList.remove('active'), 1200);
+    }
+
+    function setVolume(v) {
+      if (!activeVideo) return;
+      const clamped = Math.max(0, Math.min(1, v));
+      activeVideo.volume = clamped;
+      activeVideo.muted = clamped === 0;
+      syncVolumeUI(clamped, activeVideo.muted);
+      showHud(Math.round(clamped * 100));
+    }
+
+    function syncVolumeUI(vol, muted) {
+      const displayVol = muted ? 0 : vol;
+      if (volFill) volFill.style.width = `${displayVol * 100}%`;
+      if (volIconHigh) volIconHigh.classList.toggle('hidden', muted || displayVol === 0);
+      if (volIconMuted) volIconMuted.classList.toggle('hidden', !muted && displayVol > 0);
+    }
+
+    btnMuteToggle?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!activeVideo) return;
+      activeVideo.muted = !activeVideo.muted;
+      if (!activeVideo.muted && activeVideo.volume === 0) activeVideo.volume = 1;
+      syncVolumeUI(activeVideo.volume, activeVideo.muted);
+      showHud(activeVideo.muted ? 0 : Math.round(activeVideo.volume * 100));
+    });
+
+    volTrack?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = volTrack.getBoundingClientRect();
+      const v = (e.clientX - rect.left) / rect.width;
+      setVolume(v);
+    });
+
+    // Popover Mini-Menu
+    function closeMiniMenu() {
+      isMenuOpen = false;
+      activeMenuKey = null;
+      playerMiniMenu?.classList.remove('open');
+      $$('.quick-chip', playerOverlay).forEach((c) => c.classList.remove('active'));
+      resetIdleTimer();
+    }
+
+    miniMenuClose?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeMiniMenu();
+    });
+
+    function setSubtitleTrack(index) {
+      activeSubIndex = index;
+      if (!activeVideo) return;
+      const tracks = activeVideo.textTracks;
+      for (let i = 0; i < tracks.length; i++) {
+        tracks[i].mode = (i === index) ? 'showing' : 'disabled';
+      }
+      if (chipSubtitlesBadge) {
+        if (index === -1) {
+          chipSubtitlesBadge.textContent = 'OFF';
+        } else {
+          const sub = cachedSubtitles[index];
+          chipSubtitlesBadge.textContent = (sub?.lang || 'EN').slice(0, 3).toUpperCase();
+        }
+      }
+    }
+
+    function openMiniMenu(key) {
+      if (isMenuOpen && activeMenuKey === key) {
+        closeMiniMenu();
+        return;
+      }
+      isMenuOpen = true;
+      activeMenuKey = key;
+      showOverlay();
+
+      $$('.quick-chip', playerOverlay).forEach((c) => {
+        c.classList.toggle('active', c.dataset.chip === key);
+      });
+
+      if (!playerMiniMenu || !miniMenuTitle || !miniMenuOptions) return;
+      miniMenuOptions.innerHTML = '';
+
+      if (key === 'audio') {
+        miniMenuTitle.textContent = 'Audio Track';
+        const tracks = activeHls?.audioTracks || [];
+        if (tracks.length > 0) {
+          tracks.forEach((t, idx) => {
+            const isActive = idx === activeHls.audioTrack;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
+            const name = t.name || t.lang || `Track ${idx + 1}`;
+            btn.innerHTML = `
+              <span>${esc(name)}</span>
+              ${t.lang ? `<span class="item-badge">${esc(t.lang.toUpperCase())}</span>` : ''}
+              ${isActive ? '<span class="item-check">✓</span>' : ''}
+            `;
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              activeHls.audioTrack = idx;
+              if (chipAudioBadge) chipAudioBadge.textContent = (t.lang || name).slice(0, 3).toUpperCase();
+              closeMiniMenu();
+            });
+            miniMenuOptions.appendChild(btn);
+          });
+        } else {
+          const langs = [
+            { id: 'sub', name: 'Japanese (Sub)', badge: 'SUB' },
+            { id: 'dub', name: 'English (Dub)', badge: 'DUB' },
+          ];
+          langs.forEach((l) => {
+            const isActive = l.id === currentLang;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
+            btn.innerHTML = `
+              <span>${esc(l.name)}</span>
+              <span class="item-badge">${esc(l.badge)}</span>
+              ${isActive ? '<span class="item-check">✓</span>' : ''}
+            `;
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              switchAudio(l.id);
+              closeMiniMenu();
+            });
+            miniMenuOptions.appendChild(btn);
+          });
+        }
+      } else if (key === 'quality') {
+        miniMenuTitle.textContent = 'Video Quality';
+        const levels = activeHls?.levels || [];
+        const isAuto = !activeHls || activeHls.currentLevel === -1;
+        const autoBtn = document.createElement('button');
+        autoBtn.type = 'button';
+        autoBtn.className = `mini-menu-item${isAuto ? ' active' : ''}`;
+        autoBtn.innerHTML = `
+          <span>Auto (Adaptive)</span>
+          <span class="item-badge">AUTO</span>
+          ${isAuto ? '<span class="item-check">✓</span>' : ''}
+        `;
+        autoBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (activeHls) activeHls.currentLevel = -1;
+          if (chipQualityBadge) chipQualityBadge.textContent = 'AUTO';
+          closeMiniMenu();
+        });
+        miniMenuOptions.appendChild(autoBtn);
+
+        levels.forEach((lvl, idx) => {
+          const isActive = activeHls && activeHls.currentLevel === idx;
+          const badge = qualityBadgeName(lvl.height);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
+          btn.innerHTML = `
+            <span>${lvl.height}p</span>
+            <span class="item-badge">${esc(badge)}</span>
+            ${isActive ? '<span class="item-check">✓</span>' : ''}
+          `;
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (activeHls) activeHls.currentLevel = idx;
+            if (chipQualityBadge) chipQualityBadge.textContent = `${lvl.height}p`;
+            closeMiniMenu();
+          });
+          miniMenuOptions.appendChild(btn);
+        });
+      } else if (key === 'subtitles') {
+        miniMenuTitle.textContent = 'Subtitles';
+        const isOff = activeSubIndex === -1;
+        const offBtn = document.createElement('button');
+        offBtn.type = 'button';
+        offBtn.className = `mini-menu-item${isOff ? ' active' : ''}`;
+        offBtn.innerHTML = `
+          <span>Off</span>
+          ${isOff ? '<span class="item-check">✓</span>' : ''}
+        `;
+        offBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setSubtitleTrack(-1);
+          closeMiniMenu();
+        });
+        miniMenuOptions.appendChild(offBtn);
+
+        cachedSubtitles.forEach((sub, idx) => {
+          const isActive = activeSubIndex === idx;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
+          btn.innerHTML = `
+            <span>${esc(sub.label || sub.lang || `Track ${idx + 1}`)}</span>
+            ${sub.lang ? `<span class="item-badge">${esc(sub.lang.toUpperCase())}</span>` : ''}
+            ${isActive ? '<span class="item-check">✓</span>' : ''}
+          `;
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setSubtitleTrack(idx);
+            closeMiniMenu();
+          });
+          miniMenuOptions.appendChild(btn);
+        });
+      } else if (key === 'speed') {
+        miniMenuTitle.textContent = 'Playback Speed';
+        const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+        const curSpeed = activeVideo?.playbackRate || 1.0;
+        speeds.forEach((s) => {
+          const isActive = Math.abs(curSpeed - s) < 0.05;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
+          btn.innerHTML = `
+            <span>${s === 1.0 ? '1.0x (Normal)' : `${s}x`}</span>
+            ${isActive ? '<span class="item-check">✓</span>' : ''}
+          `;
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (activeVideo) activeVideo.playbackRate = s;
+            if (chipSpeedLabel) chipSpeedLabel.textContent = `${s}x`;
+            closeMiniMenu();
+          });
+          miniMenuOptions.appendChild(btn);
+        });
+      } else if (key === 'server') {
+        miniMenuTitle.textContent = 'Stream Server';
+        STREAM_SERVERS.forEach((srv) => {
+          const isActive = srv.id === currentServer;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
+          btn.innerHTML = `
+            <div>
+              <div style="font-weight:700;">${esc(srv.name)}</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${esc(srv.tag || '')}</div>
+            </div>
+            ${isActive ? '<span class="item-check">✓</span>' : ''}
+          `;
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            switchServer(srv.id);
+            closeMiniMenu();
+          });
+          miniMenuOptions.appendChild(btn);
+        });
+      } else if (key === 'contrast') {
+        miniMenuTitle.textContent = 'Video Enhancement';
+        const modes = [
+          { id: 'standard', name: 'Standard', desc: 'Default Colors' },
+          { id: 'vivid', name: 'Vivid Anime', desc: 'Punchy saturated art' },
+          { id: 'high', name: 'High Contrast', desc: 'Deep inky blacks' },
+          { id: 'cinema', name: 'Cinema Soft', desc: 'Warm cinematic film' },
+        ];
+        modes.forEach((m) => {
+          const isActive = m.id === currentContrast;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
+          btn.innerHTML = `
+            <div>
+              <div style="font-weight:700;">${esc(m.name)}</div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:2px;">${esc(m.desc)}</div>
+            </div>
+            ${isActive ? '<span class="item-check">✓</span>' : ''}
+          `;
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            applyContrast(m.id);
+            closeMiniMenu();
+          });
+          miniMenuOptions.appendChild(btn);
+        });
+      }
+
+      playerMiniMenu.classList.add('open');
+    }
+
+    $$('.quick-chip', playerOverlay).forEach((chip) => {
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openMiniMenu(chip.dataset.chip);
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (isMenuOpen && !playerMiniMenu?.contains(e.target) && !e.target.closest('.quick-chip')) {
+        closeMiniMenu();
+      }
+    });
+
+    // Autoplay, PiP, Theater, Fullscreen
+    btnAutoplay?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      autoplayNext = !autoplayNext;
+      try { localStorage.setItem('animeverse_autoplay', String(autoplayNext)); } catch {}
+      btnAutoplay.classList.toggle('active', autoplayNext);
+    });
+
+    btnPip?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!activeVideo) return;
+      try {
+        if (document.pictureInPictureElement) {
+          await document.exitPictureInPicture();
+        } else {
+          await activeVideo.requestPictureInPicture();
+        }
+      } catch (err) {
+        console.warn('[PiP] Failed:', err);
+      }
+    });
+
+    btnTheater?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playerBox?.classList.toggle('theater-mode');
+    });
+
+    function toggleFullscreen() {
+      const isFs = !!document.fullscreenElement || playerBox?.classList.contains('is-fullscreen');
+      if (!isFs) {
+        playerBox?.requestFullscreen().catch(() => {});
+        playerBox?.classList.add('is-fullscreen');
+      } else {
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        playerBox?.classList.remove('is-fullscreen');
+      }
+    }
+
+    btnFullscreen?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleFullscreen();
+    });
+
+    function onFullscreenChange() {
+      const isFs = !!document.fullscreenElement;
+      playerBox?.classList.toggle('is-fullscreen', isFs);
+      if (fsEnterIcon) fsEnterIcon.classList.toggle('hidden', isFs);
+      if (fsExitIcon) fsExitIcon.classList.toggle('hidden', !isFs);
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    cleanup.push(() => document.removeEventListener('fullscreenchange', onFullscreenChange));
+
+    // Keyboard Shortcuts
+    function onPlayerKeyDown(e) {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+      if (e.key === ' ' || e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === 'ArrowLeft' || e.key === 'j' || e.key === 'J') {
+        e.preventDefault();
+        seekRelative(-10);
+        triggerRipple('left', '10s');
+      } else if (e.key === 'ArrowRight' || e.key === 'l' || e.key === 'L') {
+        e.preventDefault();
+        seekRelative(10);
+        triggerRipple('right', '10s');
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (activeVideo) setVolume(Math.min(1, activeVideo.volume + 0.1));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (activeVideo) setVolume(Math.max(0, activeVideo.volume - 0.1));
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        btnMuteToggle?.click();
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        btnTheater?.click();
+      } else if (e.key === 'c' || e.key === 'C') {
+        e.preventDefault();
+        if (cachedSubtitles.length > 0) {
+          setSubtitleTrack(activeSubIndex === -1 ? 0 : -1);
+        }
+      } else if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        playNextNow();
+      } else if (e.key === '>') {
+        e.preventDefault();
+        if (activeVideo) {
+          const s = Math.min(2.0, Number((activeVideo.playbackRate + 0.25).toFixed(2)));
+          activeVideo.playbackRate = s;
+          if (chipSpeedLabel) chipSpeedLabel.textContent = `${s}x`;
+        }
+      } else if (e.key === '<') {
+        e.preventDefault();
+        if (activeVideo) {
+          const s = Math.max(0.5, Number((activeVideo.playbackRate - 0.25).toFixed(2)));
+          activeVideo.playbackRate = s;
+          if (chipSpeedLabel) chipSpeedLabel.textContent = `${s}x`;
+        }
+      } else if (e.key === 'Escape') {
+        if (isMenuOpen) {
+          closeMiniMenu();
+        }
+      }
+    }
+    window.addEventListener('keydown', onPlayerKeyDown);
+    cleanup.push(() => window.removeEventListener('keydown', onPlayerKeyDown));
+
+    // Save playback progress
     function savePlaybackProgress(curTime, dur) {
       playbackCurrentTime = curTime || 0;
       playbackDuration = dur || 0;
@@ -1151,12 +1984,11 @@
       }
     }
 
-    // ── Unified Stream Loader (Seamless Re-use & Fullscreen-Safe) ──
+    // Unified Stream Loader (HLS Native OTT Pipeline with 120s buffer & zero browser controls)
     async function loadStream(explicitResumeTime = null) {
       const thisGen = ++currentResolveGen;
       const s = getActiveServer();
 
-      // Read exact resume timestamp in seconds
       const targetResumeSec = explicitResumeTime !== null
         ? explicitResumeTime
         : Number(localStorage.getItem(storageKeyExactTime(currentEp)) || 0);
@@ -1165,8 +1997,11 @@
       upNextCancelled = false;
       playbackCurrentTime = 0;
       playbackDuration = 0;
+      cachedSubtitles = [];
+      activeSubIndex = -1;
 
-      // 1. Sync toolbar UI
+      // Sync chips & pills
+      if (chipServerLabel) chipServerLabel.textContent = s.id === 'fast' ? 'Fast Stream' : 'Multi-Audio';
       $$('.server-pill', view).forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.serverId === currentServer);
       });
@@ -1174,258 +2009,245 @@
         btn.classList.toggle('active', btn.dataset.audioLang === currentLang);
       });
 
-      // 2. If switching between server types (Native vs Iframe), teardown the other one
-      if (s.isNative && activeIframe) {
-        teardownPlayer();
-      } else if (!s.isNative && activeVideo) {
-        teardownPlayer();
-      }
+      showLoader(`Loading ${s.name}...`);
 
-      // 3. Mount / Update Native HLS Player
-      if (s.isNative) {
-        showLoader(`Loading ${s.name}...`);
-        try {
-          const res = await api(
-            `/stream/resolve?title=${encodeURIComponent(a.title)}&romaji=${encodeURIComponent(a.titleRomaji || '')}&season=${currentSeason}&episode=${currentEp}&mode=${currentLang}`,
-            30 * 60 * 1000
-          );
+      try {
+        const res = await api(
+          `/stream/resolve?title=${encodeURIComponent(a.title)}&romaji=${encodeURIComponent(a.titleRomaji || '')}&season=${currentSeason}&episode=${currentEp}&mode=${currentLang}&server=${currentServer}&anilistId=${alId}`,
+          30 * 60 * 1000
+        );
 
-          if (thisGen !== currentResolveGen) return;
+        if (thisGen !== currentResolveGen) return;
 
-          if (!res || !res.streamUrl) {
-            throw new Error('No stream URL available');
-          }
+        if (!res || !res.streamUrl) {
+          throw new Error('No stream URL available for this episode');
+        }
 
-          const finalStreamUrl = res.streamUrl.startsWith('http')
-            ? res.streamUrl
-            : `${API_BASE}${res.streamUrl}`;
+        const finalStreamUrl = res.streamUrl.startsWith('http')
+          ? res.streamUrl
+          : `${API_BASE}${res.streamUrl}`;
 
-          let video = activeVideo;
-          if (!video) {
-            video = document.createElement('video');
-            video.className = 'cinema-video-element';
-            video.controls = true;
-            video.playsInline = true;
-            video.preload = 'auto';
-            video.crossOrigin = 'anonymous';
+        let video = activeVideo;
+        if (!video) {
+          video = document.createElement('video');
+          video.className = 'cinema-video-element';
+          video.controls = false; // NEVER browser controls - custom OTT controls overlay!
+          video.playsInline = true;
+          video.preload = 'auto';
+          video.crossOrigin = 'anonymous';
 
-            playerMount.appendChild(video);
-            activeVideo = video;
+          playerMount.appendChild(video);
+          activeVideo = video;
 
-            const onProgressFlush = () => {
-              if (video && video.currentTime > 1) {
-                savePlaybackProgress(video.currentTime, video.duration);
-              }
-            };
-
-            video.addEventListener('timeupdate', () => {
-              if (video.currentTime > 1) {
-                savePlaybackProgress(video.currentTime, video.duration);
-              }
-              // Trigger Up Next card 30 seconds before ending
-              if (video.duration > 35 && (video.duration - video.currentTime) <= 30) {
-                triggerUpNext();
-              }
-            });
-            video.addEventListener('pause', onProgressFlush);
-            video.addEventListener('seeking', onProgressFlush);
-            video.addEventListener('seeked', onProgressFlush);
-            window.addEventListener('beforeunload', onProgressFlush);
-            window.addEventListener('pagehide', onProgressFlush);
-
-            video.addEventListener('ended', () => {
-              watched.add(currentEp);
-              try {
-                localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
-                localStorage.setItem(storageKeyProgress(currentEp), '100');
-              } catch {}
-              if (markWatchedBtn) {
-                markWatchedBtn.classList.add('watched');
-                markWatchedBtn.textContent = '✓ Watched';
-              }
-              triggerUpNext(true);
-            });
-          }
-
-          // Subtitle tracks
-          while (video.firstChild) {
-            video.removeChild(video.firstChild);
-          }
-          if (res.subtitles && res.subtitles.length > 0) {
-            res.subtitles.forEach((sub, idx) => {
-              const track = document.createElement('track');
-              track.kind = 'subtitles';
-              track.label = sub.label || sub.lang || `Track ${idx + 1}`;
-              track.srclang = sub.lang || 'en';
-              track.src = sub.src.startsWith('http') ? sub.src : `${API_BASE}${sub.src}`;
-              if (sub.default) track.default = true;
-              video.appendChild(track);
-            });
-          }
-
-          if (window.Hls && Hls.isSupported()) {
-            if (activeHls) {
-              try { activeHls.destroy(); } catch {}
-              activeHls = null;
+          const onProgressFlush = () => {
+            if (video && video.currentTime > 1) {
+              savePlaybackProgress(video.currentTime, video.duration);
             }
-            const hls = new Hls({
-              autoStartLoad: true,
-              enableWorker: true,
-              startPosition: targetResumeSec > 1.5 ? targetResumeSec : -1,
-              startFragPrefetch: true,
-              progressive: false,
-              lowLatencyMode: false,
-              maxBufferLength: 60,
-              maxMaxBufferLength: 120,
-              backBufferLength: 60,
-              maxBufferSize: 60 * 1024 * 1024,
-              manifestLoadingTimeOut: 20000,
-              levelLoadingTimeOut: 20000,
-              fragLoadingTimeOut: 25000,
-            });
+          };
 
-            activeHls = hls;
-            hls.loadSource(finalStreamUrl);
-            hls.attachMedia(video);
+          video.addEventListener('play', () => syncPlayState(true));
+          video.addEventListener('pause', () => {
+            syncPlayState(false);
+            onProgressFlush();
+          });
+          video.addEventListener('seeking', onProgressFlush);
+          video.addEventListener('seeked', onProgressFlush);
+          window.addEventListener('beforeunload', onProgressFlush);
+          window.addEventListener('pagehide', onProgressFlush);
 
-            let restored = false;
-            const applyResume = () => {
-              if (restored) return;
-              if (targetResumeSec > 1.5) {
-                try {
-                  if (Math.abs(video.currentTime - targetResumeSec) > 1.5) {
-                    video.currentTime = targetResumeSec;
-                  }
-                  restored = true;
-                } catch (e) {}
-              }
-            };
-
-            video.addEventListener('loadedmetadata', applyResume, { once: true });
-            video.addEventListener('canplay', applyResume, { once: true });
-            hls.once(Hls.Events.LEVEL_LOADED, applyResume);
-
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              if (thisGen !== currentResolveGen) return;
-              applyResume();
-              hideLoader();
-              video.play().catch(() => {});
-            });
-
-            let netRetries = 0;
-            let medRetries = 0;
-            const MAX_NET_RETRIES = 3;
-            const MAX_MED_RETRIES = 2;
-
-            hls.on(Hls.Events.ERROR, (evt, errData) => {
-              if (errData.fatal) {
-                switch (errData.type) {
-                  case Hls.ErrorTypes.NETWORK_ERROR:
-                    if (netRetries < MAX_NET_RETRIES) {
-                      netRetries++;
-                      hls.startLoad();
-                    } else {
-                      hls.destroy();
-                    }
-                    break;
-                  case Hls.ErrorTypes.MEDIA_ERROR:
-                    if (medRetries < MAX_MED_RETRIES) {
-                      medRetries++;
-                      hls.recoverMediaError();
-                    } else {
-                      hls.destroy();
-                    }
-                    break;
-                  default:
-                    hls.destroy();
-                    break;
+          video.addEventListener('timeupdate', () => {
+            if (video.currentTime > 1) {
+              savePlaybackProgress(video.currentTime, video.duration);
+            }
+            let bufferedEnd = 0;
+            if (video.buffered.length > 0) {
+              for (let i = 0; i < video.buffered.length; i++) {
+                if (video.buffered.start(i) <= video.currentTime && video.currentTime <= video.buffered.end(i)) {
+                  bufferedEnd = video.buffered.end(i);
+                  break;
                 }
               }
-            });
-          } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = finalStreamUrl;
-            video.addEventListener('loadedmetadata', () => {
-              if (thisGen !== currentResolveGen) return;
-              hideLoader();
-              if (targetResumeSec > 1.5) video.currentTime = targetResumeSec;
-              video.play().catch(() => {});
-            }, { once: true });
-          }
-        } catch (err) {
-          if (thisGen !== currentResolveGen) return;
-          console.warn('[Player] Native stream failed:', err.message);
-          hideLoader();
-          if (playerMount) {
-            playerMount.innerHTML = `
-              <div class="player-error-view">
-                <p class="err-title">Stream currently unavailable on HiAnime</p>
-                <p class="err-desc">${esc(err.message || 'Could not resolve video stream.')}</p>
-                <div class="err-actions">
-                  <button type="button" class="btn btn-red" id="retryStreamBtn">Retry</button>
-                  <button type="button" class="btn btn-ghost" id="fallbackVidriftBtn">Switch to Vidrift</button>
-                </div>
-              </div>
-            `;
-            $('#retryStreamBtn', playerMount)?.addEventListener('click', () => loadStream());
-            $('#fallbackVidriftBtn', playerMount)?.addEventListener('click', () => switchServer('vidrift'));
-          }
+              if (!bufferedEnd && video.buffered.length > 0) {
+                bufferedEnd = video.buffered.end(video.buffered.length - 1);
+              }
+            }
+            updateScrubberUI(video.currentTime, video.duration, bufferedEnd);
+
+            if (video.duration > 35 && (video.duration - video.currentTime) <= 30) {
+              triggerUpNext();
+            }
+          });
+
+          video.addEventListener('ended', () => {
+            watched.add(currentEp);
+            try {
+              localStorage.setItem(storageKeyWatched, JSON.stringify([...watched]));
+              localStorage.setItem(storageKeyProgress(currentEp), '100');
+            } catch {}
+            if (markWatchedBtn) {
+              markWatchedBtn.classList.add('watched');
+              markWatchedBtn.textContent = '✓ Watched';
+            }
+            if (autoplayNext) {
+              triggerUpNext(true);
+            }
+          });
         }
-      } else {
-        // 4. Mount / Update Embed Iframe (Vidrift) — Seamless reuse retains fullscreen!
-        const embedUrl = s.getUrl(alId, currentEp, currentLang, tmdbId, currentSeason);
 
-        const notifyNextEp = (win) => {
-          if (!win) return;
-          try {
-            // Send next: null to Vidrift so Vidrift suppresses its duplicate internal Up Next card.
-            // Our custom AnimeVerse floating Up Next card with the 10s progress bar and cancel button
-            // will exclusively handle up next transitions.
-            win.postMessage({ type: 'vidrift:nextup-info', next: null }, 'https://embed.vidrift.net');
-            win.postMessage({
-              type: 'vidrift:fullscreen-state',
-              on: !!(document.fullscreenElement || playerBox?.classList.contains('is-fullscreen')),
-            }, 'https://embed.vidrift.net');
-          } catch (e) {}
-        };
-
-        if (activeIframe) {
-          // REUSE existing iframe to prevent exiting fullscreen and eliminate delay!
-          activeIframe.title = `${a.title} - S${currentSeason}E${currentEp}`;
-          if (activeIframe.src !== embedUrl) {
-            showLoader(`Loading Episode ${currentEp}...`);
-            activeIframe.onload = () => {
-              if (thisGen !== currentResolveGen) return;
-              hideLoader();
-              notifyNextEp(activeIframe.contentWindow);
-            };
-            activeIframe.src = embedUrl;
-          } else {
-            hideLoader();
-            notifyNextEp(activeIframe.contentWindow);
-          }
-          setTimeout(() => {
-            if (thisGen === currentResolveGen) hideLoader();
-          }, 1500);
+        // Subtitles setup
+        while (video.firstChild) {
+          video.removeChild(video.firstChild);
+        }
+        cachedSubtitles = res.subtitles || [];
+        if (cachedSubtitles.length > 0) {
+          cachedSubtitles.forEach((sub, idx) => {
+            const track = document.createElement('track');
+            track.kind = 'subtitles';
+            track.label = sub.label || sub.lang || `Track ${idx + 1}`;
+            track.srclang = sub.lang || 'en';
+            track.src = sub.src.startsWith('http') ? sub.src : `${API_BASE}${sub.src}`;
+            if (sub.default) {
+              track.default = true;
+              activeSubIndex = idx;
+              if (chipSubtitlesBadge) chipSubtitlesBadge.textContent = (sub.lang || 'EN').toUpperCase();
+            }
+            video.appendChild(track);
+          });
         } else {
-          showLoader(`Loading ${s.name}...`);
-          const iframe = document.createElement('iframe');
-          iframe.className = 'cinema-iframe-element';
-          iframe.title = `${a.title} - S${currentSeason}E${currentEp}`;
-          iframe.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
-          iframe.allowFullscreen = true;
-          iframe.src = embedUrl;
+          if (chipSubtitlesBadge) chipSubtitlesBadge.textContent = 'OFF';
+        }
 
-          playerMount.appendChild(iframe);
-          activeIframe = iframe;
+        if (window.Hls && Hls.isSupported()) {
+          if (activeHls) {
+            try { activeHls.destroy(); } catch {}
+            activeHls = null;
+          }
+          const hls = new Hls({
+            autoStartLoad: true,
+            enableWorker: true,
+            startPosition: targetResumeSec > 1.5 ? targetResumeSec : -1,
+            startFragPrefetch: true,
+            progressive: false,
+            lowLatencyMode: false,
+            maxBufferLength: 120, // 2 minutes forward buffer
+            maxMaxBufferLength: 300, // up to 5 minutes
+            backBufferLength: 120, // 2 minutes back buffer for instant backward scrubbing
+            maxBufferSize: 128 * 1024 * 1024, // 128 MB buffer
+            manifestLoadingTimeOut: 20000,
+            levelLoadingTimeOut: 20000,
+            fragLoadingTimeOut: 25000,
+          });
 
-          iframe.onload = () => {
+          activeHls = hls;
+          hls.loadSource(finalStreamUrl);
+          hls.attachMedia(video);
+
+          let restored = false;
+          const applyResume = () => {
+            if (restored) return;
+            if (targetResumeSec > 1.5) {
+              try {
+                if (Math.abs(video.currentTime - targetResumeSec) > 1.5) {
+                  video.currentTime = targetResumeSec;
+                }
+                restored = true;
+              } catch (e) {}
+            }
+          };
+
+          video.addEventListener('loadedmetadata', applyResume, { once: true });
+          video.addEventListener('canplay', applyResume, { once: true });
+          hls.once(Hls.Events.LEVEL_LOADED, applyResume);
+
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (thisGen !== currentResolveGen) return;
+            applyResume();
+            hideLoader();
+
+            if (hls.levels && hls.levels.length > 0) {
+              const bestLevel = hls.levels[hls.levels.length - 1];
+              if (chipQualityBadge) {
+                chipQualityBadge.textContent = qualityBadgeName(bestLevel.height);
+              }
+            }
+
+            if (hls.audioTracks && hls.audioTracks.length > 0) {
+              const curTrack = hls.audioTracks[hls.audioTrack] || hls.audioTracks[0];
+              if (chipAudioBadge) {
+                chipAudioBadge.textContent = (curTrack.lang || curTrack.name || 'JP').slice(0, 3).toUpperCase();
+              }
+            }
+
+            video.play().catch(() => {});
+          });
+
+          hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
+            if (hls.audioTracks && hls.audioTracks.length > 0) {
+              const curTrack = hls.audioTracks[hls.audioTrack] || hls.audioTracks[0];
+              if (chipAudioBadge) {
+                chipAudioBadge.textContent = (curTrack.lang || curTrack.name || 'JP').slice(0, 3).toUpperCase();
+              }
+            }
+          });
+
+          let netRetries = 0;
+          let medRetries = 0;
+          const MAX_NET_RETRIES = 3;
+          const MAX_MED_RETRIES = 2;
+
+          hls.on(Hls.Events.ERROR, (evt, errData) => {
+            if (errData.fatal) {
+              switch (errData.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  if (netRetries < MAX_NET_RETRIES) {
+                    netRetries++;
+                    hls.startLoad();
+                  } else {
+                    hls.destroy();
+                  }
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  if (medRetries < MAX_MED_RETRIES) {
+                    medRetries++;
+                    hls.recoverMediaError();
+                  } else {
+                    hls.destroy();
+                  }
+                  break;
+                default:
+                  hls.destroy();
+                  break;
+              }
+            }
+          });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = finalStreamUrl;
+          video.addEventListener('loadedmetadata', () => {
             if (thisGen !== currentResolveGen) return;
             hideLoader();
-            notifyNextEp(iframe.contentWindow);
-          };
-          setTimeout(() => {
-            if (thisGen === currentResolveGen) hideLoader();
-          }, 2000);
+            if (targetResumeSec > 1.5) video.currentTime = targetResumeSec;
+            video.play().catch(() => {});
+          }, { once: true });
+        }
+      } catch (err) {
+        if (thisGen !== currentResolveGen) return;
+        console.warn('[Player] Stream resolve failed:', err.message);
+        hideLoader();
+        if (playerMount) {
+          playerMount.innerHTML = `
+            <div class="player-error-view">
+              <p class="err-title">Stream unavailable on ${esc(s.name)}</p>
+              <p class="err-desc">${esc(err.message || 'Could not resolve stream URL.')}</p>
+              <div class="err-actions">
+                <button type="button" class="btn btn-red" id="retryStreamBtn">Retry</button>
+                <button type="button" class="btn btn-ghost" id="fallbackServerBtn">Switch to ${currentServer === 'multiaudio' ? 'Fast Stream' : 'Multi-Audio'}</button>
+              </div>
+            </div>
+          `;
+          $('#retryStreamBtn', playerMount)?.addEventListener('click', () => loadStream());
+          $('#fallbackServerBtn', playerMount)?.addEventListener('click', () => {
+            switchServer(currentServer === 'multiaudio' ? 'fast' : 'multiaudio');
+          });
         }
       }
     }
@@ -1450,7 +2272,6 @@
     function switchAudio(lang) {
       if (lang === currentLang) return;
 
-      // When real alternate audio tracks exist in the HLS manifest, switch in-place
       if (activeHls && activeHls.audioTracks && activeHls.audioTracks.length > 1) {
         const targetTrackIdx = activeHls.audioTracks.findIndex((t) => {
           const l = (t.lang || t.name || '').toLowerCase();
@@ -1465,11 +2286,11 @@
           $$('.audio-pill', view).forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.audioLang === currentLang);
           });
+          if (chipAudioBadge) chipAudioBadge.textContent = lang === 'dub' ? 'EN' : 'JP';
           return;
         }
       }
 
-      // Separate-stream fallback
       const currentPos = (activeVideo && activeVideo.currentTime > 1) ? activeVideo.currentTime : null;
       currentLang = lang;
       try {
@@ -1513,7 +2334,7 @@
       return null;
     }
 
-    // Up Next Floating Popup with 5-Second Progress Bar
+    // Up Next Floating Popup with 10-Second Progress Bar
     function cancelUpNext() {
       upNextActive = false;
       upNextCancelled = true;
@@ -1544,20 +2365,15 @@
     function triggerUpNext(force = false) {
       if (upNextActive || upNextCancelled) return;
 
-      // STRICT TIMING GUARD: Never trigger Up Next if playback is early/mid episode!
-      // Only trigger if remaining time is <= 90s, or position is >= 85% of total duration, or forced on video ended.
       if (!force) {
         const cur = (activeVideo ? activeVideo.currentTime : playbackCurrentTime) || 0;
         const dur = (activeVideo ? activeVideo.duration : playbackDuration) || 0;
         if (dur > 60) {
           const remaining = dur - cur;
           if (remaining > 90 && (cur / dur) < 0.85) {
-            console.log(`[UpNext] Suppressed trigger at ${cur.toFixed(0)}s of ${dur.toFixed(0)}s (remaining: ${remaining.toFixed(0)}s)`);
             return;
           }
         } else if (cur < 900) {
-          // If duration is unknown yet, suppress any trigger unless user has played for at least 15 minutes
-          console.log(`[UpNext] Suppressed trigger at ${cur.toFixed(0)}s (duration unknown or <= 60s)`);
           return;
         }
       }
@@ -1567,7 +2383,7 @@
 
       upNextActive = true;
       if (upNextThumb) upNextThumb.src = nextMeta.still || a.image || '';
-      if (upNextKicker) upNextKicker.textContent = `UP NEXT \u00B7 S${nextMeta.season} \u00B7 E${nextMeta.episode}`;
+      if (upNextKicker) upNextKicker.textContent = `UP NEXT · S${nextMeta.season} · E${nextMeta.episode}`;
       if (upNextTitle) upNextTitle.textContent = nextMeta.name;
       if (upNextSub) upNextSub.textContent = 'STARTS IN 10s';
       if (upNextProgressFill) upNextProgressFill.style.width = '0%';
@@ -1609,103 +2425,6 @@
         cancelUpNext();
       });
     }
-
-
-    // Handle Vidrift postMessages (Seamless auto-next & episode switching)
-    function handleVidriftMessage(e) {
-      if (e.origin !== 'https://embed.vidrift.net' && e.origin !== 'https://embed.vidrift.in' && e.origin !== window.location.origin) return;
-      const d = e.data;
-      if (!d || !d.type) return;
-
-      if (d.type === 'vidrift:nextup') {
-        triggerUpNext();
-      } else if (d.type === 'vidrift:nextup-play') {
-        playNextNow();
-      } else if (d.type === 'vidrift:ended') {
-        triggerUpNext(true);
-      } else if (d.type === 'vidrift:fullscreen') {
-        const shouldFs = !!d.on;
-        if (shouldFs) {
-          if (playerBox && !document.fullscreenElement) {
-            playerBox.requestFullscreen().catch(() => {});
-          }
-          playerBox?.classList.add('is-fullscreen');
-          if (window.desktopAPI?.setFullScreen) {
-            window.desktopAPI.setFullScreen(true);
-          }
-        } else {
-          if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
-          }
-          playerBox?.classList.remove('is-fullscreen');
-          if (window.desktopAPI?.setFullScreen) {
-            window.desktopAPI.setFullScreen(false);
-          }
-        }
-        if (activeIframe && activeIframe.contentWindow) {
-          activeIframe.contentWindow.postMessage({
-            type: 'vidrift:fullscreen-state',
-            on: shouldFs,
-          }, 'https://embed.vidrift.net');
-        }
-      } else if (d.type === 'vidrift:progress') {
-        if (d.currentTime > 1) {
-          savePlaybackProgress(d.currentTime, d.duration);
-        }
-      } else if (d.type === 'vidrift:episode') {
-        if (d.episode && (d.episode !== currentEp || (d.season && d.season !== currentSeason))) {
-          if (d.season && d.season !== currentSeason) {
-            switchSeasonAndEpisode(d.season, d.episode);
-          } else {
-            switchEpisode(d.episode);
-          }
-        }
-      }
-    }
-    window.addEventListener('message', handleVidriftMessage);
-
-    function onFullscreenChange() {
-      const isFs = !!document.fullscreenElement;
-      if (playerBox) {
-        playerBox.classList.toggle('is-fullscreen', isFs);
-      }
-      if (window.desktopAPI?.setFullScreen) {
-        window.desktopAPI.setFullScreen(isFs);
-      }
-      if (activeIframe && activeIframe.contentWindow) {
-        activeIframe.contentWindow.postMessage({
-          type: 'vidrift:fullscreen-state',
-          on: isFs,
-        }, 'https://embed.vidrift.net');
-      }
-    }
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-
-    // Global 'F' / 'f' Fullscreen Toggle
-    function onFsKey(e) {
-      if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.altKey && !e.metaKey) {
-        if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
-        const isFs = !!document.fullscreenElement || playerBox?.classList.contains('is-fullscreen');
-        const nextFs = !isFs;
-        if (nextFs) {
-          if (playerBox) playerBox.requestFullscreen().catch(() => {});
-          playerBox?.classList.add('is-fullscreen');
-          if (window.desktopAPI?.setFullScreen) window.desktopAPI.setFullScreen(true);
-        } else {
-          if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-          playerBox?.classList.remove('is-fullscreen');
-          if (window.desktopAPI?.setFullScreen) window.desktopAPI.setFullScreen(false);
-        }
-        if (activeIframe && activeIframe.contentWindow) {
-          activeIframe.contentWindow.postMessage({
-            type: 'vidrift:fullscreen-state',
-            on: nextFs,
-          }, 'https://embed.vidrift.net');
-        }
-      }
-    }
-    window.addEventListener('keydown', onFsKey);
-    cleanup.push(() => window.removeEventListener('keydown', onFsKey));
 
     async function switchSeasonAndEpisode(targetSeason, targetEp = 1) {
       cancelUpNext();
@@ -1769,6 +2488,24 @@
       });
     }
 
+    // Next / Prev Episode buttons
+    centerPrevEp?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentEp > 1) {
+        switchEpisode(currentEp - 1);
+      }
+    });
+
+    centerNextEp?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playNextNow();
+    });
+
+    btnNextEpBottom?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playNextNow();
+    });
+
     function switchEpisode(epNum) {
       if (activeVideo && activeVideo.currentTime > 1) {
         savePlaybackProgress(activeVideo.currentTime, activeVideo.duration);
@@ -1787,8 +2524,14 @@
 
       if (seasonEpTag) seasonEpTag.textContent = `Season ${currentSeason} · E${currentEp}`;
       if (playerEpTitle) playerEpTitle.textContent = epObj.name || `Episode ${currentEp}`;
+      if (overlayEpBadge) overlayEpBadge.textContent = `S${currentSeason} · E${currentEp}`;
+      if (overlayEpName) overlayEpName.textContent = epObj.name || `Episode ${currentEp}`;
 
-      // Sync Dub audio pill availability for this episode
+      if (centerPrevEp) {
+        centerPrevEp.style.opacity = currentEp > 1 ? '1' : '0.35';
+        centerPrevEp.style.pointerEvents = currentEp > 1 ? 'auto' : 'none';
+      }
+
       const epHasDub = epObj?.hasDub !== undefined ? epObj.hasDub : (epData?.dubCount ? currentEp <= epData.dubCount : false);
       const dubBtn = $('#dubAudioBtn', view);
       if (dubBtn) {
@@ -1802,7 +2545,6 @@
         markWatchedBtn.textContent = isWatched ? '✓ Watched' : 'Mark Watched';
       }
 
-      // Re-mark playing card in grid and sync active season tab
       if (seasonSelector) {
         $$('.season-btn', seasonSelector).forEach((b) => b.classList.toggle('active', Number(b.dataset.seasonNum) === currentSeason));
       }
@@ -1814,7 +2556,6 @@
         attachCardListeners(episodes, currentSeason);
       }
 
-      // Update URL silently without disrupting scroll or fullscreen
       window.history.replaceState({}, '', `/watch/${encodeURIComponent(a.id)}?season=${currentSeason}&ep=${currentEp}`);
       document.title = `Watch E${currentEp}: ${a.title} — AnimeVerse`;
 
@@ -1836,7 +2577,6 @@
         });
       });
 
-      // Episode description MORE / LESS toggles
       $$('.episode-desc-toggle', episodesGrid).forEach((btn) => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1852,7 +2592,6 @@
 
     attachCardListeners(episodes, currentSeason);
 
-    // Season selector tabs
     if (seasonSelector) {
       $$('.season-btn', seasonSelector).forEach((btn) => {
         btn.addEventListener('click', async () => {
@@ -1860,7 +2599,6 @@
           if (sNum === viewingSeason) return;
 
           viewingSeason = sNum;
-
           $$('.season-btn', seasonSelector).forEach((b) => b.classList.toggle('active', Number(b.dataset.seasonNum) === viewingSeason));
 
           if (episodesGrid) {
@@ -1870,7 +2608,6 @@
           const newEpData = await api(`/anime/${encodeURIComponent(a.id)}/episodes?season=${viewingSeason}`, 60 * 60 * 1000).catch(() => null);
           let seasonEpisodes = (newEpData && newEpData.episodes && newEpData.episodes.length > 0) ? newEpData.episodes : [];
 
-          // Only filter available episodes for the detected airing season
           if (viewingSeason === detectedSeason && a.airing && availableEp < seasonEpisodes.length) {
             seasonEpisodes = seasonEpisodes.filter((e) => e.episode_number <= availableEp);
           }
@@ -1891,6 +2628,7 @@
     // Initialize playback immediately
     loadStream();
   }
+
 
 
   function relationsHtml(a) {
