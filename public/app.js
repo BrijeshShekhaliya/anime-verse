@@ -61,13 +61,25 @@
   // blip or 5xx, and the last good copy if the server can't answer.
   const API_BASE = '';
 
+  const CACHE_KEY_PREFIX = 'av_v617_';
+  if (typeof sessionStorage !== 'undefined') {
+    try {
+      for (let i = sessionStorage.length - 1; i >= 0; i--) {
+        const k = sessionStorage.key(i);
+        if (k && k.startsWith('av_') && !k.startsWith(CACHE_KEY_PREFIX)) {
+          sessionStorage.removeItem(k);
+        }
+      }
+    } catch {}
+  }
+
   const inflightApi = new Map();
   async function api(path, ttlMs = 5 * 60 * 1000) {
     const hit = memo.get(path);
     if (hit && Date.now() - hit.t < ttlMs) return hit.data;
     if (!hit && typeof sessionStorage !== 'undefined') {
       try {
-        const stored = sessionStorage.getItem(`av_api_${path}`);
+        const stored = sessionStorage.getItem(`${CACHE_KEY_PREFIX}${path}`);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed && Date.now() - parsed.t < ttlMs) {
@@ -102,7 +114,7 @@
         memo.set(path, { t: Date.now(), data });
         if (typeof sessionStorage !== 'undefined' && !path.includes('/stream/')) {
           try {
-            sessionStorage.setItem(`av_api_${path}`, JSON.stringify({ t: Date.now(), data }));
+            sessionStorage.setItem(`${CACHE_KEY_PREFIX}${path}`, JSON.stringify({ t: Date.now(), data }));
           } catch {}
         }
         return data;

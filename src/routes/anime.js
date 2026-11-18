@@ -147,7 +147,16 @@ function warmUp() {
 }
 
 router.get('/', (req, res) => res.json({ status: 'ok', name: 'AnimeVerse API' }));
-router.get('/home', handle(() => getHome(), 'public, s-maxage=1800, stale-while-revalidate=86400'));
+router.get(
+  '/home',
+  handle((req) => {
+    if (req.query.refresh === '1') {
+      cache.store?.delete('home');
+      return cache.load('home', TTL.home, buildHome, HOME_KEEP);
+    }
+    return getHome();
+  }, 'public, s-maxage=1800, stale-while-revalidate=86400')
+);
 
 router.get(
   '/anime/:id',
@@ -169,6 +178,10 @@ router.get(
     const visuals = art || {};
     const isSeason = artwork.isSeasonEntry(anime.title, anime.titleRomaji) || (art && (art.isSeason || art.targetSeason > 1));
 
+    const relations = anime.relations?.length
+      ? await artwork.withPosters(anime.relations.map((r) => ({ ...r, type: r.type || r.format }))).catch(() => anime.relations)
+      : (anime.relations || []);
+
     if (art && (isSeason || (!artwork.SERIES_TYPES.has(anime.type) && art.tmdbKind === 'tv'))) {
       // It is a specific season or non-series TV entry:
       // Keep its own season cover (AniList anime.image or season-specific poster),
@@ -178,6 +191,7 @@ router.get(
       return {
         ...anime,
         ...visuals,
+        relations,
         image: seasonPoster,
         tmdbPoster: seasonPoster,
         banner: anime.banner || visuals.backdrop,
@@ -192,14 +206,17 @@ router.get(
     // Main show entry (Season 1):
     // Use season 1 poster (visuals.seasonPoster) if available to avoid TMDB whole-show poster being hijacked by sequels,
     // otherwise fallback to visuals.tmdbPoster or anime.image.
+    // Prefer authentic anime.banner if present so Season 1 doesn't display Season 2's backdrop.
     const mainPoster = visuals.seasonPoster || visuals.tmdbPoster || anime.image;
     return {
       ...anime,
       ...visuals,
+      relations,
       image: mainPoster,
       tmdbPoster: mainPoster,
-      backdrop: visuals.backdrop || anime.banner,
-      backdropHd: visuals.backdropHd || anime.banner,
+      banner: anime.banner || visuals.backdrop,
+      backdrop: anime.banner || visuals.backdrop,
+      backdropHd: anime.banner || visuals.backdropHd,
       ...(art ? artwork.seriesFacts(art, anime) : {}),
       imdb: imdbRating,
     };

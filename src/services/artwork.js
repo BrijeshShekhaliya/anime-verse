@@ -211,13 +211,14 @@ async function artworkFor(anime) {
 async function withPosters(items, { budgetMs = 0 } = {}) {
   // A series' main entry is flagged until its series totals are known, so a card
   // never shows Season 1's own episode count where the page shows the series total.
-  const out = items.map((a) => (!isSeasonEntry(a.title, a.titleRomaji) && SERIES_TYPES.has(a.type) ? { ...a, factsPending: true } : a));
+  const out = items.map((a) => (!isSeasonEntry(a.title, a.titleRomaji) && SERIES_TYPES.has(a.type || a.format) ? { ...a, factsPending: true } : a));
   const jobs = items.map(async (a, i) => {
     const isSeason = isSeasonEntry(a.title, a.titleRomaji);
+    const itemType = a.type || a.format;
     const match = await matchFor(a).catch(() => null);
     if (isSeason) {
-      if (match?.kind === 'tv' && SERIES_TYPES.has(a.type)) {
-        const art = await artworkFor(a).catch(() => null);
+      if (match?.kind === 'tv' && SERIES_TYPES.has(itemType)) {
+        const art = await artworkFor({ ...a, type: itemType }).catch(() => null);
         const p = art?.seasonPoster || art?.tmdbPoster;
         if (p) out[i] = { ...out[i], cover: a.image, image: p, image2x: p };
       }
@@ -228,8 +229,8 @@ async function withPosters(items, { budgetMs = 0 } = {}) {
     // A series card shows the same facts as the series page (seasons, total
     // episodes, status). Same cached TMDB details the anime page uses.
     let facts = {};
-    if (match?.kind === 'tv' && SERIES_TYPES.has(a.type)) {
-      const art = await artworkFor(a).catch(() => null);
+    if (match?.kind === 'tv' && SERIES_TYPES.has(itemType)) {
+      const art = await artworkFor({ ...a, type: itemType }).catch(() => null);
       facts = seriesFacts(art, a);
       if (art?.seasonPoster) {
         out[i] = { ...out[i], cover: a.image, image: art.seasonPoster, image2x: art.seasonPoster };
