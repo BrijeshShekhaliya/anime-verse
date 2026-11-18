@@ -2245,32 +2245,11 @@ p { margin: 0; }
   box-sizing: border-box;
 }
 
-.up-next-card {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000001 !important;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: rgba(18, 19, 23, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(255, 100, 10, 0.22);
-  max-width: min(92vw, 450px);
-  opacity: 0;
-  transform: translateY(16px);
-  pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
+.up-next-card,
 .up-next-card.visible {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .up-next-thumb-wrap {

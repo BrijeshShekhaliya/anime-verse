@@ -856,25 +856,6 @@
             <p id="playerLoaderMsg">Connecting to stream...</p>
           </div>
 
-          <!-- Up Next Floating Card -->
-          <div class="up-next-card" id="upNextCard">
-            <div class="up-next-thumb-wrap">
-              <img id="upNextThumb" src="" alt="Next Episode">
-            </div>
-            <div class="up-next-info">
-              <div class="up-next-kicker" id="upNextKicker">UP NEXT</div>
-              <div class="up-next-title" id="upNextTitle">Episode Title</div>
-              <div class="up-next-sub" id="upNextSub">STARTS IN 10s</div>
-            </div>
-            <div class="up-next-actions">
-              <button type="button" class="up-next-play-btn" id="upNextPlayBtn">
-                <span class="up-next-progress-fill" id="upNextProgressFill"></span>
-                <span class="up-next-btn-text">Play now</span>
-              </button>
-              <button type="button" class="up-next-cancel-btn" id="upNextCancelBtn">Cancel</button>
-            </div>
-          </div>
-
           <!-- Cinema Player Mount (Holds Native Video Element) -->
           <div class="cinema-player-mount" id="playerMount"></div>
 
@@ -2084,10 +2065,6 @@
               }
             }
             updateScrubberUI(video.currentTime, video.duration, bufferedEnd);
-
-            if (video.duration > 35 && (video.duration - video.currentTime) <= 30) {
-              triggerUpNext();
-            }
           });
 
           video.addEventListener('ended', () => {
@@ -2101,7 +2078,7 @@
               markWatchedBtn.textContent = '✓ Watched';
             }
             if (autoplayNext) {
-              triggerUpNext(true);
+              playNextNow();
             }
           });
         }
@@ -2358,72 +2335,11 @@
       }
     }
 
-    window.triggerUpNext = triggerUpNext;
-    window.cancelUpNext = cancelUpNext;
     window.playNextNow = playNextNow;
 
-    function triggerUpNext(force = false) {
-      if (upNextActive || upNextCancelled) return;
-
-      if (!force) {
-        const cur = (activeVideo ? activeVideo.currentTime : playbackCurrentTime) || 0;
-        const dur = (activeVideo ? activeVideo.duration : playbackDuration) || 0;
-        if (dur > 60) {
-          const remaining = dur - cur;
-          if (remaining > 90 && (cur / dur) < 0.85) {
-            return;
-          }
-        } else if (cur < 900) {
-          return;
-        }
-      }
-
-      const nextMeta = getNextEpMeta();
-      if (!nextMeta || !upNextCard) return;
-
-      upNextActive = true;
-      if (upNextThumb) upNextThumb.src = nextMeta.still || a.image || '';
-      if (upNextKicker) upNextKicker.textContent = `UP NEXT · S${nextMeta.season} · E${nextMeta.episode}`;
-      if (upNextTitle) upNextTitle.textContent = nextMeta.name;
-      if (upNextSub) upNextSub.textContent = 'STARTS IN 10s';
-      if (upNextProgressFill) upNextProgressFill.style.width = '0%';
-
-      upNextCard.classList.add('visible');
-      upNextStartTime = performance.now();
-
-      function tick(now) {
-        if (!upNextActive) return;
-        const elapsed = now - upNextStartTime;
-        const pct = Math.min(100, (elapsed / UP_NEXT_DURATION_MS) * 100);
-        if (upNextProgressFill) {
-          upNextProgressFill.style.width = `${pct}%`;
-        }
-        const remainingSec = Math.max(1, Math.ceil((UP_NEXT_DURATION_MS - elapsed) / 1000));
-        if (upNextSub) {
-          upNextSub.textContent = `STARTS IN ${remainingSec}s`;
-        }
-
-        if (elapsed >= UP_NEXT_DURATION_MS) {
-          playNextNow();
-        } else {
-          upNextAnimFrame = requestAnimationFrame(tick);
-        }
-      }
-      upNextAnimFrame = requestAnimationFrame(tick);
-    }
-
-    if (upNextPlayBtn) {
-      upNextPlayBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        playNextNow();
-      });
-    }
-
-    if (upNextCancelBtn) {
-      upNextCancelBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        cancelUpNext();
-      });
+    function triggerUpNext() {
+      // Disabled: User requested no automatic popup / play now countdown
+      return;
     }
 
     async function switchSeasonAndEpisode(targetSeason, targetEp = 1) {
