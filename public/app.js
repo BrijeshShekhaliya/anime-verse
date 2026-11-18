@@ -928,7 +928,7 @@
                 <button type="button" class="quick-chip" id="chipAudio" data-chip="audio" title="Audio Language">
                   <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                   <span id="chipAudioLabel">Audio</span>
-                  <span class="chip-badge chip-badge-blue" id="chipAudioBadge">JP</span>
+                  <span class="chip-badge chip-badge-blue" id="chipAudioBadge">${currentLang === 'dub' ? 'EN' : 'JP'}</span>
                 </button>
                 <button type="button" class="quick-chip" id="chipQuality" data-chip="quality" title="Video Quality">
                   <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -948,6 +948,11 @@
                   <svg class="chip-ic" viewBox="0 0 24 24" fill="none" stroke="#FFC12E" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z" fill="#FFC12E"/></svg>
                   <span id="chipContrastLabel">Standard</span>
                 </button>
+                ${currentEp < episodes.length ? `
+                <button type="button" class="quick-chip next-ep-chip" id="chipNextEp" title="Next Episode">
+                  <span>Next Ep</span>
+                  <svg class="chip-ic" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5"/></svg>
+                </button>` : ''}
               </div>
             </div>
 
@@ -1038,32 +1043,6 @@
                 <button type="button" class="mini-menu-close" id="miniMenuClose">✕</button>
               </div>
               <div class="mini-menu-options" id="miniMenuOptions"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Permanent Audio & Contrast Bar (OUTSIDE player frame, ALWAYS VISIBLE) -->
-        <div class="player-toolbar" id="playerToolbar">
-          <div class="toolbar-section audio-section" id="audioSection">
-            <span class="toolbar-label">
-              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-              AUDIO:
-            </span>
-            <div class="audio-toggle-pills" id="audioToggleList">
-              <button type="button" class="audio-pill${currentLang === 'sub' ? ' active' : ''}" data-audio-lang="sub">SUB</button>
-              <button type="button" class="audio-pill${currentLang === 'dub' ? ' active' : ''}${!(currentEpObj?.hasDub !== undefined ? currentEpObj.hasDub : (epData?.dubCount ? currentEp <= epData.dubCount : false)) ? ' disabled' : ''}" data-audio-lang="dub" id="dubAudioBtn" title="${(currentEpObj?.hasDub !== undefined ? currentEpObj.hasDub : (epData?.dubCount ? currentEp <= epData.dubCount : false)) ? 'English Dub Available' : 'Japanese Audio (Sub) only for this episode'}">DUB</button>
-            </div>
-          </div>
-          <div class="toolbar-section toolbar-section-contrast">
-            <span class="toolbar-label">
-              <svg class="ic" viewBox="0 0 24 24" style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"/></svg>
-              CONTRAST:
-            </span>
-            <div class="contrast-pill-list" id="contrastSelectorList">
-              <button type="button" class="contrast-pill active" data-contrast="standard">Standard</button>
-              <button type="button" class="contrast-pill" data-contrast="vivid">Vivid Anime</button>
-              <button type="button" class="contrast-pill" data-contrast="high">High Contrast</button>
-              <button type="button" class="contrast-pill" data-contrast="cinema">Cinema Soft</button>
             </div>
           </div>
         </div>
@@ -1179,6 +1158,7 @@
     const chipSpeedLabel = $('#chipSpeedLabel', view);
     const chipContrast = $('#chipContrast', view);
     const chipContrastLabel = $('#chipContrastLabel', view);
+    const chipNextEp = $('#chipNextEp', view);
 
     // Center Action Buttons
     const centerPrevEp = $('#centerPrevEp', view);
@@ -1286,15 +1266,8 @@
       try { localStorage.setItem('animeverse_contrast', mode); } catch {}
       if (playerMount) playerMount.dataset.contrast = mode;
       if (chipContrastLabel) chipContrastLabel.textContent = CONTRAST_LABELS[mode] || 'Standard';
-      $$('.contrast-pill', view).forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.contrast === mode);
-      });
     }
     applyContrast(currentContrast);
-
-    $$('.contrast-pill', view).forEach((btn) => {
-      btn.addEventListener('click', () => applyContrast(btn.dataset.contrast));
-    });
 
     // Teardown: Guarantees MULTIPLE PLAYERS NEVER RUN AT ONCE
     function teardownPlayer() {
@@ -1358,6 +1331,48 @@
       } else {
         resetIdleTimer();
       }
+    }
+
+    function syncAudioBadge() {
+      if (!chipAudioBadge) return;
+      if (activeHls && activeHls.audioTracks && activeHls.audioTracks.length > 1) {
+        const curTrack = activeHls.audioTracks[activeHls.audioTrack] || activeHls.audioTracks[0];
+        if (curTrack) {
+          const raw = `${curTrack.name || ''} ${curTrack.lang || ''}`.toLowerCase();
+          if (raw.includes('en') || raw.includes('eng')) {
+            chipAudioBadge.textContent = 'EN';
+            return;
+          }
+          if (raw.includes('hi') || raw.includes('hin')) {
+            chipAudioBadge.textContent = 'HI';
+            return;
+          }
+          if (raw.includes('ja') || raw.includes('jp')) {
+            chipAudioBadge.textContent = 'JP';
+            return;
+          }
+          if (raw.includes('ta')) {
+            chipAudioBadge.textContent = 'TA';
+            return;
+          }
+          if (raw.includes('te')) {
+            chipAudioBadge.textContent = 'TE';
+            return;
+          }
+          if (curTrack.lang && curTrack.lang.length <= 3) {
+            chipAudioBadge.textContent = curTrack.lang.toUpperCase();
+            return;
+          }
+        }
+      }
+      chipAudioBadge.textContent = currentLang === 'dub' ? 'EN' : 'JP';
+    }
+
+    if (chipNextEp) {
+      chipNextEp.addEventListener('click', (e) => {
+        e.stopPropagation();
+        nextEp();
+      });
     }
 
     function togglePlay() {
@@ -1607,22 +1622,42 @@
       if (key === 'audio') {
         miniMenuTitle.textContent = 'Audio Track';
         const tracks = activeHls?.audioTracks || [];
-        if (tracks.length > 0) {
+        if (tracks.length > 1) {
           tracks.forEach((t, idx) => {
             const isActive = idx === activeHls.audioTrack;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = `mini-menu-item${isActive ? ' active' : ''}`;
-            const name = t.name || t.lang || `Track ${idx + 1}`;
+            const raw = `${t.name || ''} ${t.lang || ''}`.toLowerCase();
+            let label = t.name || t.lang || `Track ${idx + 1}`;
+            let badge = 'SUB';
+            if (raw.includes('en') || raw.includes('eng')) {
+              label = 'English (Dub)';
+              badge = 'DUB';
+            } else if (raw.includes('ja') || raw.includes('jp')) {
+              label = 'Japanese (Sub)';
+              badge = 'SUB';
+            } else if (raw.includes('hi')) {
+              label = 'Hindi (Dub)';
+              badge = 'DUB';
+            } else if (raw.includes('ta')) {
+              label = 'Tamil (Dub)';
+              badge = 'DUB';
+            } else if (raw.includes('te')) {
+              label = 'Telugu (Dub)';
+              badge = 'DUB';
+            }
             btn.innerHTML = `
-              <span>${esc(name)}</span>
-              ${t.lang ? `<span class="item-badge">${esc(t.lang.toUpperCase())}</span>` : ''}
+              <span>${esc(label)}</span>
+              <span class="item-badge">${esc(badge)}</span>
               ${isActive ? '<span class="item-check">✓</span>' : ''}
             `;
             btn.addEventListener('click', (e) => {
               e.stopPropagation();
               activeHls.audioTrack = idx;
-              if (chipAudioBadge) chipAudioBadge.textContent = (t.lang || name).slice(0, 3).toUpperCase();
+              currentLang = badge === 'DUB' ? 'dub' : 'sub';
+              try { localStorage.setItem('animeverse_lang', currentLang); } catch {}
+              syncAudioBadge();
               closeMiniMenu();
             });
             miniMenuOptions.appendChild(btn);
@@ -1644,8 +1679,8 @@
             `;
             btn.addEventListener('click', (e) => {
               e.stopPropagation();
-              switchAudio(l.id);
               closeMiniMenu();
+              switchAudio(l.id);
             });
             miniMenuOptions.appendChild(btn);
           });
@@ -1952,10 +1987,8 @@
       cachedSubtitles = [];
       activeSubIndex = -1;
 
-      // Sync chips & pills
-      $$('.audio-pill', view).forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.audioLang === currentLang);
-      });
+      // Sync audio badge
+      syncAudioBadge();
 
       showLoader(`Loading ${s.name}...`);
 
@@ -2119,12 +2152,18 @@
               }
             }
 
-            if (hls.audioTracks && hls.audioTracks.length > 0) {
-              const curTrack = hls.audioTracks[hls.audioTrack] || hls.audioTracks[0];
-              if (chipAudioBadge) {
-                chipAudioBadge.textContent = (curTrack.lang || curTrack.name || 'JP').slice(0, 3).toUpperCase();
+            if (hls.audioTracks && hls.audioTracks.length > 1) {
+              const targetTrackIdx = hls.audioTracks.findIndex((t) => {
+                const raw = `${t.name || ''} ${t.lang || ''}`.toLowerCase();
+                return currentLang === 'dub'
+                  ? (raw.includes('en') || raw.includes('eng') || raw.includes('dub'))
+                  : (raw.includes('ja') || raw.includes('jp') || raw.includes('sub'));
+              });
+              if (targetTrackIdx !== -1) {
+                hls.audioTrack = targetTrackIdx;
               }
             }
+            syncAudioBadge();
 
             video.play().catch((err) => {
               console.log('[Player] Autoplay waiting for user gesture:', err?.message || err);
@@ -2133,12 +2172,18 @@
           });
 
           hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
-            if (hls.audioTracks && hls.audioTracks.length > 0) {
-              const curTrack = hls.audioTracks[hls.audioTrack] || hls.audioTracks[0];
-              if (chipAudioBadge) {
-                chipAudioBadge.textContent = (curTrack.lang || curTrack.name || 'JP').slice(0, 3).toUpperCase();
+            if (hls.audioTracks && hls.audioTracks.length > 1) {
+              const targetTrackIdx = hls.audioTracks.findIndex((t) => {
+                const raw = `${t.name || ''} ${t.lang || ''}`.toLowerCase();
+                return currentLang === 'dub'
+                  ? (raw.includes('en') || raw.includes('eng') || raw.includes('dub'))
+                  : (raw.includes('ja') || raw.includes('jp') || raw.includes('sub'));
+              });
+              if (targetTrackIdx !== -1 && hls.audioTrack !== targetTrackIdx) {
+                hls.audioTrack = targetTrackIdx;
               }
             }
+            syncAudioBadge();
           });
 
           let netRetries = 0;
@@ -2204,38 +2249,28 @@
 
     // Audio language listener
     function switchAudio(lang) {
-      if (lang === currentLang) return;
+      if (lang === currentLang && activeVideo) return;
+      currentLang = lang;
+      try {
+        localStorage.setItem('animeverse_lang', currentLang);
+      } catch {}
+      syncAudioBadge();
 
       if (activeHls && activeHls.audioTracks && activeHls.audioTracks.length > 1) {
         const targetTrackIdx = activeHls.audioTracks.findIndex((t) => {
-          const l = (t.lang || t.name || '').toLowerCase();
-          return lang === 'dub' ? (l.includes('en') || l.includes('eng')) : (l.includes('ja') || l.includes('jp') || l.includes('sub'));
+          const raw = `${t.name || ''} ${t.lang || ''}`.toLowerCase();
+          return lang === 'dub' ? (raw.includes('en') || raw.includes('eng') || raw.includes('dub')) : (raw.includes('ja') || raw.includes('jp') || raw.includes('sub'));
         });
         if (targetTrackIdx !== -1) {
           activeHls.audioTrack = targetTrackIdx;
-          currentLang = lang;
-          try {
-            localStorage.setItem('animeverse_lang', currentLang);
-          } catch {}
-          $$('.audio-pill', view).forEach((btn) => {
-            btn.classList.toggle('active', btn.dataset.audioLang === currentLang);
-          });
-          if (chipAudioBadge) chipAudioBadge.textContent = lang === 'dub' ? 'EN' : 'JP';
+          syncAudioBadge();
           return;
         }
       }
 
       const currentPos = (activeVideo && activeVideo.currentTime > 1) ? activeVideo.currentTime : null;
-      currentLang = lang;
-      try {
-        localStorage.setItem('animeverse_lang', currentLang);
-      } catch {}
       loadStream(currentPos);
     }
-
-    $$('.audio-pill', view).forEach((btn) => {
-      btn.addEventListener('click', () => switchAudio(btn.dataset.audioLang));
-    });
 
     // Up Next Next-Episode Metadata Helper
     function getNextEpMeta() {

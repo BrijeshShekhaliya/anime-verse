@@ -972,114 +972,6 @@ p { margin: 0; }
   font-weight: 500;
 }
 
-
-/* ── Permanent Server & Audio Toolbar (ALWAYS VISIBLE OUTSIDE FRAME) ── */
-.player-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 14px 18px;
-  background: #141416;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  margin-top: 14px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.toolbar-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.toolbar-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #888;
-  text-transform: uppercase;
-}
-
-.server-pill-list {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.server-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 14px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: #ccc;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.server-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.server-pill .server-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #666;
-  transition: background 0.15s ease;
-}
-
-.server-pill.active {
-  background: rgba(255, 100, 10, 0.18);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 700;
-}
-
-.server-pill.active .server-dot {
-  background: var(--accent);
-  box-shadow: 0 0 10px rgba(255, 100, 10, 0.8);
-}
-
-.audio-toggle-pills {
-  display: inline-flex;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.audio-pill {
-  padding: 7px 14px;
-  background: transparent;
-  border: none;
-  color: #aaa;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.audio-pill.active {
-  background: var(--red);
-  color: #fff;
-}
-
 /* ── Video Visual & Contrast Adjustments ── */
 .cinema-player-mount {
   transition: filter 0.25s ease;
@@ -1095,39 +987,6 @@ p { margin: 0; }
 
 .cinema-player-mount[data-contrast="cinema"] {
   filter: contrast(0.95) saturate(0.95) brightness(0.96);
-}
-
-.contrast-pill-list {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.contrast-pill {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text-2);
-  padding: 5px 11px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.03em;
-  transition: all var(--fast);
-  white-space: nowrap;
-}
-
-.contrast-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
-
-.contrast-pill.active {
-  background: rgba(255, 100, 10, 0.18);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 800;
 }
 
 /* ── Fullscreen Restore Toast ── */
@@ -2858,30 +2717,32 @@ body.is-scrolling * {
 }
 
 .player-anime-name {
-  font-size: 15px;
-  font-weight: 800;
-  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent, #ff8a3d);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  letter-spacing: -0.01em;
 }
 
 .player-ep-sub {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .player-ep-sub .ep-badge {
-  background: rgba(255, 100, 10, 0.22);
-  border: 1px solid rgba(255, 100, 10, 0.4);
-  color: var(--accent, #ff640a);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
   font-size: 11px;
   font-weight: 800;
   padding: 1px 7px;
@@ -2898,39 +2759,58 @@ body.is-scrolling * {
 }
 
 .quick-chip {
-  background: rgba(18, 19, 23, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 20px;
-  padding: 5px 11px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 16px;
+  height: 32px;
+  padding: 0 12px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #e2e8f0;
-  font-size: 12px;
+  color: #ffffff;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .quick-chip:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #fff;
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: #ffffff;
+  transform: scale(1.03);
 }
 
 .quick-chip.active {
   border-color: var(--accent, #ff640a);
-  background: rgba(255, 100, 10, 0.18);
+  background: rgba(255, 100, 10, 0.24);
+}
+
+.quick-chip.next-ep-chip {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  font-weight: 800;
+}
+
+.quick-chip.next-ep-chip:hover {
+  background: #f1f5f9;
+  color: #000000;
+  transform: scale(1.04);
+}
+
+.quick-chip.next-ep-chip .chip-ic {
+  color: #000000;
+  opacity: 1;
 }
 
 .quick-chip .chip-ic {
   width: 14px;
   height: 14px;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .chip-badge {
