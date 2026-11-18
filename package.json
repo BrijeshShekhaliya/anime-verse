@@ -2,8 +2,10 @@
   "name": "anime-verse",
   "version": "1.0.0",
   "description": "AnimeVerse - Fast, clean, ad-free anime streaming aggregator with custom OTT cinema player",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "build": "echo 'Static and serverless build ready'",
+    "vercel-build": "echo 'Static and serverless build ready'",
     "start": "node server.js",
     "dev": "node --watch-path=server.js --watch-path=src server.js",
     "desktop": "electron electron-main.js",
