@@ -42,11 +42,18 @@ let pausedUntil = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function post(body) {
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     const wait = pausedUntil - Date.now();
-    if (wait > 0) await sleep(wait);
+    if (wait > 0) {
+      if (wait > 4000) {
+        const err = new Error('AniList rate limited, pausing');
+        err.status = 429;
+        throw err;
+      }
+      await sleep(wait);
+    }
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
+    const timer = setTimeout(() => controller.abort(), 6000);
     let res;
     try {
       res = await fetch(URL, {

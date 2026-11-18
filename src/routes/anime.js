@@ -39,7 +39,28 @@ const loadSearch = (p) =>
   });
 const DEFAULT_BROWSE = { q: '', genre: '', type: '', status: '', order: '', dub: '', page: 1 };
 
-const getDetail = (id) => fresh(`detail:${id}`, TTL.detail, KEEP.detail, () => provider.detail(id));
+const getDetail = async (id) => {
+  const mem = cache.get(`detail:${id}`);
+  if (mem) return mem;
+  const disk = cache.snapshot.read(`detail_${id}`);
+  if (disk) {
+    cache.seed(`detail:${id}`, disk, KEEP.detail);
+    inBackground(() =>
+      provider.detail(id).then((freshData) => {
+        if (freshData) {
+          cache.set(`detail:${id}`, freshData, TTL.detail);
+          cache.snapshot.write(`detail_${id}`, freshData);
+        }
+      })
+    ).catch(() => {});
+    return disk;
+  }
+  return fresh(`detail:${id}`, TTL.detail, KEEP.detail, async () => {
+    const data = await provider.detail(id);
+    if (data) cache.snapshot.write(`detail_${id}`, data);
+    return data;
+  });
+};
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
@@ -140,7 +161,10 @@ router.get(
     const anime = await getDetail(id);
     const [imdbRating, art] = await Promise.all([
       imdb.enabled() ? imdb.lookup([anime.title, anime.titleRomaji], anime.year).catch(() => null) : null,
-      artwork.artworkFor(anime),
+      artwork.artworkFor(anime).catch((err) => {
+        console.warn(`[anime] artworkFor failed: ${err.message}`);
+        return null;
+      }),
     ]);
     const visuals = art || {};
     const isSeason = artwork.isSeasonEntry(anime.title, anime.titleRomaji) || (art && (art.isSeason || art.targetSeason > 1));
@@ -150,7 +174,7 @@ router.get(
       // Keep its own season cover (AniList anime.image or season-specific poster),
       // Prefer anime.banner if available (so sequel doesn't show Season 1's backdrop),
       // Drop series-wide season count and status so it doesn't show "2 Seasons | 20 Episodes | Airing".
-      const seasonPoster = visuals.seasonPoster || anime.image;
+      const seasonPoster = visuals.seasonPoster || visuals.tmdbPoster || anime.image;
       return {
         ...anime,
         ...visuals,

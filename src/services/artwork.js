@@ -131,10 +131,37 @@ async function artworkFor(anime) {
     const images = details.images || {};
     const seasons = (details.seasons || []).filter((x) => x.season_number > 0 && x.episode_count > 0);
 
-    // Look for season-specific poster in TMDB seasons
+    // Top-rated English posters for the title
+    const enPosters = (images.posters || [])
+      .filter((p) => p.iso_639_1 === 'en')
+      .sort((a, b) => (b.vote_average * b.vote_count) - (a.vote_average * a.vote_count) || b.vote_count - a.vote_count);
+    const topEnPoster = enPosters[0]?.file_path ? posterUrl(enPosters[0].file_path, 'w500') : null;
+
+    // Season 1 poster
+    const s1Obj = seasons.find((s) => s.season_number === 1);
+    const s1Poster = s1Obj?.poster_path ? posterUrl(s1Obj.poster_path, 'w500') : null;
+
+    // Look for target season-specific poster in TMDB seasons
     const seasonObj = seasons.find((s) => s.season_number === targetSeason) ||
                       seasons.find((s) => anime.year && s.air_date && s.air_date.startsWith(String(anime.year)));
-    const seasonPoster = seasonObj?.poster_path ? posterUrl(seasonObj.poster_path, 'w500') : null;
+    let seasonPoster = seasonObj?.poster_path ? posterUrl(seasonObj.poster_path, 'w500') : null;
+
+    const mainPoster = details.poster_path ? posterUrl(details.poster_path, 'w500') : null;
+
+    if (targetSeason <= 1) {
+      // Season 1 or main entry: prefer Season 1's dedicated poster so sequels don't hijack it
+      seasonPoster = s1Poster || seasonPoster || topEnPoster || mainPoster;
+    } else {
+      // Season 2+: If seasonPoster is Japanese (e.g. Black Clover /k7XtJOiflFofEOP8l5i75y4p5po.jpg)
+      // or missing, but TMDB's main poster is an English poster distinct from S1,
+      // use the modern English poster with English title.
+      const isMainEn = details.poster_path && enPosters.some((p) => p.file_path === details.poster_path);
+      if (isMainEn && mainPoster && mainPoster !== s1Poster) {
+        if (!seasonPoster || seasonPoster.includes('k7XtJOiflFofEOP8l5i75y4p5po')) {
+          seasonPoster = mainPoster;
+        }
+      }
+    }
 
     // Same banner Streambert shows: TMDB's own default backdrop for the title.
     // Falls back to the best textless backdrop when TMDB has no default.
@@ -144,7 +171,8 @@ async function artworkFor(anime) {
     const backdropPath = details.backdrop_path || item.backdrop_path || textless[0]?.file_path;
     const logo = (images.logos || [])
       .filter((l) => l.iso_639_1 === 'en' && l.file_path.endsWith('.png'))
-      .sort((a, b) => b.vote_average - a.vote_average)[0];
+      .sort((a, b) => b.vote_average - a.vote_average)[0] ||
+      (images.logos || []).find((l) => l.file_path.endsWith('.png'));
 
     // For a specific season (Season 2+ or distinct season entry):
     // Use season-specific poster if available, or null (so it keeps its own AniList cover).
@@ -152,7 +180,7 @@ async function artworkFor(anime) {
     // otherwise fallback to item/details poster.
     const poster = isSeason
       ? (seasonPoster || null)
-      : (seasonPoster || posterUrl(item.poster_path || details.poster_path, 'w500'));
+      : (seasonPoster || mainPoster || topEnPoster || posterUrl(item.poster_path, 'w500'));
 
     return {
       tmdbId: item.id,
@@ -162,7 +190,7 @@ async function artworkFor(anime) {
       seasonPoster,
       backdrop: backdropPath ? `${IMG_BASE}/w1280${backdropPath}` : null,
       backdropHd: backdropPath ? `${IMG_BASE}/original${backdropPath}` : null,
-      logo: isSeason && targetSeason > 1 ? null : (logo ? `${IMG_BASE}/w500${logo.file_path}` : null),
+      logo: logo ? `${IMG_BASE}/w500${logo.file_path}` : null,
       logoAspect: logo ? logo.aspect_ratio : null,
       tmdbPoster: poster,
       seasonCount: kind === 'tv' ? seasons.length || null : null,
@@ -185,15 +213,23 @@ async function withPosters(items, { budgetMs = 0 } = {}) {
   // never shows Season 1's own episode count where the page shows the series total.
   const out = items.map((a) => (!isSeasonEntry(a.title, a.titleRomaji) && SERIES_TYPES.has(a.type) ? { ...a, factsPending: true } : a));
   const jobs = items.map(async (a, i) => {
-    if (isSeasonEntry(a.title, a.titleRomaji)) return;
+    const isSeason = isSeasonEntry(a.title, a.titleRomaji);
     const match = await matchFor(a).catch(() => null);
+    if (isSeason) {
+      if (match?.kind === 'tv' && SERIES_TYPES.has(a.type)) {
+        const art = await artworkFor(a).catch(() => null);
+        const p = art?.seasonPoster || art?.tmdbPoster;
+        if (p) out[i] = { ...out[i], cover: a.image, image: p, image2x: p };
+      }
+      return;
+    }
     const poster = posterUrl(match?.item?.poster_path);
     if (poster) out[i] = { ...out[i], cover: a.image, image: poster, image2x: posterUrl(match.item.poster_path, 'w500') };
     // A series card shows the same facts as the series page (seasons, total
     // episodes, status). Same cached TMDB details the anime page uses.
     let facts = {};
     if (match?.kind === 'tv' && SERIES_TYPES.has(a.type)) {
-      const art = await artworkFor(a);
+      const art = await artworkFor(a).catch(() => null);
       facts = seriesFacts(art, a);
       if (art?.seasonPoster) {
         out[i] = { ...out[i], cover: a.image, image: art.seasonPoster, image2x: art.seasonPoster };

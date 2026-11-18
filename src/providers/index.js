@@ -26,7 +26,7 @@ function trip(name, err) {
   const b = breakers[name];
   b.failures += 1;
   b.lastError = err.message;
-  const wait = Math.min(30 * 1000 * 2 ** (b.failures - 1), 10 * 60 * 1000);
+  const wait = Math.min(5 * 1000 * 2 ** (b.failures - 1), 30 * 1000);
   b.openUntil = Date.now() + wait;
   console.warn(`[source] ${name} failed (${err.message}); skipping it for ${Math.round(wait / 1000)}s`);
 }
@@ -55,7 +55,15 @@ async function run(method, args, { only } = {}) {
       lastSource = name;
       return result;
     } catch (err) {
-      if (err.status === 404) throw err;
+      if (err.status === 404) {
+        // If anilist gave 404 for a numeric ID (idMal) on detail, try jikan before failing
+        if (name === 'anilist' && !only && args[0] && !String(args[0]).startsWith('al') && names.includes('jikan')) {
+          console.log(`[source] anilist returned 404 for ${args[0]}, falling back to jikan`);
+          lastErr = err;
+          continue;
+        }
+        throw err;
+      }
       trip(name, err);
       lastErr = err;
     }
