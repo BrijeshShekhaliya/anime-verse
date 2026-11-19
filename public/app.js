@@ -61,7 +61,7 @@
   // blip or 5xx, and the last good copy if the server can't answer.
   const API_BASE = '';
 
-  const CACHE_KEY_PREFIX = 'av_v620_';
+  const CACHE_KEY_PREFIX = 'av_v621_';
   if (typeof sessionStorage !== 'undefined') {
     try {
       for (let i = sessionStorage.length - 1; i >= 0; i--) {

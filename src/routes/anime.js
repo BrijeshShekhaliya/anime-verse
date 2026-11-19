@@ -184,20 +184,19 @@ router.get(
 
     if (art && (isSeason || (!artwork.SERIES_TYPES.has(anime.type) && art.tmdbKind === 'tv'))) {
       // It is a specific season or non-series TV entry:
-      // Keep its own season cover (AniList anime.image or season-specific poster),
-      // Prefer anime.banner so sequels (e.g. Apothecary Diaries Season 3, Cyberpunk S2) display their authentic season artwork instead of Season 1's backdrop,
-      // Drop series-wide season count and status so it doesn't show "2 Seasons | 20 Episodes | Airing".
+      // Match the mobile app: use the season's official key visual as the single source for both poster and hero art,
+      // preventing stale Season 1 backdrops/banners from lingering on sequels.
       const seasonPoster = visuals.seasonPoster || visuals.tmdbPoster || anime.image;
-      const seasonBackdrop = anime.banner || visuals.backdrop;
+      const seasonArt = seasonPoster || anime.banner || visuals.backdrop;
       return {
         ...anime,
         ...visuals,
         relations,
         image: seasonPoster,
         tmdbPoster: seasonPoster,
-        banner: seasonBackdrop,
-        backdrop: seasonBackdrop,
-        backdropHd: anime.banner || visuals.backdropHd || visuals.backdrop,
+        banner: seasonArt,
+        backdrop: seasonArt,
+        backdropHd: seasonArt,
         seasonCount: null,
         episodeCount: anime.episodes || null,
         tmdbStatus: anime.status || null,
