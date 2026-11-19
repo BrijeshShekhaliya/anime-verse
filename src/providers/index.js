@@ -104,13 +104,16 @@ module.exports = {
     ),
   }),
 
-  trending: (limit) => list('trending', 'dedupe', limit),
-  seasonNow: (limit) => list('seasonNow', 'dedupe', limit),
-  topRated: (limit) => list('topRated', 'series', limit),
-  upcoming: (limit) => list('upcoming', 'dedupe', limit),
-  popular: (limit) => list('popular', 'series', limit),
+  // Home rows list every AniList entry as it comes, seasons included, exactly
+  // like the mobile app's rows (anilistClient.fetchHome), so both show the same cards.
+  trending: (limit) => list('trending', null, limit),
+  seasonNow: (limit) => list('seasonNow', null, limit),
+  topRated: (limit) => list('topRated', null, limit),
+  upcoming: (limit) => list('upcoming', null, limit),
+  popular: (limit) => list('popular', null, limit),
   movies: (limit) => list('movies', null, limit),
   schedule: (day) => list('schedule', null, day),
+  airing: (from, to) => list('airing', null, from, to),
 
   // One request to one source. AniList-only ids (no MAL entry) can only come from AniList.
   async detail(id) {
@@ -131,11 +134,13 @@ module.exports = {
         jikan.recommendations(id).catch(() => []),
       ]);
     }
-    const recs = await art.withPosters(franchise.collapse(recommendations, 'dedupe'));
+    // Same 12 recommendations as the app's "More Like This".
+    const recs = await art.withPosters(recommendations);
     return { characters, recommendations: recs.map(withLanguages) };
   },
 
-  async search(params) {
+  // budgetMs: how long to wait for TMDB posters before answering (0 = wait for all).
+  async search(params, { budgetMs = 1500 } = {}) {
     let result;
     let lastErr;
     for (const name of healthyFirst(ORDER)) {
@@ -151,10 +156,9 @@ module.exports = {
       }
     }
     if (!result) throw lastErr;
-    // Catalogue search shows each series once; a movie-only search keeps every movie.
-    const grouped = params.type === 'movie' ? result.items : franchise.collapse(result.items, 'series');
+    // Every entry as AniList lists it (seasons included), like the app's Browse.
     // Don't hold the page for slow poster lookups (see withPosters).
-    const withArt = await art.withPosters(grouped, { budgetMs: 200 });
+    const withArt = await art.withPosters(result.items, { budgetMs });
     let items = withArt.map(withLanguages);
     if (params.dub === '1') items = items.filter((a) => a.languages.dub);
     return { ...result, items, postersPending: withArt.postersPending };

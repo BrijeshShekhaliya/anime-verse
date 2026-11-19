@@ -1,10 +1,14 @@
-/* AnimeVerse — single-page anime discovery app (no build step). */
+/* AnimeVerse — single-page anime app (no build step).
+   Same cards, hero, artwork and layout as the AnimeVerse mobile app
+   (animeverse-app). The server picks every picture with the app's own TMDB
+   rules, so a title shows the same poster, banner and logo on both. */
 (() => {
   'use strict';
 
   const app = document.getElementById('app');
   const nav = document.getElementById('nav');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const phone = () => window.matchMedia('(max-width: 760px)').matches;
 
   // ---------- Helpers ----------
   const $ = (sel, el = document) => el.querySelector(sel);
@@ -13,10 +17,19 @@
     String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
   const fmtNum = (n) => (n == null ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n));
   const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
-  // Custom icon set: soft filled shapes with a duotone accent layer (class "ic").
+  const clock = (seconds) => {
+    const t = Math.floor(seconds || 0);
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
+    const sec = String(t % 60).padStart(2, '0');
+    return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
+  };
+
+  // The app's icon set: soft filled shapes with a duotone layer (class "ic").
   const svg = (body, cls = '') => `<svg class="ic${cls ? ` ${cls}` : ''}" viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
   const tint = 'fill="currentColor" stroke="none" opacity=".2"';
   const solid = 'fill="currentColor" stroke="none"';
+  const BOOKMARK = 'M6.5 4.5h11a1 1 0 011 1v15l-6.5-4-6.5 4v-15a1 1 0 011-1z';
   const icon = {
     star: svg(`<path ${solid} d="M12 2.8c.4 0 .7.2.9.6l2.3 4.7 5.1.8c.8.1 1.1 1.1.5 1.7l-3.7 3.6.9 5.1c.1.8-.7 1.4-1.4 1l-4.6-2.4-4.6 2.4c-.7.4-1.6-.2-1.4-1l.9-5.1-3.7-3.6c-.6-.6-.3-1.6.5-1.7l5.1-.8 2.3-4.7c.2-.4.5-.6.9-.6z"/>`),
     play: svg(`<path ${solid} d="M8 5.6v12.8c0 .9 1 1.5 1.8 1l10-6.4c.7-.5.7-1.5 0-2l-10-6.4C9 4.1 8 4.7 8 5.6z"/>`),
@@ -24,6 +37,7 @@
     left: svg('<path d="M14.5 6.5L9 12l5.5 5.5" stroke-width="2.6"/>'),
     right: svg('<path d="M9.5 6.5L15 12l-5.5 5.5" stroke-width="2.6"/>'),
     chevron: svg('<path d="M7 10l5 4.5 5-4.5" stroke-width="2.4"/>', 'cs-chev'),
+    down: svg('<path d="M7 10l5 4.5 5-4.5" stroke-width="2.4"/>'),
     ext: svg(`<rect ${tint} x="3.5" y="6.5" width="14" height="14" rx="4"/><path d="M13 3.5h7.5V11M20.5 3.5L11 13"/><path d="M17.5 14v2.5a4 4 0 01-4 4h-6a4 4 0 01-4-4v-6a4 4 0 014-4H10"/>`),
     check: svg('<path d="M5 12.5l4.2 4.2L19 7" stroke-width="2.8"/>'),
     mic: svg(`<rect ${tint} x="8" y="2.5" width="8" height="12.5" rx="4"/><rect x="8" y="2.5" width="8" height="12.5" rx="4"/><path d="M4.5 11.5a7.5 7.5 0 0015 0M12 19v2.5"/>`),
@@ -31,9 +45,14 @@
     clock: svg(`<circle ${tint} cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 2"/>`),
     x: svg('<path d="M7 7l10 10M17 7L7 17" stroke-width="2.4"/>'),
     search: svg(`<circle ${tint} cx="10.5" cy="10.5" r="7"/><circle cx="10.5" cy="10.5" r="7"/><path d="M16 16l4.5 4.5" stroke-width="2.8"/>`),
-    globe: svg(`<circle ${tint} cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.8 3.8 6 3.8 9.5s-1.2 6.7-3.8 9.5c-2.6-2.8-3.8-6-3.8-9.5s1.2-6.7 3.8-9.5z"/>`),
     spark: svg(`<path ${solid} d="M12 2l2.2 6.3L20.5 10.5l-6.3 2.2L12 19l-2.2-6.3L3.5 10.5l6.3-2.2z"/>`),
     shield: svg(`<path ${tint} d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.4-7.5 9.8-4.4-1.4-7.5-5.2-7.5-9.8V5.8z"/><path d="M12 2.8l7.5 3v5.6c0 4.6-3.1 8.4-7.5 9.8-4.4-1.4-7.5-5.2-7.5-9.8V5.8z"/>`),
+    plus: svg('<path d="M12 5v14M5 12h14" stroke-width="2.6"/>'),
+    share: svg(`<circle ${tint} cx="18" cy="5.5" r="2.6"/><circle ${tint} cx="6" cy="12" r="2.6"/><circle ${tint} cx="18" cy="18.5" r="2.6"/><circle cx="18" cy="5.5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="18.5" r="2.6"/><path d="M8.3 10.8l7.4-4.1M8.3 13.2l7.4 4.1"/>`),
+    bookmark: svg(`<path d="${BOOKMARK}"/>`),
+    bookmarkOn: svg(`<path ${solid} d="${BOOKMARK}"/>`),
+    history: svg('<path d="M4 12a8 8 0 102.4-5.7"/><path d="M4 4.5v4h4"/><path d="M12 8v4.5l3 1.8"/>'),
+    trash: svg('<path d="M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7"/>'),
   };
 
   // Detect season number from anime title or romaji (e.g. "Season 2", "2nd Season", "Part 3", "2", "II")
@@ -53,31 +72,26 @@
     return 1;
   }
 
-  // Small client cache so going back and forth is instant.
+  // ---------- Data ----------
+  // Every page asks for data through here: one request per URL at a time, a
+  // short memory so going back and forth doesn't re-download, one quiet retry
+  // on a network blip or 5xx, and the last good copy if the server can't answer.
   const memo = new Map();
-  // Every page asks for data through here: one request per URL at a time (two
-  // parts of the page asking for the same thing share it), a short memory so
-  // going back and forth doesn't re-download, one quiet retry on a network
-  // blip or 5xx, and the last good copy if the server can't answer.
   const API_BASE = '';
-
-  const CACHE_KEY_PREFIX = 'av_v621_';
-  if (typeof sessionStorage !== 'undefined') {
-    try {
-      for (let i = sessionStorage.length - 1; i >= 0; i--) {
-        const k = sessionStorage.key(i);
-        if (k && k.startsWith('av_') && !k.startsWith(CACHE_KEY_PREFIX)) {
-          sessionStorage.removeItem(k);
-        }
-      }
-    } catch {}
-  }
+  // Bumped with every artwork change, so no browser keeps showing old pictures.
+  const CACHE_KEY_PREFIX = 'av_v700_';
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith('av_') && !k.startsWith(CACHE_KEY_PREFIX)) sessionStorage.removeItem(k);
+    }
+  } catch { /* storage may be blocked */ }
 
   const inflightApi = new Map();
   async function api(path, ttlMs = 5 * 60 * 1000) {
     const hit = memo.get(path);
     if (hit && Date.now() - hit.t < ttlMs) return hit.data;
-    if (!hit && typeof sessionStorage !== 'undefined') {
+    if (!hit) {
       try {
         const stored = sessionStorage.getItem(`${CACHE_KEY_PREFIX}${path}`);
         if (stored) {
@@ -87,7 +101,7 @@
             return parsed.data;
           }
         }
-      } catch {}
+      } catch { /* storage may be blocked */ }
     }
     if (inflightApi.has(path)) return inflightApi.get(path);
 
@@ -112,10 +126,8 @@
           data = await attempt();
         }
         memo.set(path, { t: Date.now(), data });
-        if (typeof sessionStorage !== 'undefined' && !path.includes('/stream/')) {
-          try {
-            sessionStorage.setItem(`${CACHE_KEY_PREFIX}${path}`, JSON.stringify({ t: Date.now(), data }));
-          } catch {}
+        if (!path.includes('/stream/')) {
+          try { sessionStorage.setItem(`${CACHE_KEY_PREFIX}${path}`, JSON.stringify({ t: Date.now(), data })); } catch { /* full or blocked */ }
         }
         return data;
       } catch (err) {
@@ -140,8 +152,97 @@
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(el._t);
-    el._t = setTimeout(() => el.classList.remove('show'), 3000);
+    el._t = setTimeout(() => el.classList.remove('show'), 2600);
   }
+
+  // ---------- My List, Continue Watching, History ----------
+  // Kept in this browser (like the app keeps them on the phone).
+  const Library = (() => {
+    const KEY = 'av-library-v1';
+    const fresh = () => ({ list: [], progress: {}, history: [] });
+    let data = fresh();
+    try { data = { ...fresh(), ...(JSON.parse(localStorage.getItem(KEY)) || {}) }; } catch { /* first visit or blocked */ }
+    const listeners = new Set();
+    let dirty = false;
+    const write = () => {
+      dirty = false;
+      try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* full or blocked */ }
+    };
+    const changed = () => {
+      write();
+      listeners.forEach((fn) => { try { fn(); } catch { /* a page that's gone */ } });
+    };
+    // The few fields a card needs, so saved titles show without a request.
+    const snap = (a) => ({
+      id: String(a.id), title: a.title, titleRomaji: a.titleRomaji || null,
+      image: a.image || null, image2x: a.image2x || null, backdrop: a.backdrop || a.banner || null,
+      type: a.type || null, year: a.year || null, episodes: a.episodes || null, score: a.score || null,
+      airing: !!a.airing, status: a.status || null, languages: a.languages || null,
+      seasonCount: a.seasonCount || null, episodeCount: a.episodeCount || null,
+    });
+    const flush = () => { if (dirty) write(); };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+    let lastWrite = 0;
+
+    return {
+      onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+      inList: (id) => data.list.some((x) => x.id === String(id)),
+      list: () => [...data.list].sort((x, y) => y.addedAt - x.addedAt),
+      toggle(a) {
+        const id = String(a.id);
+        const i = data.list.findIndex((x) => x.id === id);
+        if (i >= 0) data.list.splice(i, 1);
+        else data.list.unshift({ ...snap(a), addedAt: Date.now() });
+        changed();
+        return i < 0;
+      },
+      progressFor: (id) => data.progress[String(id)] || null,
+      continueList: () => Object.values(data.progress).sort((x, y) => y.updatedAt - x.updatedAt),
+      removeProgress(id) { delete data.progress[String(id)]; changed(); },
+      history: () => data.history,
+      removeHistory(at) { data.history = data.history.filter((h) => h.at !== at); changed(); },
+      clearHistory() { data.history = []; changed(); },
+      // Called by the player while an episode plays.
+      saveProgress(a, season, ep, time, duration, still) {
+        if (!a?.id || !(time > 5)) return;
+        const id = String(a.id);
+        const now = Date.now();
+        const prev = data.progress[id];
+        const sameEp = prev && prev.season === season && prev.ep === ep;
+        data.progress[id] = {
+          anime: snap(a), season, ep, time, duration: duration || (sameEp ? prev.duration : 0),
+          still: still || (sameEp ? prev.still : null), updatedAt: now,
+        };
+        const h = data.history[0];
+        if (!h || h.id !== id || h.season !== season || h.ep !== ep) {
+          data.history = [{ id, anime: snap(a), season, ep, at: now },
+            ...data.history.filter((x) => !(x.id === id && x.season === season && x.ep === ep))].slice(0, 100);
+          changed();
+          lastWrite = now;
+          return;
+        }
+        h.at = now;
+        dirty = true;
+        if (now - lastWrite > 5000) { lastWrite = now; write(); }
+      },
+    };
+  })();
+
+  // Which episode a Continue entry opens: the same one if it was left half-way,
+  // the next one once it was (nearly) finished.
+  function continueState(p) {
+    const frac = p.duration ? Math.min(1, p.time / p.duration) : 0;
+    const done = frac >= 0.9;
+    const total = p.anime.episodes;
+    const finished = done && !p.anime.airing && total && p.ep >= total && (p.season || 1) === 1;
+    const targetEp = done && !finished ? p.ep + 1 : p.ep;
+    return { frac: done ? (finished ? 1 : 0) : frac, done, finished, targetEp, position: !done && p.duration ? p : null };
+  }
+
+  // Titles shown on the page, so a bookmark button knows what it saves.
+  const known = new Map();
+  const remember = (items) => (items || []).forEach((a) => a?.id && known.set(String(a.id), a));
 
   // ---------- Custom dropdown ----------
   // Replaces a native <select> with an animated listbox while keeping the select
@@ -208,16 +309,16 @@
     };
 
     const open = () => {
-      if (openDropdown && openDropdown !== api) openDropdown.close();
+      if (openDropdown && openDropdown !== ctl) openDropdown.close();
       filter = '';
       renderMenu();
       menu.hidden = false;
       wrap.classList.add('open');
       btn.setAttribute('aria-expanded', 'true');
-      // Flip upward if there's no room below.
       const r = btn.getBoundingClientRect();
       wrap.classList.toggle('up', window.innerHeight - r.bottom < 280 && r.top > 320);
-      openDropdown = api;
+      wrap.classList.toggle('right', r.left + 240 > window.innerWidth);
+      openDropdown = ctl;
       const items = visible();
       active = items.findIndex((el) => el.classList.contains('on'));
       if (active >= 0) items[active].scrollIntoView({ block: 'nearest' });
@@ -230,7 +331,7 @@
       wrap.classList.add('closing');
       btn.setAttribute('aria-expanded', 'false');
       setTimeout(() => { menu.hidden = true; wrap.classList.remove('closing'); }, reduceMotion ? 0 : 140);
-      if (openDropdown === api) openDropdown = null;
+      if (openDropdown === ctl) openDropdown = null;
       if (focusBtn) btn.focus();
     };
 
@@ -268,22 +369,24 @@
     });
     select.addEventListener('change', syncButton);
 
-    const api = { open, close, refresh: syncButton, wrap };
-    select._cs = api;
+    const ctl = { open, close, refresh: syncButton, wrap };
+    select._cs = ctl;
     syncButton();
-    return api;
+    return ctl;
   }
   document.addEventListener('pointerdown', (e) => {
     if (openDropdown && !openDropdown.wrap.contains(e.target)) openDropdown.close();
   });
 
-  // ---------- Shared fragments ----------
+  // ---------- Shared fragments (the app's components) ----------
   const scoreLabel = (a) => (a.source === 'jikan' ? 'MAL' : 'AniList');
 
+  // ★ 8.2
   function scoreHtml(a) {
-    return a.score ? `<span class="score" title="${scoreLabel(a)} score">${icon.star}${a.score.toFixed(1)}</span>` : '';
+    return a.score ? `<span class="score" title="${scoreLabel(a)} score">${icon.star}<b>${a.score.toFixed(1)}</b></span>` : '';
   }
 
+  // SUB / DUB chips, same colours as the app.
   function langHtml(a) {
     const l = a.languages || {};
     const parts = [];
@@ -293,85 +396,148 @@
     return `<span class="lang">${parts.join('')}</span>`;
   }
 
-  // Only the languages that are actually available, nothing else.
-  function languagesHtml(a) {
-    const l = a.languages || {};
-    const audio = (l.audio || ['Japanese']).map((lang) =>
-      lang === 'English' && l.dub === 'partial' ? { lang, note: 'some episodes' } : { lang });
-    const subs = l.subtitles || ['English'];
-    const chip = (ic, { lang, note }) =>
-      `<span class="av-chip">${ic}${esc(lang)}${note ? `<small>${esc(note)}</small>` : ''}</span>`;
-    return `
-      <section class="section reveal">
-        <div class="av-langs">
-          <div class="av-group"><h3>Audio</h3><div class="av-list">${audio.map((x) => chip(icon.mic, x)).join('')}</div></div>
-          <div class="av-group"><h3>Subtitles</h3><div class="av-list">${subs.map((lang) => chip(icon.cc, { lang })).join('')}</div></div>
-        </div>
-      </section>`;
-  }
-
+  // "TV · 2016 · 13 eps"
   function factsOf(a, { long = false } = {}) {
     const eps = (n) => `${n} ${long ? 'Episodes' : 'eps'}`;
     if (a.seasonCount) {
       return [a.year, `${a.seasonCount} ${a.seasonCount === 1 ? 'Season' : 'Seasons'}`, a.episodeCount ? eps(a.episodeCount) : null].filter(Boolean);
     }
-    // Series totals still loading: show nothing that could contradict them.
     if (a.factsPending) return [a.type, a.year].filter(Boolean);
     return [a.type, a.year, a.episodes ? eps(a.episodes) : null].filter(Boolean);
   }
 
-  function cardHtml(a, i = 0) {
-    const meta = factsOf(a);
-    return `
-      <a class="card" href="/anime/${esc(a.id)}" data-link style="--i:${i}" aria-label="${esc(a.title)}">
-        <div class="card-poster${a.image ? '' : ' no-img'}" data-title="${esc(a.title)}">
-          ${a.airing ? '<span class="pill card-tag airing">Airing</span>' : ''}
-          ${a.image ? `<img src="${esc(a.image)}"${a.image2x && a.image2x !== a.image ? ` srcset="${esc(a.image)} 1x, ${esc(a.image2x)} 2x"` : ''} alt="" loading="${i < 8 ? 'eager' : 'lazy'}" decoding="async"${i < 4 ? ' fetchpriority="high"' : ''}>` : ''}
-          <div class="card-hover" aria-hidden="true">
-            <h4>${esc(a.title)}</h4>
-            <div class="meta">${scoreHtml(a)}${meta.map(esc).join('<i class="sep"></i>')}</div>
-            ${langHtml(a)}
-            <p class="syn">${esc(a.synopsis || 'No synopsis yet.')}</p>
-            <span class="go">Details ${icon.right}</span>
-          </div>
+  // TMDB serves each picture in several sizes: let the browser take the one it needs.
+  const TMDB_SIZED = /\/t\/p\/(w\d+|original)\//;
+  const tmdbSize = (url, size) => (url && TMDB_SIZED.test(url) ? url.replace(TMDB_SIZED, `/t/p/${size}/`) : url);
+  function posterImg(a, i = 0, sizes = '(max-width: 760px) 124px, 190px') {
+    const src = a.image;
+    if (!src) return '';
+    const set = TMDB_SIZED.test(src)
+      ? ` srcset="${esc(tmdbSize(src, 'w342'))} 342w, ${esc(tmdbSize(src, 'w500'))} 500w" sizes="${sizes}"`
+      : a.image2x && a.image2x !== src ? ` srcset="${esc(src)} 1x, ${esc(a.image2x)} 2x"` : '';
+    return `<img src="${esc(src)}"${set} alt="" loading="${i < 8 ? 'eager' : 'lazy'}" decoding="async"${i < 4 ? ' fetchpriority="high"' : ''}>`;
+  }
+
+  // The app's poster card: 2:3 picture (Airing / Upcoming pill, Top-10 number),
+  // two-line title, SUB/DUB chips and score, and the facts line in grids.
+  function cardHtml(a, i = 0, { rank = null, facts = false, remove = null } = {}) {
+    const pending = a.posterPending && a.image;
+    const tag = a.airing
+      ? '<span class="pill pill-accent card-tag">● Airing</span>'
+      : /not yet|upcoming/i.test(a.status || '') ? '<span class="pill card-tag">Upcoming</span>' : '';
+    const card = `
+      <a class="card" href="/anime/${esc(a.id)}" data-link data-id="${esc(a.id)}" style="--i:${Math.min(i, 12)}" aria-label="${esc(a.title)}">
+        <div class="poster${a.image ? '' : ' no-img'}${pending ? ' pending' : ''}" data-title="${esc(a.title)}"${pending ? ` data-fallback="${esc(a.image)}"` : ''}>
+          ${pending ? '' : posterImg(a, i)}
+          ${tag}
+          ${rank != null ? `<span class="rank" aria-hidden="true">${rank}</span>` : ''}
         </div>
         <h3 class="card-title">${esc(a.title)}</h3>
-        <p class="card-sub">${langHtml(a)}${a.score ? scoreHtml(a) : ''}</p>
+        <div class="card-sub">${langHtml(a)}${scoreHtml(a)}</div>
+        ${facts ? `<p class="card-facts">${esc(factsOf(a).join(' · '))}</p>` : ''}
       </a>`;
+    return remove
+      ? `<div class="card-wrap">${card}<button class="x-btn" type="button" ${remove} aria-label="Remove ${esc(a.title)}">${icon.x}</button></div>`
+      : card;
   }
 
   const skeletonCards = (n) =>
-    Array.from({ length: n }, () => '<div><div class="sk sk-poster"></div><div class="sk sk-line"></div></div>').join('');
+    Array.from({ length: n }, () => '<div class="card-sk"><div class="sk sk-poster"></div><div class="sk sk-line"></div><div class="sk sk-line short"></div></div>').join('');
 
-  function rowHtml({ title, sub, items, more, ranked }) {
-    if (!items?.length) return '';
-    const cards = ranked
-      ? items.slice(0, 10).map((a, i) => `<div class="ranked-item"><span class="rank-num${i >= 9 ? ' two' : ''}" aria-hidden="true">${i + 1}</span>${cardHtml(a, i)}</div>`).join('')
-      : items.map((a, i) => cardHtml(a, i)).join('');
+  function sectionHead(title, more) {
     return `
-      <section class="row reveal">
-        <div class="row-head">
-          <div><h2>${esc(title)}</h2>${sub ? `<p>${esc(sub)}</p>` : ''}</div>
-          ${more ? `<a class="row-more" href="${esc(more)}" data-link>View all ${icon.right}</a>` : ''}
-        </div>
+      <div class="row-head">
+        <h2>${esc(title)}</h2>
+        ${more ? `<a class="row-more" href="${esc(more)}" data-link>View all ${icon.right}</a>` : ''}
+      </div>`;
+  }
+
+  // A titled, horizontally scrolling row of cards (arrows on wide screens).
+  function rowHtml({ title, items, more, ranked, html, cls = '' }) {
+    if (!html && !items?.length) return '';
+    remember(items);
+    const cards = html || (ranked ? items.slice(0, 10) : items).map((a, i) => cardHtml(a, i, { rank: ranked ? i + 1 : null })).join('');
+    return `
+      <section class="row reveal${ranked ? ' ranked' : ''} ${cls}">
+        ${sectionHead(title, more)}
         <div class="track-wrap">
           <button class="track-btn prev" aria-label="Scroll left" disabled>${icon.left}</button>
-          <div class="track${ranked ? ' ranked' : ''}">${cards}</div>
+          <div class="track">${cards}</div>
           <button class="track-btn next" aria-label="Scroll right">${icon.right}</button>
         </div>
       </section>`;
   }
 
-  // Safety net for every image on the page, including ones added without
-  // enhance(): show it as soon as it loads, swap in a placeholder if it breaks.
+  // Landscape "Continue Watching" card: the episode's picture, which episode
+  // is next, and a progress bar. compact: smaller grid card, title below.
+  function continueCardHtml(p, i = 0, { compact = false, removable = false } = {}) {
+    const a = p.anime;
+    const st = continueState(p);
+    const art = p.still || a.backdrop || a.image;
+    const detail = st.position ? `<i> · ${clock(p.time)} / ${clock(p.duration)}</i>` : '';
+    const line = st.finished ? 'All episodes watched' : `Episode ${st.targetEp}`;
+    const href = `/watch/${encodeURIComponent(a.id)}?season=${p.season || 1}&ep=${st.finished ? 1 : st.targetEp}`;
+    const card = `
+      <a class="cw${compact ? ' compact' : ''}" href="${esc(href)}" data-link style="--i:${Math.min(i, 8)}" aria-label="Continue ${esc(a.title)}, episode ${st.targetEp}">
+        <div class="cw-art">
+          ${art ? `<img src="${esc(tmdbSize(art, 'w780'))}" alt="" loading="lazy" decoding="async">` : ''}
+          <span class="cw-ep">${st.finished ? 'FINISHED' : `EP ${st.targetEp}`}</span>
+          <span class="cw-play">${icon.play}</span>
+          ${compact ? '' : `<div class="cw-info"><strong>${esc(a.title)}</strong><span>${line}${detail}</span></div>`}
+          <span class="cw-track"><i style="--p:${Math.max(0.02, st.frac).toFixed(3)}"></i></span>
+        </div>
+        ${compact ? `<div class="cw-below"><strong>${esc(a.title)}</strong><span>${line}${detail}</span></div>` : ''}
+      </a>`;
+    return removable
+      ? `<div class="card-wrap">${card}<button class="x-btn" type="button" data-remove-progress="${esc(a.id)}" aria-label="Remove ${esc(a.title)} from Continue Watching">${icon.x}</button></div>`
+      : card;
+  }
+
+  // Bookmark buttons anywhere on the page (hero, detail, cards) share one state.
+  function bookmarkBtn(a, cls = 'ghost-square') {
+    const on = Library.inList(a.id);
+    return `<button type="button" class="${cls}${on ? ' on' : ''}" data-bookmark="${esc(a.id)}" aria-pressed="${on}" aria-label="${on ? 'Remove from My List' : 'Add to My List'}">${on ? icon.bookmarkOn : icon.bookmark}</button>`;
+  }
+  function syncBookmarks(id) {
+    const on = Library.inList(id);
+    $$(`[data-bookmark="${CSS.escape(String(id))}"]`).forEach((b) => {
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+      b.setAttribute('aria-label', on ? 'Remove from My List' : 'Add to My List');
+      if (b.classList.contains('action')) {
+        b.innerHTML = `${on ? icon.check : icon.plus}<span>${on ? 'In My List' : 'My List'}</span>`;
+      } else {
+        b.innerHTML = on ? icon.bookmarkOn : icon.bookmark;
+      }
+    });
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-bookmark]');
+    if (!b) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const a = known.get(b.dataset.bookmark);
+    if (!a) return;
+    const added = Library.toggle(a);
+    syncBookmarks(a.id);
+    if (!reduceMotion) {
+      b.classList.remove('pop');
+      void b.offsetWidth;
+      b.classList.add('pop');
+    }
+    toast(added ? `Added to My List` : `Removed from My List`);
+  });
+
+  // Safety net for every image on the page: show it as soon as it loads,
+  // swap in a placeholder if it breaks.
   document.addEventListener('load', (e) => {
     if (e.target.tagName === 'IMG') e.target.classList.add('loaded');
   }, true);
   document.addEventListener('error', (e) => {
     const img = e.target;
-    if (img.tagName !== 'IMG' || img.closest('.detail-poster')) return;
+    if (img.tagName !== 'IMG') return;
     const box = img.parentElement;
-    if (box && (box.classList.contains('card-poster') || box.classList.contains('result-img') || box.classList.contains('slot-img'))) {
+    if (box && (box.classList.contains('poster') || box.classList.contains('result-img') || box.classList.contains('slot-img'))) {
       box.classList.add('no-img');
       img.remove();
     }
@@ -379,34 +545,20 @@
 
   // ---------- Behaviours wired after each render ----------
   function enhance(root) {
-    // If the browser never started the entrance animation (some embedded or
-    // throttled views freeze animations), show the cards anyway.
-    setTimeout(() => {
-      $$('.card', root).forEach((c) => c.getAnimations().forEach((a) => {
-        try { if (!a.currentTime) a.finish(); } catch { /* infinite animations can't finish */ }
-      }));
-    }, 1500);
-    // Fade images in once they load.
     $$('img', root).forEach((img) => {
-      const done = () => img.classList.add('loaded');
       if (img.complete) {
-        if (img.naturalWidth) done();
-        else {
-          img.parentElement?.classList.add('no-img');
+        if (img.naturalWidth) img.classList.add('loaded');
+        else if (img.closest('.poster, .result-img, .slot-img')) {
+          img.parentElement.classList.add('no-img');
           img.remove();
         }
-      } else {
-        img.addEventListener('load', done, { once: true });
-        // Broken artwork falls back to a branded placeholder instead of a blank box.
-        img.addEventListener('error', () => {
-          img.parentElement?.classList.add('no-img');
-          img.remove();
-        }, { once: true });
       }
     });
 
-    // Horizontal row arrows.
+    // Row arrows (wide screens).
     $$('.track-wrap', root).forEach((wrap) => {
+      if (wrap._wired) return;
+      wrap._wired = true;
       const track = $('.track', wrap);
       const prev = $('.prev', wrap);
       const next = $('.next', wrap);
@@ -429,9 +581,40 @@
           io.unobserve(e.target);
         }
       }),
-      { rootMargin: '0px 0px -8% 0px' }
+      { rootMargin: '0px 0px -6% 0px' }
     );
     $$('.reveal', root).forEach((el) => io.observe(el));
+  }
+
+  // Cards whose TMDB poster hadn't arrived when the page was served show a
+  // placeholder (never an AniList cover first, like the app) until it lands.
+  async function fillPendingPosters(roots, path, selector = '.poster.pending') {
+    const boxes = [roots].flat().flatMap((r) => (r.matches?.(selector) ? [r] : $$(selector, r)));
+    if (!boxes.length) return;
+    let byId = new Map();
+    try {
+      const res = await api(`${path}${path.includes('?') ? '&' : '?'}full=1`, 15 * 60 * 1000);
+      byId = new Map((res.items || []).map((a) => [String(a.id), a]));
+    } catch { /* fall back to the cover we already have */ }
+    boxes.forEach((box) => {
+      if (!box.isConnected) return;
+      const id = box.closest('[data-id]')?.dataset.id;
+      const a = byId.get(id);
+      const src = a?.image || box.dataset.fallback;
+      box.classList.remove('pending');
+      if (!src) { box.classList.add('no-img'); return; }
+      const img = document.createElement('img');
+      img.alt = '';
+      img.decoding = 'async';
+      img.addEventListener('load', () => img.classList.add('loaded'), { once: true });
+      if (TMDB_SIZED.test(src) && box.classList.contains('poster')) {
+        img.srcset = `${tmdbSize(src, 'w342')} 342w, ${tmdbSize(src, 'w500')} 500w`;
+        img.sizes = '(max-width: 760px) 124px, 190px';
+      }
+      img.src = src;
+      box.prepend(img);
+      if (a) known.set(String(a.id), a);
+    });
   }
 
   // Live countdowns for "next episode" labels.
@@ -472,46 +655,44 @@
     if (btn) { e.preventDefault(); openTrailer(btn.dataset.trailer); }
   });
 
-  // ---------- Hero carousel ----------
+  // ---------- Hero carousel (the app's top slider) ----------
   let heroCtl = null;
-  const HERO_MS = 5000;
+  const HERO_MS = 6500;
 
-  // Backdrop: TMDB w1280 on small screens, original resolution on large ones.
-  function artVars(a) {
-    const sm = a.backdrop || a.banner || a.image;
-    const lg = a.backdropHd || sm;
-    return `--bg-sm:url('${esc(sm)}');--bg-lg:url('${esc(lg)}')`;
+  // TMDB backdrop: w780 on phones, w1280 on laptops, full size on big/high-DPI screens.
+  function backdropImg(a, { eager = false, cls = '' } = {}) {
+    const src = a.backdrop || a.banner || a.image;
+    if (!src) return '';
+    const set = TMDB_SIZED.test(src)
+      ? ` srcset="${esc(tmdbSize(src, 'w780'))} 780w, ${esc(tmdbSize(src, 'w1280'))} 1280w, ${esc(tmdbSize(src, 'original'))} 2400w" sizes="100vw"`
+      : '';
+    return `<img class="${cls}" src="${esc(tmdbSize(src, 'w1280'))}"${set} alt="" decoding="async"${eager ? ' fetchpriority="high"' : ' loading="lazy"'}>`;
   }
 
-  // Official title logo when TMDB has one, plain text otherwise.
-  function titleHtml(a) {
-    if (!a.logo) return `<h1>${esc(a.title)}</h1>`;
+  // Official title logo when TMDB has one, the title in big type otherwise.
+  function logoHtml(a, tag = 'h2') {
+    if (!a.logo) return `<${tag} class="big-title">${esc(a.title)}</${tag}>`;
     const wide = (a.logoAspect || 3) >= 2.2;
-    // The logo shows the series name, so say which season or film this page is.
-    const cur = a.series?.seasons.find((x) => x.id === String(a.id));
-    const extra = !cur && a.series?.extras.find((x) => x.id === String(a.id));
-    const label = cur && a.series.seasons.length > 1
-      ? `Season ${cur.number} of ${a.series.seasons.length}${/part\s*\d/i.test(a.title) ? ` · ${a.title.match(/part\s*\d+/i)[0]}` : ''}`
-      : extra ? `${extra.format} · ${a.title}`
-      : (a.title.match(/(season\s*\d+|\d+(st|nd|rd|th)\s*season|part\s*\d+|final season)/i)?.[0] || '');
-    return `<h1 class="title-logo-wrap"><img class="title-logo${wide ? ' wide' : ''}" src="${esc(a.logo)}" alt="${esc(a.title)}" onerror="this.parentNode.textContent=this.alt"></h1>${label ? `<p class="logo-sub">${esc(label)}</p>` : ''}`;
+    return `<${tag} class="logo-wrap"><img class="title-logo${wide ? ' wide' : ''}" src="${esc(a.logo)}" alt="${esc(a.title)}" onerror="this.parentNode.classList.add('big-title');this.parentNode.textContent=this.alt"></${tag}>`;
   }
 
   function heroHtml(items) {
-    if (!items.length) return '';
+    if (!items?.length) return '';
+    remember(items);
     const slides = items.map((a, i) => {
-      const meta = [a.type, a.year, a.episodes ? `${a.episodes} episodes` : null, ...(a.genres || []).slice(0, 2)].filter(Boolean);
+      const facts = factsOf(a);
       return `
-        <div class="hero-slide${i === 0 ? ' active' : ''}" aria-hidden="${i !== 0}" role="group" aria-roledescription="slide" aria-label="${i + 1} of ${items.length}">
-          <div class="hero-bg${a.backdrop ? ' hd' : ''}" style="${artVars(a)}"></div>
+        <div class="hero-slide${i === 0 ? ' active' : ''}" aria-hidden="${i !== 0}" role="group" aria-roledescription="slide" aria-label="${i + 1} of ${items.length}: ${esc(a.title)}">
+          <div class="hero-art">${backdropImg(a, { eager: i === 0 })}</div>
+          <div class="hero-shade"></div>
           <div class="hero-content">
-            <span class="hero-kicker"><span class="dot"></span>${a.airing ? 'Trending · Airing now' : 'Spotlight'}</span>
-            ${titleHtml(a)}
-            <div class="hero-meta">${scoreHtml(a)}${langHtml(a)}${meta.map((m) => `<span>${esc(m)}</span>`).join('<i class="sep"></i>')}</div>
-            <p class="hero-synopsis">${esc(a.synopsis)}</p>
+            ${logoHtml(a)}
+            <div class="hero-meta">${scoreHtml(a)}${langHtml(a)}${facts.length ? `<span>${esc(facts.join(' · '))}</span>` : ''}</div>
+            ${a.genres?.length ? `<p class="hero-genres">${a.genres.slice(0, 3).map(esc).join(' • ')}</p>` : ''}
+            ${a.synopsis ? `<p class="hero-synopsis">${esc(a.synopsis)}</p>` : ''}
             <div class="hero-actions">
-              <a class="btn btn-primary" href="/anime/${esc(a.id)}" data-link>${icon.info}View details</a>
-              ${a.trailer ? `<button class="btn btn-ghost" data-trailer="${esc(a.trailer)}">${icon.play}Trailer</button>` : ''}
+              <a class="btn btn-primary btn-wide" href="/anime/${esc(a.id)}" data-link>${icon.info}Details</a>
+              ${bookmarkBtn(a)}
             </div>
           </div>
         </div>`;
@@ -542,22 +723,22 @@
     const show = (i) => {
       index = (i + slides.length) % slides.length;
       slides.forEach((s, j) => {
-        s.classList.toggle('active', j === index);
-        s.setAttribute('aria-hidden', String(j !== index));
-        $$('a,button', s).forEach((el) => (el.tabIndex = j === index ? 0 : -1));
+        const on = j === index;
+        s.classList.toggle('active', on);
+        s.setAttribute('aria-hidden', String(!on));
+        $$('a,button', s).forEach((el) => (el.tabIndex = on ? 0 : -1));
+        // The next slide's picture starts loading before it's needed.
+        if (j === (index + 1) % slides.length) $('img', s)?.setAttribute('loading', 'eager');
       });
-      dots.forEach((d, j) => {
-        d.classList.remove('active', 'done');
-        if (j < index) d.classList.add('done');
-      });
-      void dots[index].offsetWidth; // restart the progress animation
+      dots.forEach((d) => d.classList.remove('active'));
+      void dots[index].offsetWidth; // restart the fill
       dots[index].classList.add('active');
       remaining = HERO_MS;
       schedule();
     };
     const schedule = () => {
       clearTimeout(timer);
-      if (paused || reduceMotion) return;
+      if (paused || reduceMotion || slides.length < 2) return;
       startedAt = Date.now();
       timer = setTimeout(() => show(index + 1), remaining);
     };
@@ -584,11 +765,13 @@
 
     // Swipe on touch screens.
     let x0 = null;
-    hero.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    let y0 = null;
+    hero.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
     hero.addEventListener('touchend', (e) => {
       if (x0 == null) return;
       const dx = e.changedTouches[0].clientX - x0;
-      if (Math.abs(dx) > 50) show(index + (dx < 0 ? 1 : -1));
+      const dy = e.changedTouches[0].clientY - y0;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) show(index + (dx < 0 ? 1 : -1));
       x0 = null;
     });
 
@@ -606,33 +789,35 @@
     };
   }
 
-  // ---------- Pages ----------
+  // ---------- Home (same rows, same order as the app) ----------
   async function homePage(view) {
-    view.innerHTML = `<div class="sk sk-hero"></div><div class="rows" style="margin-top:24px">${[0, 1].map(() => `
-      <section class="row"><div class="row-head"><div class="sk" style="height:22px;width:200px"></div></div>
+    view.innerHTML = `<div class="sk sk-hero"></div><div class="rows">${[0, 1].map(() => `
+      <section class="row"><div class="row-head"><div class="sk" style="height:22px;width:220px"></div></div>
       <div class="track">${skeletonCards(8)}</div></section>`).join('')}</div>`;
 
     const data = await api('/home', 10 * 60 * 1000);
-    const season = data.seasonNow?.[0]?.season;
-    const seasonYear = data.seasonNow?.[0]?.year;
+    const season = data.seasonNow?.[0];
+    const dubbed = [...data.popular, ...data.topRated].filter((a, i, arr) => a.languages?.dub && arr.findIndex((b) => b.id === a.id) === i);
+    const cont = Library.continueList();
     view.innerHTML = `
       ${heroHtml(data.spotlight)}
-      <div class="rows"${data.spotlight.length ? '' : ' style="margin-top:calc(var(--nav-h) + 24px)"'}>
-        ${rowHtml({ title: 'Top 10 Airing Right Now', sub: 'Updated automatically every 30 minutes', items: data.trending, ranked: true, more: '/browse?status=airing&order=popularity' })}
-        ${rowHtml({ title: season ? `${cap(season)} ${seasonYear || ''} Season` : 'This Season', sub: 'Everything airing this season', items: data.seasonNow, more: '/browse?status=airing' })}
-        ${rowHtml({ title: 'Dubbed in English', sub: 'Popular titles you can watch with English audio', items: [...data.popular, ...data.topRated].filter((a, i, arr) => a.languages?.dub && arr.findIndex((b) => b.id === a.id) === i), more: '/browse?dub=1' })}
+      <div class="rows${data.spotlight?.length ? '' : ' no-hero'}">
+        ${cont.length ? rowHtml({ title: 'Continue Watching', more: '/library', html: cont.slice(0, 12).map((p, i) => continueCardHtml(p, i)).join(''), cls: 'continue' }) : ''}
+        ${rowHtml({ title: 'Top 10 Airing Right Now', items: data.trending, ranked: true, more: '/browse?status=airing&order=popularity' })}
+        ${rowHtml({ title: season?.season ? `${cap(season.season)} ${season.year ?? ''} Season` : 'This Season', items: data.seasonNow, more: '/browse?status=airing' })}
+        ${rowHtml({ title: 'Dubbed in English', items: dubbed, more: '/browse?dub=1' })}
         ${rowHtml({ title: 'Highest Rated of All Time', items: data.topRated, more: '/browse?order=score' })}
         ${rowHtml({ title: 'Most Popular', items: data.popular, more: '/browse?order=popularity' })}
-        ${rowHtml({ title: 'Coming Next Season', sub: 'Most anticipated upcoming anime', items: data.upcoming, more: '/browse?status=upcoming' })}
+        ${rowHtml({ title: 'Coming Next Season', items: data.upcoming, more: '/browse?status=upcoming' })}
         ${rowHtml({ title: 'Top Anime Movies', items: data.movies, more: '/browse?type=movie&order=score' })}
       </div>`;
     enhance(view);
     heroCtl = startHero(view);
-    return `AnimeVerse — Discover Anime`;
+    return 'AnimeVerse — Discover Anime';
   }
 
-  // ---------- Detail page sections ----------
-  // Prefer the big subscription platforms for the main "Watch on" button.
+  // ---------- Detail page helpers ----------
+  // Prefer the big subscription platforms for the "Official" link.
   const PLATFORM_ORDER = ['crunchyroll', 'netflix', 'hidive', 'amazon prime video', 'prime video', 'disney plus', 'hulu', 'max', 'bilibili tv', 'muse asia', 'ani-one asia', 'youtube'];
   function primaryStream(a) {
     const list = (a.links || []).filter((l) => l.type === 'STREAMING');
@@ -2032,6 +2217,8 @@
     function savePlaybackProgress(curTime, dur) {
       playbackCurrentTime = curTime || 0;
       playbackDuration = dur || 0;
+      // Continue Watching and History (My List page, Home's first row).
+      Library.saveProgress(a, currentSeason, currentEp, curTime, dur, episodes.find((x) => x.episode_number === currentEp)?.still_path || null);
       if (curTime > 1) {
         try {
           localStorage.setItem(storageKeyExactTime(currentEp), curTime.toFixed(2));
@@ -2660,35 +2847,38 @@
   }
 
 
+  // ---------- Detail page ----------
+  function starsHtml(value) {
+    return `<span class="stars" aria-hidden="true">${[0, 1, 2, 3, 4].map((i) => {
+      const fill = Math.max(0, Math.min(1, value - i));
+      return `<span class="star-cell">${icon.star}<span class="star-fill" style="width:${Math.round(fill * 100)}%">${icon.star}</span></span>`;
+    }).join('')}</span>`;
+  }
+
+  function actionBookmarkHtml(a) {
+    const on = Library.inList(a.id);
+    return `<button type="button" class="action${on ? ' on' : ''}" data-bookmark="${esc(a.id)}" aria-pressed="${on}" aria-label="${on ? 'Remove from My List' : 'Add to My List'}">${on ? icon.check : icon.plus}<span>${on ? 'In My List' : 'My List'}</span></button>`;
+  }
 
   function relationsHtml(a) {
-    // Seasons, movies and specials already appear in their own rows above.
-    const inSeries = new Set([...(a.series?.seasons || []), ...(a.series?.extras || [])].map((x) => x.id));
-    const rel = (a.relations || []).filter((r) => r.title && !(r.id && inSeries.has(r.id)));
+    const rel = (a.relations || []).filter((r) => r.title);
     if (!rel.length) return '';
     const order = ['Prequel', 'Sequel', 'Parent story', 'Side story', 'Spin-off', 'Alternative version', 'Summary', 'Adaptation', 'Source'];
     const rank = (r) => (order.includes(r.relation) ? order.indexOf(r.relation) : order.length) + (r.id ? 0 : 50);
     rel.sort((x, y) => rank(x) - rank(y));
-    return `
-      <section class="row reveal related">
-        <div class="row-head"><div><h2>Related</h2><p>Spin-offs, alternate versions and the original source</p></div></div>
-        <div class="track-wrap">
-          <button class="track-btn prev" aria-label="Scroll left" disabled>${icon.left}</button>
-          <div class="track">${rel.map((r, i) => {
-            const inner = `
-              <div class="card-poster${r.image ? '' : ' no-img'}" data-title="${esc(r.title)}">
-                <span class="pill card-tag rel-tag">${esc(r.relation)}</span>
-                ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy">` : ''}
-              </div>
-              <h3 class="card-title">${esc(r.title)}</h3>
-              <p class="card-sub">${esc([r.kind === 'manga' ? 'Manga' : r.format, r.year].filter(Boolean).join(' · ') || cap(r.kind || ''))}</p>`;
-            return r.id
-              ? `<a class="card" href="/anime/${esc(r.id)}" data-link style="--i:${i}">${inner}</a>`
-              : `<div class="card is-static" style="--i:${i}">${inner}</div>`;
-          }).join('')}</div>
-          <button class="track-btn next" aria-label="Scroll right">${icon.right}</button>
+    const cards = rel.map((r, i) => {
+      const inner = `
+        <div class="poster${r.image ? '' : ' no-img'}" data-title="${esc(r.title)}">
+          ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy" decoding="async">` : ''}
+          <span class="pill card-tag">${esc(r.relation)}</span>
         </div>
-      </section>`;
+        <h3 class="card-title">${esc(r.title)}</h3>
+        <p class="card-facts">${esc([r.kind === 'manga' ? 'Manga' : r.format, r.year].filter(Boolean).join(' · ') || cap(r.kind || ''))}</p>`;
+      return r.id
+        ? `<a class="card" href="/anime/${esc(r.id)}" data-link style="--i:${Math.min(i, 12)}">${inner}</a>`
+        : `<div class="card is-static" style="--i:${Math.min(i, 12)}">${inner}</div>`;
+    }).join('');
+    return rowHtml({ title: 'Related', html: cards, cls: 'flush' });
   }
 
   function statsHtml(a) {
@@ -2701,7 +2891,8 @@
     const totalStatus = status.reduce((sum, d) => sum + d.amount, 0) || 1;
     const cls = (d) => `st-${esc(d.status.replace(/\s/g, '').toLowerCase())}`;
     return `
-      <section class="section reveal">
+      <section class="d-section reveal">
+        <h2 class="d-h">Fans</h2>
         <div class="panel fans">
           ${dist.length ? `
           <div class="fans-chart">
@@ -2719,8 +2910,8 @@
           <div class="fans-status">
             <h3>What viewers are doing</h3>
             <div class="status-bar">${status.map((d) => `<span style="flex:${d.amount}" class="${cls(d)}" title="${esc(d.status)}: ${d.amount.toLocaleString()}"></span>`).join('')}</div>
-            <ul class="status-list">${status.map((d, i) => `
-              <li style="--i:${i}"><i class="${cls(d)}"></i><span>${esc(d.status)}</span><b>${fmtNum(d.amount)}</b><em>${Math.round((d.amount / totalStatus) * 100)}%</em></li>`).join('')}
+            <ul class="status-list">${status.map((d) => `
+              <li><i class="${cls(d)}"></i><span>${esc(d.status)}</span><b>${fmtNum(d.amount)}</b><em>${Math.round((d.amount / totalStatus) * 100)}%</em></li>`).join('')}
             </ul>
           </div>` : ''}
         </div>
@@ -2731,80 +2922,50 @@
     if (!a.openings?.length && !a.endings?.length) return '';
     const list = (items) => items.slice(0, 6).map((t) => `<li>${esc(t.replace(/^\d+:\s*/, ''))}</li>`).join('');
     return `
-      <section class="section reveal">
-        <div class="info-layout">
+      <section class="d-section reveal">
+        <h2 class="d-h">Music</h2>
+        <div class="two-col">
           ${a.openings?.length ? `<div class="panel"><h3>Opening themes</h3><ol class="themes">${list(a.openings)}</ol></div>` : ''}
           ${a.endings?.length ? `<div class="panel"><h3>Ending themes</h3><ol class="themes">${list(a.endings)}</ol></div>` : ''}
         </div>
       </section>`;
   }
 
-  async function detailPage(view, id) {
-    view.innerHTML = `
-      <div class="detail-hero"><div class="detail-grid">
-        <div class="sk sk-poster"></div>
-        <div><div class="sk" style="height:42px;width:60%"></div><div class="sk sk-line" style="width:40%"></div>
-        <div class="sk" style="height:80px;width:100%;margin-top:28px"></div></div>
-      </div></div>`;
-
-    const a = await api(`/anime/${encodeURIComponent(id)}`, 30 * 60 * 1000);
-    const meta = [a.type, a.year, a.episodes ? `${a.episodes} episodes` : null, a.duration, a.ageRating].filter(Boolean);
-    const altTitles = [a.titleRomaji !== a.title ? a.titleRomaji : null, a.titleJapanese].filter(Boolean);
-    const availableEp = getAvailableEpisodes(a);
-    const lastEp = Math.min(Math.max(1, Number(localStorage.getItem(`animeverse_ep_${a.id}`) || 1)), availableEp || 1);
+  // Everything the app keeps behind "More Details", plus the website's extras.
+  function detailsPanelHtml(a) {
+    const info = [
+      ['Status', a.tmdbStatus || (a.airing ? 'Airing' : a.status)],
+      ['Studio', a.studios?.join(', ')],
+      ['Aired', a.aired || (a.year ? String(a.year) : '')],
+      ['Episodes', a.episodes ? `${a.episodes}${a.duration ? ` · ${a.duration}` : ''}` : a.duration],
+      ['Series', a.seasonCount ? `${a.seasonCount} ${a.seasonCount === 1 ? 'season' : 'seasons'}${a.episodeCount ? ` · ${a.episodeCount} episodes` : ''}` : ''],
+      ['Season', a.season ? `${cap(a.season)} ${a.year || ''}` : ''],
+      ['Source', a.sourceMaterial],
+      ['Rating', a.contentRating],
+      ['Original title', a.titleJapanese || a.titleRomaji],
+      ['Romaji', a.titleRomaji !== a.title ? a.titleRomaji : ''],
+    ].filter(([, v]) => v);
+    const l = a.languages || {};
+    const audio = (l.audio || ['Japanese']).map((lang) => (lang === 'English' && l.dub === 'partial' ? `${lang} (some episodes)` : lang));
+    const subs = l.subtitles || ['English'];
+    const official = primaryStream(a);
     const scorePct = a.score ? Math.round(a.score * 10) : 0;
-    // Streambert-style header: what it is, then the series facts TMDB gives us.
-    const kicker = a.type === 'Movie' ? 'Movie' : a.seasonCount ? 'Series' : a.type || 'Anime';
-    // The server decides: a series' main entry gets TMDB's series poster (as on
-    // the cards), a page for one particular season keeps that season's cover.
-    const poster = a.tmdbPoster || a.image;
-    const factLine = [
-      ...factsOf(a, { long: true }),
-      a.tmdbStatus || (a.status ? a.status.replace('Currently Airing', 'Airing').replace('Finished Airing', 'Ended') : null),
-      a.duration,
-    ].filter(Boolean);
-
-    view.innerHTML = `
-      <section class="detail-hero sb${a.backdrop ? ' has-art' : ''}">
-        <div class="detail-bg${a.backdrop ? ' hd' : a.banner ? '' : ' blur'}" style="${artVars(a)}"></div>
-        <div class="detail-grid">
-          <div class="detail-poster"><img src="${esc(poster)}" alt="${esc(a.title)} poster" onerror="this.onerror=null;this.src='${esc(a.image)}'"></div>
-          <div class="detail-main">
-            <p class="sb-kicker">${esc(kicker)}${a.airing ? '<span class="sb-live">Airing</span>' : ''}</p>
-            ${titleHtml(a)}
-            ${altTitles.length ? `<p class="detail-alt">${altTitles.map(esc).join(' · ')}</p>` : '<span></span>'}
-            <div class="sb-genres">${(a.genres || []).map((g) => `<a class="sb-chip" href="/browse?genre=${encodeURIComponent(g)}" data-link>${esc(g)}</a>`).join('')}</div>
-            <div class="sb-meta">
-              ${a.score ? `<span class="sb-score">${icon.star}<b data-count="${a.score}">${a.score.toFixed(1)}</b></span>` : ''}
-              ${factLine.map((m) => `<span>${esc(m)}</span>`).join('')}
-              ${langHtml(a)}
-            </div>
-            ${a.contentRating ? `<span class="sb-age">${icon.shield}${esc(a.contentRating)}</span>` : '<span></span>'}
-            ${a.nextEpisode ? `<div class="countdown">${icon.clock}Episode ${a.nextEpisode.episode} airs in <b data-countdown="${a.nextEpisode.airingAt}">${formatCountdown(a.nextEpisode.airingAt - Date.now() / 1000)}</b></div>` : '<span></span>'}
-            <div>
-              <p class="synopsis clamped" id="synopsis">${esc(a.synopsis || 'No synopsis available yet.')}</p>
-              <button class="link-btn" id="synMore" hidden>Read more</button>
-              <div class="hero-actions">
-                ${availableEp > 0 ? `
-                  <a class="btn btn-primary btn-watch" href="/watch/${esc(a.id)}?season=${detectSeasonNumber(a.title, a.titleRomaji)}&ep=${lastEp}" data-link>
-                    ${icon.play}${lastEp > 1 ? `Continue Ep ${lastEp}` : (a.type === 'Movie' ? 'Watch Movie' : 'Watch Episode 1')}
-                  </a>` : `
-                  <button class="btn btn-ghost" disabled style="opacity:0.6;cursor:not-allowed;">Not Yet Aired</button>`}
-                ${a.trailer ? `<button class="btn btn-glass" data-trailer="${esc(a.trailer)}">${icon.spark}Trailer</button>` : ''}
-                ${primaryStream(a) ? `<a class="btn btn-glass" href="${esc(primaryStream(a).url)}" target="_blank" rel="noopener">${icon.ext}Official: ${esc(primaryStream(a).name)}</a>` : ''}
-              </div>
-            </div>
-          </div>
-        </div>
+    return `
+      <section class="d-section">
+        <h2 class="d-h">About</h2>
+        ${a.synopsis ? `<p class="d-synopsis">${esc(a.synopsis)}</p>` : ''}
+        <dl class="info-grid">${info.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+        ${a.genres?.length ? `<div class="chip-row">${a.genres.map((g) => `<a class="chip" href="/browse?genre=${encodeURIComponent(g)}" data-link>${esc(g)}</a>`).join('')}</div>` : ''}
       </section>
 
-      <section class="section sb-stats reveal">
+      <section class="d-section reveal">
+        <h2 class="d-h">Ratings</h2>
         <div class="ratings">
           <div class="rating-box">
             <div class="label">${scoreLabel(a)} score</div>
-            <div class="value">${a.score ? `${icon.star}<span>${a.score.toFixed(1)}</span><small>/10</small>` : '<small>Not rated yet</small>'}</div>
+            <div class="value">${a.score ? `${icon.star}<span data-count="${a.score}">${a.score.toFixed(1)}</span><small>/10</small>` : '<small>Not rated yet</small>'}</div>
             ${a.score ? `<div class="rating-bar"><i style="width:${scorePct}%"></i></div>` : ''}
-            ${a.scoredBy ? `<div class="foot">${fmtNum(a.scoredBy)} votes</div>` : ''}
+            ${a.members ? `<div class="foot">${fmtNum(a.members)} fans</div>` : ''}
           </div>
           ${a.imdb ? `
           <a class="rating-box imdb" href="https://www.imdb.com/title/${esc(a.imdb.id)}/" target="_blank" rel="noopener">
@@ -2813,74 +2974,225 @@
             <div class="rating-bar"><i style="width:${a.imdb.rating * 10}%"></i></div>
             ${a.imdb.votes ? `<div class="foot">${esc(a.imdb.votes)} votes</div>` : ''}
           </a>` : ''}
-          ${a.rank ? `<div class="rating-box"><div class="label">Ranked</div><div class="value">#${a.rank.toLocaleString()}</div><div class="foot">all time</div></div>` : ''}
-          ${a.members ? `<div class="rating-box"><div class="label">${a.source === 'jikan' ? 'Members' : 'Fans'}</div><div class="value">${fmtNum(a.members)}</div><div class="foot">${a.popularity ? `#${a.popularity} most popular` : 'tracking this'}</div></div>` : ''}
-          ${a.seasonCount ? `<div class="rating-box"><div class="label">Series</div><div class="value">${a.seasonCount}<small>${a.seasonCount === 1 ? 'season' : 'seasons'}</small></div><div class="foot">${a.episodeCount ? `${a.episodeCount} episodes in total` : ''}</div></div>` : ''}
+          ${a.rank ? `<div class="rating-box"><div class="label">Ranked</div><div class="value"><span>#${a.rank.toLocaleString()}</span></div><div class="foot">highest rated, all time</div></div>` : ''}
+          ${a.favourites ? `<div class="rating-box"><div class="label">Favourites</div><div class="value"><span>${fmtNum(a.favourites)}</span></div><div class="foot">fans' favourite</div></div>` : ''}
         </div>
       </section>
 
+      <section class="d-section reveal">
+        <h2 class="d-h">Languages</h2>
+        <div class="two-col">
+          <div class="panel lang-panel"><h3>${icon.mic}Audio</h3><p>${audio.map(esc).join(' · ')}</p></div>
+          <div class="panel lang-panel"><h3>${icon.cc}Subtitles</h3><p>${subs.map(esc).join(' · ')}</p></div>
+        </div>
+        ${official ? `<a class="btn btn-plain official" href="${esc(official.url)}" target="_blank" rel="noopener">${icon.ext}Also on ${esc(official.name)}</a>` : ''}
+      </section>
 
-      ${languagesHtml(a)}
+      <div id="chars"></div>
       ${relationsHtml(a)}
       ${statsHtml(a)}
-      ${themesHtml(a)}
+      ${themesHtml(a)}`;
+  }
 
+  // One episode row: still (with progress), number and name, date, overview.
+  function episodeRowHtml(a, ep, season, i) {
+    const n = ep.episode_number;
+    const air = ep.air_date ? new Date(`${ep.air_date}T00:00:00`) : null;
+    const upcoming = air && air.getTime() > Date.now();
+    const pct = Number(localStorage.getItem(`animeverse_prog_${a.id}_s${season}_e${n}`) || 0);
+    const name = ep.name && !/^episode\s+\d+$/i.test(ep.name.trim()) ? ep.name : '';
+    const date = air ? air.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    const still = ep.still_path ? tmdbSize(ep.still_path, 'w500') : null;
+    const body = `
+      <div class="ep-thumb${still ? '' : ' no-img'}">
+        ${still ? `<img src="${esc(still)}" alt="" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async">` : ''}
+        ${ep.runtime ? `<span class="ep-dur">${ep.runtime}m</span>` : ''}
+        ${upcoming ? '<span class="ep-lock">Coming soon</span>' : `<span class="ep-play">${icon.play}</span>`}
+        ${pct > 0 ? `<span class="ep-prog"><i style="--p:${Math.min(1, pct / 100).toFixed(3)}"></i></span>` : ''}
+      </div>
+      <div class="ep-body">
+        <h3><span class="ep-num">E${n}</span>${name ? ` · ${esc(name)}` : ''}</h3>
+        <p class="ep-meta">${upcoming ? `<span class="soon">Airs ${esc(date)}</span>` : esc(date)}${!upcoming ? `<span class="ep-tags"><b class="s">SUB</b>${ep.hasDub ? '<b class="d">DUB</b>' : ''}</span>` : ''}${pct >= 85 ? `<span class="watched">${icon.check}Watched</span>` : ''}</p>
+        ${ep.overview ? `<p class="ep-overview">${esc(ep.overview)}</p>` : ''}
+      </div>`;
+    return upcoming
+      ? `<div class="ep is-upcoming" style="--i:${Math.min(i, 10)}">${body}</div>`
+      : `<a class="ep" href="/watch/${esc(a.id)}?season=${season}&ep=${n}" data-link style="--i:${Math.min(i, 10)}">${body}</a>`;
+  }
 
+  async function loadEpisodes(view, a, season = null) {
+    const box = $('[data-panel="episodes"]', view);
+    if (!box) return;
+    const list = $('.ep-list', box);
+    if (list) list.classList.add('refreshing');
+    else box.innerHTML = `<div class="ep-head"><div class="sk" style="height:40px;width:200px;border-radius:10px"></div></div><div class="ep-list">${Array.from({ length: 4 }, () => '<div class="ep-sk"><div class="sk"></div><div><div class="sk sk-line"></div><div class="sk sk-line short"></div></div></div>').join('')}</div>`;
+    const id = encodeURIComponent(a.id);
+    let data;
+    try {
+      data = await api(season ? `/anime/${id}/episodes?season=${season}` : `/anime/${id}/episodes`, 60 * 60 * 1000);
+    } catch {
+      if (box.isConnected) box.innerHTML = '<p class="empty-line">Episodes couldn’t be loaded. Try again in a moment.</p>';
+      return;
+    }
+    if (!box.isConnected) return;
+    const s = data.selectedSeason || season || 1;
+    const seasons = (data.seasons || []).filter((x) => x.episode_count > 0);
+    const eps = data.episodes || [];
+    box.innerHTML = `
+      <div class="ep-head">
+        ${seasons.length > 1 ? `
+          <div class="select season-select"><select aria-label="Season">${seasons.map((x) => `<option value="${x.season_number}"${x.season_number === s ? ' selected' : ''}>${esc(x.name || `Season ${x.season_number}`)}</option>`).join('')}</select></div>`
+          : `<h3 class="ep-season">${esc(seasons[0]?.name || (a.type === 'Movie' ? 'Movie' : `Season ${s}`))}</h3>`}
+        ${eps.length ? `<span class="ep-count">${eps.length} ${eps.length === 1 ? 'episode' : 'episodes'}</span>` : ''}
+      </div>
+      <div class="ep-list">${eps.length ? eps.map((ep, i) => episodeRowHtml(a, ep, s, i)).join('') : '<p class="empty-line">Episodes aren’t listed for this season yet.</p>'}</div>`;
+    const sel = $('select', box);
+    if (sel) {
+      customSelect(sel);
+      sel.addEventListener('change', () => loadEpisodes(view, a, Number(sel.value)));
+    }
+    enhance(box);
+  }
 
-      <div id="extras"><div class="loader-row"><div class="spinner"></div></div></div>`;
+  async function detailPage(view, id) {
+    view.innerHTML = `
+      <section class="dh dh-loading"><div class="dh-art sk"></div>
+        <div class="dh-content container"><div class="sk" style="height:90px;width:min(420px,80%);border-radius:12px"></div>
+        <div class="sk sk-line" style="width:260px;margin-top:18px"></div><div class="sk sk-line" style="width:340px"></div>
+        <div class="sk" style="height:52px;width:260px;border-radius:999px;margin-top:24px"></div></div></section>`;
+
+    const a = await api(`/anime/${encodeURIComponent(id)}`, 30 * 60 * 1000);
+    remember([a]);
+    const available = getAvailableEpisodes(a);
+    const prog = Library.progressFor(a.id);
+    const st = prog ? continueState(prog) : null;
+    const pageSeason = detectSeasonNumber(a.title, a.titleRomaji);
+    const storedEp = Math.min(Number(localStorage.getItem(`animeverse_ep_${a.id}`) || 0), available || 0);
+    const watch = (s, ep) => `/watch/${encodeURIComponent(a.id)}?season=${s}&ep=${ep}`;
+    const cta = available <= 0 ? { label: 'Not Yet Aired' }
+      : st ? { label: st.finished ? 'Replay E1' : `Continue E${st.targetEp}`, href: watch(prog.season || 1, st.finished ? 1 : st.targetEp) }
+      : storedEp > 1 ? { label: `Continue E${storedEp}`, href: watch(Number(localStorage.getItem(`animeverse_season_${a.id}`)) || pageSeason, storedEp) }
+      : { label: a.type === 'Movie' ? 'Watch Movie' : 'Start Watching E1', href: watch(pageSeason, 1) };
+    const ctaHtml = (cls = '') => (cta.href
+      ? `<a class="btn btn-primary btn-pill btn-lg ${cls}" href="${esc(cta.href)}" data-link>${icon.play}<span>${esc(cta.label)}</span></a>`
+      : `<span class="btn btn-pill btn-lg btn-disabled ${cls}">${icon.clock}<span>${esc(cta.label)}</span></span>`);
+
+    const meta = [a.year, a.type, ...(a.genres || []).slice(0, 3)].filter(Boolean);
+    // The logo shows the series name, so say which season or part this page is.
+    const seasonLabel = a.logo ? (a.title.match(/(season\s*\d+.*$|\d+(st|nd|rd|th)\s*season.*$|part\s*\d+.*$|final season.*$|the movie.*$)/i)?.[0] || '') : '';
+    // Phones show the poster as key art (like the app); wider screens the TMDB backdrop.
+    const keyArt = a.image && TMDB_SIZED.test(a.image) ? tmdbSize(a.image, 'w780') : a.image2x || a.image;
+    const stars = a.score ? a.score / 2 : 0;
+    const facts = factsOf(a, { long: true });
+
+    view.innerHTML = `
+      <section class="dh">
+        <div class="dh-art">
+          <picture>
+            ${keyArt ? `<source media="(max-width: 760px)" srcset="${esc(keyArt)}">` : ''}
+            ${backdropImg(a, { eager: true })}
+          </picture>
+        </div>
+        <div class="dh-shade"></div>
+        <div class="dh-content container">
+          <div class="dh-title">${logoHtml(a, 'h1')}${seasonLabel ? `<p class="dh-season">${esc(seasonLabel)}</p>` : ''}</div>
+          <div class="dh-meta">
+            ${a.contentRating ? `<span class="rating-chip">${esc(a.contentRating)}</span>` : ''}
+            <span>${meta.map(esc).join('<i>•</i>')}</span>
+          </div>
+          ${a.score ? `<div class="dh-stars">${starsHtml(stars)}<span>Average: <b>${stars.toFixed(1)}</b>${a.members ? ` <em>(${fmtNum(a.members)})</em>` : ''}</span></div>` : ''}
+          <div class="dh-facts">${langHtml(a)}${facts.length ? `<span>${esc(facts.join(' · '))}</span>` : ''}${a.airing ? '<span class="live">Airing</span>' : ''}</div>
+          <div class="dh-actions">
+            ${actionBookmarkHtml(a)}
+            <button type="button" class="action" id="shareBtn">${icon.share}<span>Share</span></button>
+            ${a.trailer ? `<button type="button" class="action" data-trailer="${esc(a.trailer)}">${icon.play}<span>Trailer</span></button>` : ''}
+          </div>
+          ${a.nextEpisode ? `<div class="countdown">${icon.clock}<span>Episode ${a.nextEpisode.episode} airs in <b data-countdown="${a.nextEpisode.airingAt}">${formatCountdown(a.nextEpisode.airingAt - Date.now() / 1000)}</b></span></div>` : ''}
+          ${a.synopsis ? `<div class="dh-syn"><p class="dh-synopsis">${esc(a.synopsis)}</p><button type="button" class="link-accent" id="moreDetails">More Details</button></div>` : ''}
+          <div class="dh-cta">${ctaHtml()}${bookmarkBtn(a, 'round-save')}</div>
+        </div>
+      </section>
+
+      <div class="dh-tabs container" role="tablist" aria-label="Sections">
+        <button type="button" role="tab" data-tab="episodes" aria-selected="true">${a.type === 'Movie' ? 'Movie' : 'Episodes'}</button>
+        <button type="button" role="tab" data-tab="more" aria-selected="false" hidden>More Like This</button>
+        <button type="button" role="tab" data-tab="details" aria-selected="false">Details</button>
+      </div>
+      <div class="dh-panels container">
+        <section class="dh-panel" data-panel="episodes" role="tabpanel"></section>
+        <section class="dh-panel" data-panel="more" role="tabpanel" hidden><div class="grid">${skeletonCards(10)}</div></section>
+        <section class="dh-panel" data-panel="details" role="tabpanel" hidden>${detailsPanelHtml(a)}</section>
+      </div>
+
+      <div class="dh-bar">${ctaHtml('grow')}${bookmarkBtn(a, 'round-save')}</div>`;
+
+    const tabs = $$('.dh-tabs [role="tab"]', view);
+    const showTab = (key, scroll = false) => {
+      tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === key)));
+      $$('.dh-panel', view).forEach((p) => { p.hidden = p.dataset.panel !== key; });
+      if (key === 'details') { enhance($('[data-panel="details"]', view)); countUp(view); }
+      if (scroll) $('.dh-tabs', view).scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    };
+    tabs.forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
+    $('#moreDetails', view)?.addEventListener('click', () => showTab('details', true));
+    $('#shareBtn', view).addEventListener('click', async () => {
+      const url = location.href;
+      try {
+        if (navigator.share) await navigator.share({ title: `${a.title} on AnimeVerse`, url });
+        else { await navigator.clipboard.writeText(url); toast('Link copied'); }
+      } catch { /* closed the share sheet */ }
+    });
 
     enhance(view);
-    const syn = $('#synopsis', view);
-    const more = $('#synMore', view);
-    if (syn.scrollHeight > syn.clientHeight + 4) {
-      more.hidden = false;
-      more.addEventListener('click', () => {
-        const open = syn.classList.toggle('clamped');
-        more.textContent = open ? 'Read more' : 'Show less';
-      });
-    }
-    countUp(view);
+    loadEpisodes(view, a);
     loadExtras(view, id);
     return `${a.title} — AnimeVerse`;
   }
 
   async function loadExtras(view, id) {
-    const box = $('#extras', view);
     try {
       const { characters, recommendations } = await api(`/anime/${encodeURIComponent(id)}/extras`, 30 * 60 * 1000);
-      if (!box.isConnected) return;
-      box.innerHTML = `
-        ${characters.length ? `
-        <section class="section reveal">
-          <h2>Characters &amp; Voice Cast</h2>
-          <div class="char-grid">${characters.map((c) => `
-            <div class="char"><img src="${esc(c.image)}" alt="" loading="lazy"><div><strong>${esc(c.name)}</strong><span>${esc(c.role)}${c.voiceActor ? ` · ${esc(c.voiceActor)}` : ''}</span></div></div>`).join('')}
-          </div>
-        </section>` : ''}
-        ${rowHtml({ title: 'You might also like', items: recommendations })}`;
-      enhance(box);
-    } catch {
-      box.innerHTML = '';
-    }
+      if (!view.isConnected) return;
+      remember(recommendations);
+      const more = $('[data-panel="more"]', view);
+      if (recommendations?.length) {
+        $('[data-tab="more"]', view).hidden = false;
+        more.innerHTML = `<div class="grid">${recommendations.map((r, i) => cardHtml(r, i)).join('')}</div>`;
+        enhance(more);
+      }
+      const chars = $('#chars', view);
+      if (chars && characters?.length) {
+        chars.innerHTML = `
+          <section class="d-section reveal">
+            <h2 class="d-h">Characters &amp; Voice Cast</h2>
+            <div class="char-grid">${characters.map((c) => `
+              <div class="char"><span class="char-img">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy">` : ''}</span><div><strong>${esc(c.name)}</strong><span>${esc(c.role)}${c.voiceActor ? ` · ${esc(c.voiceActor)}` : ''}</span></div></div>`).join('')}
+            </div>
+          </section>`;
+        enhance(chars);
+      }
+    } catch { /* recommendations and cast are optional */ }
   }
 
   // Animate score numbers counting up.
   function countUp(root) {
     if (reduceMotion) return;
     $$('[data-count]', root).forEach((el) => {
+      if (el._counted) return;
+      el._counted = true;
       const target = Number(el.dataset.count);
       const t0 = performance.now();
-      const dur = 1100;
+      const dur = 1000;
       const tick = (t) => {
         const p = Math.min(1, (t - t0) / dur);
-        const eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = (target * eased).toFixed(1);
+        el.textContent = (target * (1 - Math.pow(1 - p, 3))).toFixed(1);
         if (p < 1) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
     });
   }
 
+  // ---------- Browse ----------
   let genresCache = null;
   async function browsePage(view, params) {
     const state = {
@@ -2893,31 +3205,34 @@
     };
     const opt = (value, label, current) => `<option value="${esc(value)}"${value === current ? ' selected' : ''}>${esc(label)}</option>`;
     const titleFor = () =>
-      state.q ? `Results for “${state.q}”` : state.dub ? 'English Dubbed Anime' : state.genre ? `${state.genre} Anime` : 'Browse Anime';
+      state.q ? `Results for “${state.q}”` : state.dub ? 'Dubbed in English' : state.genre ? `${state.genre} Anime` : 'Browse';
 
     view.innerHTML = `
       <div class="container page-top">
-        <div class="browse-head">
-          <div><h1 id="browseTitle">${esc(titleFor())}</h1><p id="browseSub">Filters update instantly. More titles load as you scroll.</p></div>
+        <div class="page-head">
+          <h1 id="browseTitle">${esc(titleFor())}</h1>
+          <p id="browseSub">Every anime on AniList, with live sub and dub availability.</p>
         </div>
         <form class="filters" id="filters" role="search" autocomplete="off">
-          <div class="filter-q-wrap">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
-            <input class="filter-q" name="q" type="search" placeholder="Search any anime title…" value="${esc(state.q)}" aria-label="Title">
-            <span class="filter-q-spin" aria-hidden="true"></span>
+          <div class="searchbox">
+            ${icon.search}
+            <input name="q" type="search" placeholder="Search anime: English, Japanese or romaji…" value="${esc(state.q)}" aria-label="Search anime">
+            <span class="spin" aria-hidden="true"></span>
           </div>
-          <div class="select"><select name="genre" aria-label="Genre"><option value="">All genres</option>${state.genre ? opt(state.genre, state.genre, state.genre) : ''}</select></div>
-          <div class="select"><select name="type" aria-label="Format">
-            ${opt('', 'All formats', state.type)}${opt('tv', 'TV series', state.type)}${opt('movie', 'Movie', state.type)}${opt('ova', 'OVA', state.type)}${opt('ona', 'ONA', state.type)}${opt('special', 'Special', state.type)}
-          </select></div>
-          <div class="select"><select name="status" aria-label="Status">
-            ${opt('', 'Any status', state.status)}${opt('airing', 'Airing', state.status)}${opt('finished', 'Finished', state.status)}${opt('upcoming', 'Upcoming', state.status)}
-          </select></div>
-          <div class="select"><select name="order" aria-label="Sort by">
-            ${opt('', 'Best match / popular', state.order)}${opt('score', 'Highest rated', state.order)}${opt('popularity', 'Most popular', state.order)}${opt('newest', 'Newest', state.order)}${opt('title', 'A–Z', state.order)}
-          </select></div>
-          <button type="button" class="toggle${state.dub ? ' on' : ''}" id="dubToggle" aria-pressed="${Boolean(state.dub)}"><span class="box">${icon.check}</span>English dub only</button>
-          <button type="button" class="reset-btn" id="resetFilters" hidden>Reset</button>
+          <div class="filter-row">
+            <div class="select"><select name="genre" aria-label="Genre"><option value="">All genres</option>${state.genre ? opt(state.genre, state.genre, state.genre) : ''}</select></div>
+            <div class="select"><select name="type" aria-label="Format">
+              ${opt('', 'All formats', state.type)}${opt('tv', 'TV series', state.type)}${opt('movie', 'Movie', state.type)}${opt('ova', 'OVA', state.type)}${opt('ona', 'ONA', state.type)}${opt('special', 'Special', state.type)}
+            </select></div>
+            <div class="select"><select name="status" aria-label="Status">
+              ${opt('', 'Any status', state.status)}${opt('airing', 'Airing', state.status)}${opt('finished', 'Finished', state.status)}${opt('upcoming', 'Upcoming', state.status)}
+            </select></div>
+            <div class="select"><select name="order" aria-label="Sort by">
+              ${opt('', 'Best match', state.order)}${opt('score', 'Highest rated', state.order)}${opt('popularity', 'Most popular', state.order)}${opt('newest', 'Newest', state.order)}${opt('title', 'A–Z', state.order)}
+            </select></div>
+            <button type="button" class="toggle${state.dub ? ' on' : ''}" id="dubToggle" aria-pressed="${Boolean(state.dub)}"><span class="box">${icon.check}</span>English dub</button>
+            <button type="button" class="reset-btn" id="resetFilters" hidden>Reset</button>
+          </div>
         </form>
         <div class="active-filters" id="activeFilters"></div>
         <div class="grid" id="grid">${skeletonCards(18)}</div>
@@ -2928,7 +3243,7 @@
     const grid = $('#grid', view);
     const sentinel = $('#sentinel', view);
     const qInput = form.elements.q;
-    const qWrap = $('.filter-q-wrap', view);
+    const qWrap = $('.searchbox', view);
     $$('select', form).forEach(customSelect);
 
     (async () => {
@@ -2944,7 +3259,7 @@
     let loading = false;
     let done = false;
     let count = 0;
-    const shown = new Set(); // a series can turn up on more than one page
+    const shown = new Set();
     let generation = 0;
     let relaxed = false;
 
@@ -2961,7 +3276,6 @@
       history.replaceState({}, '', `/browse${qs.toString() ? `?${qs}` : ''}`);
       $('#browseTitle', view).textContent = titleFor();
       document.title = `${titleFor()} — AnimeVerse`;
-      $$('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === (state.dub ? 'dubbed' : 'browse')));
       const chips = filterLabels();
       $('#activeFilters', view).innerHTML = chips
         .map(([k, label]) => `<button type="button" class="chip chip-x" data-clear="${k}">${esc(label)}${icon.x}</button>`)
@@ -2979,9 +3293,6 @@
       loading = false;
       grid.classList.add('refreshing');
       sentinel.innerHTML = '';
-      // New filters start from the first result. Otherwise the shorter page leaves the
-      // "load more" marker on screen and infinite scroll refetches pages back down to
-      // where the user had scrolled.
       const stickyOffset = nav.offsetHeight + form.offsetHeight + 16;
       const resultsTop = Math.max(0, grid.getBoundingClientRect().top + window.scrollY - stickyOffset);
       if (window.scrollY > resultsTop) window.scrollTo({ top: resultsTop, behavior: 'instant' });
@@ -2997,12 +3308,13 @@
     form.addEventListener('change', (e) => {
       if (e.target.name && e.target.name !== 'q') set({ [e.target.name]: e.target.value });
     });
+    let qTimer;
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       clearTimeout(qTimer);
+      qInput.blur();
       if (qInput.value.trim() !== state.q) set({ q: qInput.value.trim() });
     });
-    let qTimer;
     qInput.addEventListener('input', () => {
       clearTimeout(qTimer);
       const value = qInput.value.trim();
@@ -3030,10 +3342,7 @@
       set({ q: '', genre: '', type: '', status: '', order: '', dub: '' });
     });
 
-    const fetchPage = (s, p) => {
-      const qs = new URLSearchParams(Object.entries({ ...s, page: p }).filter(([, v]) => v));
-      return api(`/search?${qs}`);
-    };
+    const pathFor = (s, p) => `/search?${new URLSearchParams(Object.entries({ ...s, page: p }).filter(([, v]) => v))}`;
 
     const load = async () => {
       if (loading || done) return;
@@ -3042,13 +3351,15 @@
       qWrap.classList.add('busy');
       if (page > 1) sentinel.innerHTML = '<div class="spinner"></div>';
       try {
-        let res = await fetchPage(relaxed ? { ...state, genre: '', type: '', status: '' } : state, page);
+        let path = pathFor(relaxed ? { ...state, genre: '', type: '', status: '' } : state, page);
+        let res = await api(path);
         if (gen !== generation || !grid.isConnected) return;
 
         // A title search that finds nothing inside the filters retries across all of them.
         if (page === 1 && !res.items.length && state.q && (state.genre || state.type || state.status)) {
           relaxed = true;
-          res = await fetchPage({ ...state, genre: '', type: '', status: '' }, 1);
+          path = pathFor({ ...state, genre: '', type: '', status: '' }, 1);
+          res = await api(path);
           if (gen !== generation) return;
         }
 
@@ -3057,11 +3368,16 @@
           grid.classList.remove('refreshing');
           $('#browseSub', view).innerHTML = relaxed && res.items.length
             ? `Nothing matched “${esc(state.q)}” with your filters, so these results cover <b>all genres and formats</b>.`
-            : 'Filters update instantly. More titles load as you scroll.';
+            : 'Every anime on AniList, with live sub and dub availability.';
         }
-        const fresh = res.items.filter((a) => !shown.has(a.group || a.id) && shown.add(a.group || a.id));
-        grid.insertAdjacentHTML('beforeend', fresh.map((a, i) => cardHtml(a, i)).join(''));
+        const fresh = res.items.filter((a) => !shown.has(a.id) && shown.add(a.id));
+        remember(fresh);
+        const holder = document.createElement('div');
+        holder.innerHTML = fresh.map((a, i) => cardHtml(a, i, { facts: true })).join('');
+        const added = [...holder.children];
+        grid.append(...added);
         enhance(grid);
+        if (res.postersPending) fillPendingPosters(added, path); // only this page's cards
         count += fresh.length;
         done = !res.hasNext;
         page += 1;
@@ -3091,44 +3407,50 @@
     cleanup.push(() => io.disconnect());
     syncUi();
     load();
-    if (state.q === '' && params.get('focus') === '1') qInput.focus();
+    if (params.get('focus') === '1') qInput.focus();
     return `${titleFor()} — AnimeVerse`;
   }
 
-  const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  // ---------- Schedule (by your own calendar day, like the app) ----------
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const dateKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
   async function schedulePage(view, params) {
-    const today = DAYS[new Date().getDay()];
-    let day = DAYS.includes(params.get('day')) ? params.get('day') : today;
-    const dates = DAYS.map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
+    const BACK = 7;
+    const AHEAD = 13;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Array.from({ length: BACK + AHEAD + 1 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i - BACK);
       return d;
     });
+    let shown = days.findIndex((d) => dateKey(d) === params.get('date'));
+    if (shown < 0) shown = BACK;
+
     view.innerHTML = `
       <div class="container page-top">
-        <div class="browse-head"><div><h1>Release Schedule</h1><p>New episodes this week, shown in your local time.</p></div></div>
+        <div class="page-head"><h1>Release Schedule</h1><p>Times are in your local time.</p></div>
         <div class="days" role="tablist" aria-label="Day">
           <span class="day-pill" aria-hidden="true"></span>
-          ${dates.map((d) => {
-            const name = DAYS[d.getDay()];
-            return `<button class="day" role="tab" aria-selected="${name === day}" data-day="${name}">
-              <small>${name === today ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short' })}</small>
-              <strong>${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</strong>
-              <em class="day-count" data-count-for="${name}"></em></button>`;
-          }).join('')}
+          ${days.map((d, i) => `
+            <button type="button" class="day${i < BACK ? ' past' : ''}${i === BACK ? ' today' : ''}" role="tab" aria-selected="${i === shown}" data-i="${i}">
+              <small>${i === BACK ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'short' })}</small>
+              <strong>${d.getDate()}</strong>
+              <em>${d.toLocaleDateString(undefined, { month: 'short' })}</em>
+            </button>`).join('')}
         </div>
         <div class="timeline" id="timeline" role="tabpanel"></div>
       </div>`;
 
-    const tabs = $('.days', view);
+    const strip = $('.days', view);
     const pill = $('.day-pill', view);
     const timeline = $('#timeline', view);
     let seq = 0;
 
-    // The orange pill glides between days instead of the whole page re-rendering.
     const movePill = (instant) => {
-      const btn = $(`.day[data-day="${day}"]`, tabs);
-      $$('.day', tabs).forEach((b) => {
+      const btn = $(`.day[data-i="${shown}"]`, strip);
+      $$('.day', strip).forEach((b) => {
         const on = b === btn;
         b.classList.toggle('on', on);
         b.setAttribute('aria-selected', String(on));
@@ -3137,32 +3459,39 @@
       pill.style.width = `${btn.offsetWidth}px`;
       pill.style.height = `${btn.offsetHeight}px`;
       pill.style.transform = `translate(${btn.offsetLeft}px, ${btn.offsetTop}px)`;
-      btn.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: instant || reduceMotion ? 'auto' : 'smooth' });
+      const target = btn.offsetLeft - strip.clientWidth / 2 + btn.offsetWidth / 2;
+      strip.scrollTo({ left: target, behavior: instant || reduceMotion ? 'auto' : 'smooth' });
     };
 
-    const skeleton = () => Array.from({ length: 5 }, (_, i) =>
-      `<div class="slot slot-sk" style="--i:${i}"><span class="sk" style="height:20px;width:60px"></span><span class="sk" style="width:64px;height:88px"></span><div><span class="sk" style="height:16px;width:55%;display:block"></span><span class="sk" style="height:12px;width:30%;display:block;margin-top:10px"></span></div></div>`).join('');
+    const skeleton = () => Array.from({ length: 5 }, () =>
+      '<div class="slot slot-sk"><span class="sk" style="height:18px;width:44px"></span><span></span><span class="sk" style="width:56px;height:80px;border-radius:10px"></span><div><span class="sk sk-line" style="width:60%"></span><span class="sk sk-line short"></span></div></div>').join('');
 
-    const slotsHtml = (list) => {
+    const slotsHtml = (list, isToday) => {
       const now = Date.now() / 1000;
+      if (!list.length) return '<div class="state empty-state"><div class="empty-art" aria-hidden="true">(￣o￣) zzZ</div><h2>Nothing scheduled</h2><p>No episodes are listed for this day.</p></div>';
       const sorted = [...list].sort((x, y) => (x.nextEpisode?.airingAt || 9e9) - (y.nextEpisode?.airingAt || 9e9));
-      if (!sorted.length) return '<div class="state empty-state"><div class="empty-art" aria-hidden="true">(￣o￣) zzZ</div><h2>Nothing scheduled</h2><p>No episodes are listed for this day yet.</p></div>';
       let nowMarked = false;
+      remember(sorted);
       return sorted.map((a, i) => {
         const at = a.nextEpisode?.airingAt;
-        const time = at ? new Date(at * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+        const t = at ? new Date(at * 1000) : null;
+        const [hm, ampm] = t ? t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).split(/\s+/) : ['—', ''];
         const past = at && at < now;
         let marker = '';
-        if (!past && !nowMarked && day === today && i > 0) {
+        if (isToday && !past && !nowMarked && i > 0) {
           nowMarked = true;
-          marker = `<div class="now-line" style="--i:${i}"><span>Now · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>`;
+          marker = `<div class="now-line"><span>Now</span></div>`;
         }
         return `${marker}
-          <a class="slot${past ? ' past' : ''}" href="/anime/${esc(a.id)}" data-link style="--i:${i}">
-            <time>${time}</time>
-            <span class="slot-img${a.image ? '' : ' no-img'}">${a.image ? `<img src="${esc(a.image)}" alt="" loading="lazy">` : ''}</span>
-            <div><h3>${esc(a.title)}</h3><div class="meta">${scoreHtml(a)}${langHtml(a)}${a.type ? `<span>${esc(a.type)}</span>` : ''}${a.broadcast ? `<span>${esc(a.broadcast)}</span>` : ''}</div></div>
-            ${a.nextEpisode ? `<div class="ep">EP ${a.nextEpisode.episode}<small>${past ? `${icon.check} Released` : `<span data-countdown="${at}">${formatCountdown(at - now)}</span>`}</small></div>` : '<span></span>'}
+          <a class="slot${past ? ' past' : ''}" href="/anime/${esc(a.id)}" data-link data-id="${esc(a.id)}" style="--i:${Math.min(i, 12)}">
+            <time><b>${esc(hm)}</b><small>${esc(ampm || '')}</small></time>
+            <span class="rail"><i></i></span>
+            <span class="slot-img${a.image ? '' : ' no-img'}">${a.image ? `<img src="${esc(tmdbSize(a.image, 'w185'))}" alt="" loading="lazy" decoding="async">` : ''}</span>
+            <div class="slot-body">
+              <h3>${esc(a.title)}</h3>
+              ${a.nextEpisode ? `<p class="slot-ep">Episode ${a.nextEpisode.episode}</p>` : ''}
+              <p class="slot-status">${past ? `<span class="released">${icon.check}Released</span>` : at ? `<span>in <span data-countdown="${at}">${formatCountdown(at - now)}</span></span>` : ''}${a.score ? `<i>·</i>${scoreHtml(a)}` : ''}</p>
+            </div>
           </a>`;
       }).join('');
     };
@@ -3170,12 +3499,11 @@
     const show = async (dir = 0) => {
       const mine = ++seq;
       movePill(dir === 0);
-      const key = `/schedule/${day}`;
-      const cached = memo.get(key);
-      if (!cached) {
-        timeline.classList.add('swap');
-        timeline.innerHTML = skeleton();
-      }
+      const d = days[shown];
+      const next = new Date(d);
+      next.setDate(next.getDate() + 1);
+      const key = `/airing?from=${Math.floor(d.getTime() / 1000) - 1}&to=${Math.floor(next.getTime() / 1000)}`;
+      if (!memo.get(key)) timeline.innerHTML = skeleton();
       try {
         const list = await api(key, 30 * 60 * 1000);
         if (mine !== seq || !timeline.isConnected) return;
@@ -3183,9 +3511,7 @@
         timeline.classList.remove('swap');
         void timeline.offsetWidth;
         timeline.classList.add('swap');
-        timeline.innerHTML = slotsHtml(list);
-        const badge = $(`[data-count-for="${day}"]`, tabs);
-        if (badge) badge.textContent = list.length;
+        timeline.innerHTML = slotsHtml(list, shown === BACK);
         enhance(timeline);
       } catch (err) {
         if (mine !== seq) return;
@@ -3194,20 +3520,20 @@
       }
     };
 
-    tabs.addEventListener('click', (e) => {
+    strip.addEventListener('click', (e) => {
       const btn = e.target.closest('.day');
-      if (!btn || btn.dataset.day === day) return;
-      const order = $$('.day', tabs).map((b) => b.dataset.day);
-      const dir = order.indexOf(btn.dataset.day) > order.indexOf(day) ? 1 : -1;
-      day = btn.dataset.day;
-      history.replaceState({}, '', `/schedule?day=${day}`);
+      if (!btn) return;
+      const i = Number(btn.dataset.i);
+      if (i === shown) return;
+      const dir = i > shown ? 1 : -1;
+      shown = i;
+      history.replaceState({}, '', i === BACK ? '/schedule' : `/schedule?date=${dateKey(days[i])}`);
       show(dir);
     });
-    tabs.addEventListener('keydown', (e) => {
+    strip.addEventListener('keydown', (e) => {
       if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
-      const btns = $$('.day', tabs);
-      const i = btns.findIndex((b) => b.dataset.day === day) + (e.key === 'ArrowRight' ? 1 : -1);
-      if (btns[i]) { btns[i].click(); btns[i].focus(); }
+      const btn = $(`.day[data-i="${shown + (e.key === 'ArrowRight' ? 1 : -1)}"]`, strip);
+      if (btn) { btn.click(); btn.focus(); }
     });
     const onResize = () => movePill(true);
     window.addEventListener('resize', onResize);
@@ -3215,18 +3541,88 @@
 
     requestAnimationFrame(() => movePill(true));
     await show();
-    // Warm the other days in the background so switching is instant.
-    (async () => {
-      for (const d of DAYS) {
-        if (d === day || !view.isConnected) continue;
-        try {
-          const list = await api(`/schedule/${d}`, 30 * 60 * 1000);
-          const badge = $(`[data-count-for="${d}"]`, tabs);
-          if (badge) badge.textContent = list.length;
-        } catch { /* background warm-up only */ }
+    return 'Schedule — AnimeVerse';
+  }
+
+  // ---------- My List (Continue · My List · History) ----------
+  async function libraryPage(view, params) {
+    let tab = ['continue', 'list', 'history'].includes(params.get('tab')) ? params.get('tab')
+      : Library.continueList().length ? 'continue' : 'list';
+
+    const timeAgo = (t) => {
+      const s = (Date.now() - t) / 1000;
+      if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m ago`;
+      if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+      if (s < 7 * 86400) return `${Math.round(s / 86400)}d ago`;
+      return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    };
+    const empty = (art, title, text) => `<div class="state empty-state"><div class="empty-art" aria-hidden="true">${art}</div><h2>${title}</h2><p>${text}</p><a class="btn btn-primary" href="/browse" data-link>${icon.search}Browse anime</a></div>`;
+
+    const draw = () => {
+      const cont = Library.continueList();
+      const list = Library.list();
+      const hist = Library.history();
+      remember(list);
+      let body = '';
+      if (tab === 'continue') {
+        body = cont.length
+          ? `<div class="cw-grid">${cont.map((p, i) => continueCardHtml(p, i, { compact: true, removable: true })).join('')}</div>`
+          : empty('▶', 'Nothing to continue yet', 'Episodes you start watching show up here, ready to pick up where you left off.');
+      } else if (tab === 'list') {
+        body = list.length
+          ? `<div class="grid">${list.map((a, i) => cardHtml(a, i, { facts: true, remove: `data-remove-list="${esc(a.id)}"` })).join('')}</div>`
+          : empty('♡', 'Your list is empty', 'Tap the bookmark on any anime to save it here.');
+      } else {
+        body = hist.length
+          ? `<div class="hist-head"><span>${hist.length} ${hist.length === 1 ? 'episode' : 'episodes'} watched</span><button type="button" class="link-mini" id="clearHistory">Clear history</button></div>
+             <div class="hist">${hist.map((h, i) => `
+              <div class="hist-row" style="--i:${Math.min(i, 12)}">
+                <a href="/watch/${esc(h.id)}?season=${h.season || 1}&ep=${h.ep}" data-link class="hist-link">
+                  <span class="slot-img${h.anime.image ? '' : ' no-img'}">${h.anime.image ? `<img src="${esc(tmdbSize(h.anime.image, 'w185'))}" alt="" loading="lazy">` : ''}</span>
+                  <div><strong>${esc(h.anime.title)}</strong><span class="hist-ep">Episode ${h.ep}${h.season > 1 ? ` · Season ${h.season}` : ''}</span><small>${timeAgo(h.at)}</small></div>
+                </a>
+                <button type="button" class="x-btn" data-remove-history="${h.at}" aria-label="Remove from history">${icon.x}</button>
+              </div>`).join('')}</div>`
+          : empty('◷', 'No history yet', 'Every episode you watch is listed here.');
       }
-    })();
-    return `Schedule — AnimeVerse`;
+      view.innerHTML = `
+        <div class="container page-top">
+          <div class="page-head"><h1>My List</h1></div>
+          <div class="lib-tabs" role="tablist">
+            ${[['continue', 'Continue', cont.length], ['list', 'My List', list.length], ['history', 'History', hist.length]].map(([k, label, n]) =>
+              `<button type="button" role="tab" data-lib="${k}" aria-selected="${tab === k}">${label} <b>${n}</b></button>`).join('')}
+          </div>
+          <div class="lib-body">${body}</div>
+        </div>`;
+      enhance(view);
+    };
+
+    view.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-lib]');
+      if (t) {
+        tab = t.dataset.lib;
+        history.replaceState({}, '', `/library?tab=${tab}`);
+        draw();
+        return;
+      }
+      const rp = e.target.closest('[data-remove-progress]');
+      if (rp) { e.preventDefault(); Library.removeProgress(rp.dataset.removeProgress); toast('Removed from Continue Watching'); return; }
+      const rl = e.target.closest('[data-remove-list]');
+      if (rl) {
+        e.preventDefault();
+        const a = Library.list().find((x) => x.id === rl.dataset.removeList);
+        if (a) { Library.toggle(a); toast('Removed from My List'); }
+        return;
+      }
+      const rh = e.target.closest('[data-remove-history]');
+      if (rh) { e.preventDefault(); Library.removeHistory(Number(rh.dataset.removeHistory)); return; }
+      if (e.target.closest('#clearHistory')) {
+        if (confirm('Clear your whole watch history?')) Library.clearHistory();
+      }
+    });
+    cleanup.push(Library.onChange(() => { if (view.isConnected) draw(); }));
+    draw();
+    return 'My List — AnimeVerse';
   }
 
   // Thin loading bar at the top of the window during page changes.
@@ -3253,16 +3649,30 @@
 
   const routes = [
     { re: /^\/$/, nav: 'home', run: (v) => homePage(v) },
-    { re: /^\/watch\/((?:al)?\d+)\/?$/, nav: null, run: (v, m, p) => watchPage(v, m[1], p) },
-    { re: /^\/anime\/((?:al)?\d+)\/?$/, nav: null, run: (v, m) => detailPage(v, m[1]) },
+    { re: /^\/watch\/((?:al)?\d+)\/?$/, nav: null, kind: 'watch', run: (v, m, p) => watchPage(v, m[1], p) },
+    { re: /^\/anime\/((?:al)?\d+)\/?$/, nav: null, kind: 'detail', run: (v, m) => detailPage(v, m[1]) },
     { re: /^\/browse\/?$/, nav: 'browse', run: (v, m, p) => browsePage(v, p) },
     { re: /^\/schedule\/?$/, nav: 'schedule', run: (v, m, p) => schedulePage(v, p) },
+    { re: /^\/library\/?$/, nav: 'library', run: (v, m, p) => libraryPage(v, p) },
     // Player for licensed streams (public/player.js).
-    { re: /^\/player\/([\w-]{1,40})\/?$/, nav: null, run: (v, m, p) => window.AVPlayer.mount(v, m[1], p, (fn) => cleanup.push(fn)) },
+    { re: /^\/player\/([\w-]{1,40})\/?$/, nav: null, kind: 'watch', run: (v, m, p) => window.AVPlayer.mount(v, m[1], p, (fn) => cleanup.push(fn)) },
   ];
 
   // Going back restores where you were on the previous page.
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+  const tabbar = document.getElementById('tabbar');
+  function setActiveNav(key) {
+    $$('[data-nav]').forEach((a) => {
+      const on = a.dataset.nav === key;
+      a.classList.toggle('active', on);
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    const items = $$('.tab', tabbar);
+    const i = items.findIndex((t) => t.dataset.nav === key);
+    tabbar.style.setProperty('--tab', String(Math.max(0, i)));
+    tabbar.classList.toggle('none', i < 0);
+  }
 
   async function render({ keepScroll = false, restoreY = null } = {}) {
     const token = ++renderToken;
@@ -3273,16 +3683,14 @@
     const path = location.pathname;
     const params = new URLSearchParams(location.search);
     const route = routes.find((r) => r.re.test(path));
-    const navKey = route?.nav === 'browse' && params.get('dub') === '1' ? 'dubbed' : route?.nav;
-    $$('[data-nav]').forEach((a) => a.classList.toggle('active', a.dataset.nav === navKey));
-    $('.nav-links').classList.remove('open');
-    $('#menuBtn').setAttribute('aria-expanded', 'false');
+    setActiveNav(route?.nav);
+    document.body.dataset.route = route?.nav || route?.kind || 'none';
 
     progress.start();
     const old = $('.page', app);
     if (old && !keepScroll && !reduceMotion) {
       old.classList.add('leaving');
-      await new Promise((r) => setTimeout(r, 160));
+      await new Promise((r) => setTimeout(r, 140));
       if (token !== renderToken) return;
     }
 
@@ -3293,8 +3701,9 @@
     updateNav();
 
     if (!route) {
-      view.innerHTML = `<div class="state"><h2>Page not found</h2><p>That page doesn’t exist.</p><a class="btn btn-primary" href="/" data-link>Go home</a></div>`;
+      view.innerHTML = `<div class="state page-top"><div class="empty-art" aria-hidden="true">404</div><h2>Page not found</h2><p>That page doesn’t exist.</p><a class="btn btn-primary" href="/" data-link>Go home</a></div>`;
       document.title = 'Not found — AnimeVerse';
+      progress.done();
       return;
     }
     try {
@@ -3302,15 +3711,16 @@
       if (token === renderToken && title) document.title = title;
       if (token === renderToken) {
         progress.done();
+        updateNav();
         if (restoreY != null) requestAnimationFrame(() => window.scrollTo({ top: restoreY, behavior: 'instant' }));
       }
     } catch (err) {
       if (token === renderToken) progress.done();
       if (token !== renderToken) return;
       console.error(err);
-      view.innerHTML = `<div class="state"><h2>Something went wrong</h2><p>${esc(err.message)}</p><button class="btn btn-primary" id="retryPage">Try again</button></div>`;
+      view.innerHTML = `<div class="state page-top"><div class="empty-art" aria-hidden="true">(×_×)</div><h2>Something went wrong</h2><p>${esc(err.message)}</p><button class="btn btn-primary" id="retryPage">Try again</button></div>`;
       $('#retryPage', view)?.addEventListener('click', () => {
-        try { sessionStorage.clear(); } catch {}
+        try { sessionStorage.clear(); } catch { /* blocked */ }
         window.location.reload();
       });
     }
@@ -3321,6 +3731,7 @@
     const target = new URL(url, location.origin);
     if (target.pathname + target.search === location.pathname + location.search && !replace) {
       window.__isAppNavigation = false;
+      if (!keepScroll) window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
       return;
     }
     if (!replace) history.replaceState({ ...(history.state || {}), scroll: window.scrollY }, '');
@@ -3338,19 +3749,14 @@
   });
   window.addEventListener('popstate', (e) => render({ restoreY: e.state?.scroll ?? null }));
 
-  // Solid nav once the page scrolls.
+  // Transparent bar over the hero, solid black once the page scrolls (like the app).
   const toTop = document.getElementById('toTop');
   function updateNav() {
-    nav.classList.toggle('solid', window.scrollY > 40 || !$('.hero, .detail-hero', app));
-    toTop.classList.toggle('show', window.scrollY > 900);
+    nav.classList.toggle('solid', window.scrollY > 40 || !$('.hero, .dh', app));
+    toTop.classList.toggle('show', window.scrollY > 1200);
   }
   toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));
   window.addEventListener('scroll', updateNav, { passive: true });
-
-  $('#menuBtn').addEventListener('click', (e) => {
-    const open = $('.nav-links').classList.toggle('open');
-    e.currentTarget.setAttribute('aria-expanded', String(open));
-  });
 
   // ---------- Search overlay ----------
   const overlay = document.getElementById('searchOverlay');
@@ -3373,7 +3779,7 @@
     } catch { /* storage may be blocked */ }
   };
 
-  // Wraps the matched part of a title in <mark> for a highlight sweep.
+  // Wraps the matched part of a title in <mark>.
   function highlight(text, q) {
     const safe = esc(text);
     if (!q) return safe;
@@ -3390,10 +3796,10 @@
     results.innerHTML = `
       ${recent.length ? `
         <div class="search-group"><div class="search-group-head"><span>Recent searches</span><button class="link-mini" id="clearRecent">Clear</button></div>
-        <div class="search-chips">${recent.map((q, i) => `<button class="chip" data-q="${esc(q)}" style="--i:${i}">${icon.clock}${esc(q)}</button>`).join('')}</div></div>` : ''}
+        <div class="search-chips">${recent.map((q) => `<button class="chip" data-q="${esc(q)}">${icon.clock}${esc(q)}</button>`).join('')}</div></div>` : ''}
       ${trending.length ? `
         <div class="search-group"><div class="search-group-head"><span>Trending now</span></div>
-        ${trending.map((a, i) => resultHtml(a, i, '')).join('')}</div>` : '<p class="search-empty">Start typing to search every anime on MyAnimeList and AniList.</p>'}`;
+        ${trending.map((a, i) => resultHtml(a, i, '')).join('')}</div>` : '<p class="search-empty">Start typing to search every anime on AniList.</p>'}`;
     enhance(results);
     selIndex = -1;
     $('#clearRecent', results)?.addEventListener('click', () => {
@@ -3403,11 +3809,12 @@
   }
 
   function resultHtml(a, i, q) {
+    const pending = a.posterPending && a.image;
     return `
-      <a class="result" href="/anime/${esc(a.id)}" data-link style="--i:${i}">
-        <span class="result-img${a.image ? '' : ' no-img'}">${a.image ? `<img src="${esc(a.image)}" alt="" loading="eager" decoding="async" onload="this.classList.add('loaded')" onerror="this.parentElement.classList.add('no-img');this.remove();">` : ''}</span>
+      <a class="result" href="/anime/${esc(a.id)}" data-link data-id="${esc(a.id)}" style="--i:${i}">
+        <span class="result-img${a.image ? '' : ' no-img'}${pending ? ' pending' : ''}"${pending ? ` data-fallback="${esc(a.image)}"` : ''}>${a.image && !pending ? `<img src="${esc(tmdbSize(a.image, 'w185'))}" alt="" loading="eager" decoding="async">` : ''}</span>
         <div><strong>${highlight(a.title, q)}</strong>
-          <div class="meta">${scoreHtml(a)}${langHtml(a)}${factsOf(a).map((m) => `<span>${esc(m)}</span>`).join('<i class="sep"></i>')}</div>
+          <div class="meta">${scoreHtml(a)}${langHtml(a)}${factsOf(a).length ? `<span>${esc(factsOf(a).join(' · '))}</span>` : ''}</div>
           ${a.titleRomaji && a.titleRomaji !== a.title ? `<div class="alt">${highlight(a.titleRomaji, q)}</div>` : ''}
         </div>
         <span class="result-go">${icon.right}</span>
@@ -3417,7 +3824,7 @@
   function openSearch() {
     overlay.hidden = false;
     overlay.classList.remove('closing');
-    document.body.style.overflow = 'hidden';
+    document.body.classList.add('search-open');
     selIndex = -1;
     if (!input.value.trim()) renderSearchHome();
     requestAnimationFrame(() => { input.focus(); input.select(); });
@@ -3430,7 +3837,7 @@
       overlay.hidden = true;
       overlay.classList.remove('closing');
     }, reduceMotion ? 0 : 200);
-    document.body.style.overflow = '';
+    document.body.classList.remove('search-open');
     heroCtl?.resume();
   }
 
@@ -3439,11 +3846,11 @@
     if (!q) { searchBar.classList.remove('busy'); renderSearchHome(); return; }
     if (q.length < 2) return;
     searchBar.classList.add('busy');
-    // Keep the previous results on screen (dimmed) instead of flashing a spinner.
     if ($('.result', results) && lastQuery) results.classList.add('stale');
     else results.innerHTML = Array.from({ length: 5 }, () => '<div class="result-sk"><span class="sk"></span><div><span class="sk"></span><span class="sk"></span></div></div>').join('');
     try {
-      const res = await api(`/search?q=${encodeURIComponent(q)}`);
+      const path = `/search?q=${encodeURIComponent(q)}`;
+      const res = await api(path);
       if (seq !== searchSeq) return;
       lastQuery = q;
       const items = res.items.slice(0, 10);
@@ -3453,6 +3860,7 @@
            <a class="search-all" href="/browse?q=${encodeURIComponent(q)}" data-link>See all results for “${esc(q)}” ${icon.right}</a>`
         : `<div class="search-empty"><div class="empty-art" aria-hidden="true">(・_・;)</div><strong>No anime found for “${esc(q)}”</strong><p>Try the English or Japanese title, or fewer words.</p></div>`;
       enhance(results);
+      if (res.postersPending) fillPendingPosters(results, path, '.result-img.pending');
     } catch (err) {
       if (seq === searchSeq) results.innerHTML = `<p class="search-empty">${esc(err.message)}</p>`;
     } finally {
@@ -3498,7 +3906,7 @@
     input.focus();
     runSearch('');
   });
-  document.getElementById('searchOpen').addEventListener('click', openSearch);
+  $$('[data-open-search]').forEach((b) => b.addEventListener('click', openSearch));
   document.getElementById('searchClose').addEventListener('click', closeSearch);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeSearch(); });
 
@@ -3515,32 +3923,23 @@
     }
   });
 
-  // ---------- Scroll Hover Glitch Fix: disables pointer-events during active scrolling ----------
+  // Cards don't flash hover effects while the page scrolls under the pointer.
   let isScrollingTimer = null;
   window.addEventListener('scroll', () => {
-    if (!document.body.classList.contains('is-scrolling')) {
-      document.body.classList.add('is-scrolling');
-    }
+    if (!document.body.classList.contains('is-scrolling')) document.body.classList.add('is-scrolling');
     clearTimeout(isScrollingTimer);
-    isScrollingTimer = setTimeout(() => {
-      document.body.classList.remove('is-scrolling');
-    }, 120);
+    isScrollingTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 120);
   }, { passive: true });
 
-  // ---------- Nav search hint: cycles through trending titles without wasting network calls ----------
+  // Nav search hint: cycles through trending titles (no extra requests).
   (async () => {
     try {
-      const defaultHints = ['Jujutsu Kaisen', 'Demon Slayer', 'Solo Leveling', 'Attack on Titan', 'One Piece', 'Chainsaw Man'];
-      let names = defaultHints;
-      // Only fetch /home if on home page or already cached in memory to save backend requests
-      const cachedHome = memo.get('/home');
-      if (cachedHome && cachedHome.trending && cachedHome.trending.length > 0) {
-        names = cachedHome.trending.slice(0, 8).map((a) => a.title);
-      } else if (location.pathname === '/') {
+      let names = ['Jujutsu Kaisen', 'Demon Slayer', 'Solo Leveling', 'Attack on Titan', 'One Piece', 'Frieren'];
+      const cachedHome = memo.get('/home')?.data;
+      if (cachedHome?.trending?.length) names = cachedHome.trending.slice(0, 8).map((a) => a.title);
+      else if (location.pathname === '/') {
         const homeData = await api('/home', 10 * 60 * 1000);
-        if (homeData && homeData.trending && homeData.trending.length > 0) {
-          names = homeData.trending.slice(0, 8).map((a) => a.title);
-        }
+        if (homeData?.trending?.length) names = homeData.trending.slice(0, 8).map((a) => a.title);
       }
       const el = document.getElementById('searchHint');
       if (!el || !names.length || reduceMotion) return;
@@ -3556,7 +3955,7 @@
     } catch { /* hint stays static */ }
   })();
 
-  // ---------- Footer status (cached in sessionStorage to eliminate redundant network hits) ----------
+  // Footer status (cached for the session).
   (() => {
     const renderStatus = (s) => {
       const el = $('#footerStatus');
@@ -3566,21 +3965,18 @@
     };
     try {
       const cached = sessionStorage.getItem('animeverse_status_cache');
-      if (cached) {
-        renderStatus(JSON.parse(cached));
-        return;
-      }
-    } catch {}
+      if (cached) { renderStatus(JSON.parse(cached)); return; }
+    } catch { /* blocked */ }
     fetch(`${API_BASE}/api/status`)
       .then((r) => r.json())
       .then((s) => {
-        try { sessionStorage.setItem('animeverse_status_cache', JSON.stringify(s)); } catch {}
+        try { sessionStorage.setItem('animeverse_status_cache', JSON.stringify(s)); } catch { /* blocked */ }
         renderStatus(s);
       })
       .catch(() => {});
   })();
 
-  // Home data refreshes on its own: re-render quietly every 30 minutes if the user is on the home page.
+  // Home refreshes itself every 30 minutes while you're at the top of it.
   setInterval(() => {
     if (location.pathname === '/' && !document.hidden && window.scrollY < 50) {
       memo.delete('/home');

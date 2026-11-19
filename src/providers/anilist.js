@@ -345,6 +345,28 @@ module.exports = {
       .map((s) => ({ ...normalize(s.media), nextEpisode: { episode: s.episode, airingAt: s.airingAt } }));
   },
 
+  // Every episode airing between two moments (unix seconds), the way the app's
+  // schedule asks: the page sends the viewer's own local midnight-to-midnight.
+  async airing(from, to) {
+    const out = [];
+    for (let pageNo = 1; pageNo <= 3; pageNo++) {
+      const data = await query(
+        `query ($from: Int, $to: Int, $page: Int) { Page(page: $page, perPage: 50) {
+          pageInfo { hasNextPage }
+          airingSchedules(airingAt_greater: $from, airingAt_lesser: $to, sort: TIME) {
+            episode airingAt media { ${MEDIA_FIELDS} }
+          } } }`,
+        { from, to, page: pageNo }
+      );
+      for (const s of data.Page.airingSchedules) {
+        if (s.media?.isAdult) continue;
+        out.push({ ...normalize(s.media), nextEpisode: { episode: s.episode, airingAt: s.airingAt } });
+      }
+      if (!data.Page.pageInfo?.hasNextPage) break;
+    }
+    return out;
+  },
+
   // Banner art and AniList IDs for MAL ids.
   async bannersByMalIds(ids) {
     if (!ids.length) return {};

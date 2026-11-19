@@ -109,14 +109,13 @@ async function buildHome() {
     ['movies', () => provider.movies(20)],
   ]);
   if (!Object.values(rows).some((r) => r.length)) throw new Error('All home rows failed');
-  // Spotlight uses TMDB's backdrops and title logos.
+  // Spotlight: the same 8 titles, in the same order, as the mobile app's slider
+  // (anilistClient.fetchHome), with TMDB's backdrop and title logo for each.
   const candidates = [...rows.trending, ...rows.seasonNow]
     .filter((a, i, arr) => a.synopsis && arr.findIndex((b) => b.id === a.id) === i)
-    .slice(0, 14);
-  const spotlight = (await artwork.withArtwork(candidates))
-    .filter((a) => a.backdrop || a.banner)
-    .sort((a, b) => Boolean(b.backdrop) - Boolean(a.backdrop))
+    .filter((a) => a.banner || a.image)
     .slice(0, 8);
+  const spotlight = await artwork.withArtwork(candidates);
   const partial = Object.values(rows).some((r) => !r.length);
   const home = { spotlight, ...rows, partial, updatedAt: new Date().toISOString() };
   if (partial) {
@@ -176,48 +175,26 @@ router.get(
       }),
     ]);
     const visuals = art || {};
-    const isSeason = artwork.isSeasonEntry(anime.title, anime.titleRomaji) || (art && (art.isSeason || art.targetSeason > 1));
+    const isSeason = artwork.isSeasonEntry(anime.title);
 
     const relations = anime.relations?.length
       ? await artwork.withPosters(anime.relations.map((r) => ({ ...r, type: r.type || r.format }))).catch(() => anime.relations)
       : (anime.relations || []);
 
-    if (art && (isSeason || (!artwork.SERIES_TYPES.has(anime.type) && art.tmdbKind === 'tv'))) {
-      // It is a specific season or non-series TV entry:
-      // Match the mobile app: use the season's official key visual as the single source for both poster and hero art,
-      // preventing stale Season 1 backdrops/banners from lingering on sequels.
-      const seasonPoster = visuals.seasonPoster || visuals.tmdbPoster || anime.image;
-      const seasonArt = seasonPoster || anime.banner || visuals.backdrop;
-      return {
-        ...anime,
-        ...visuals,
-        relations,
-        image: seasonPoster,
-        tmdbPoster: seasonPoster,
-        banner: seasonArt,
-        backdrop: seasonArt,
-        backdropHd: seasonArt,
-        seasonCount: null,
-        episodeCount: anime.episodes || null,
-        tmdbStatus: anime.status || null,
-        imdb: imdbRating,
-      };
-    }
-    // Main show entry (Season 1):
-    // Use season 1 poster (visuals.seasonPoster) if available to avoid TMDB whole-show poster being hijacked by sequels,
-    // otherwise fallback to visuals.tmdbPoster or anime.image.
-    // Use TMDB 4K/HD backdrop whenever available.
-    const mainPoster = visuals.seasonPoster || visuals.tmdbPoster || anime.image;
+    const poster = visuals.poster || anime.image2x || anime.image;
+    const backdrop = visuals.backdrop || anime.banner || poster;
+    const backdropHd = visuals.backdropHd || visuals.backdrop || anime.banner || poster;
+
     return {
       ...anime,
       ...visuals,
       relations,
-      image: mainPoster,
-      tmdbPoster: mainPoster,
-      banner: visuals.backdrop || anime.banner,
-      backdrop: visuals.backdrop || anime.banner,
-      backdropHd: visuals.backdropHd || visuals.backdrop || anime.banner,
-      ...(art ? artwork.seriesFacts(art, anime) : {}),
+      image: poster,
+      tmdbPoster: poster,
+      banner: backdrop,
+      backdrop: backdrop,
+      backdropHd: backdropHd,
+      ...(art ? (isSeason ? { seasonCount: null, episodeCount: anime.episodes || null, tmdbStatus: anime.status || null } : artwork.seriesFacts(art, anime)) : {}),
       imdb: imdbRating,
     };
   }, 'public, s-maxage=3600, stale-while-revalidate=86400')
@@ -420,6 +397,16 @@ router.get(
       dub: req.query.dub === '1' ? '1' : '',
       page: Math.max(1, Math.min(200, parseInt(req.query.page, 10) || 1)),
     };
+    // full=1: the page asks again for cards still waiting on their TMDB poster.
+    // Waits for every poster, and keeps that complete answer for everyone else.
+    if (req.query.full === '1') {
+      const cached = cache.get(searchKey(params));
+      if (cached && !cached.postersPending) return cached;
+      return provider.search(params, { budgetMs: 0 }).then((r) => {
+        cache.set(searchKey(params), r, TTL.search);
+        return r;
+      });
+    }
     return loadSearch(params);
   }, 'public, s-maxage=900, stale-while-revalidate=3600')
 );
@@ -435,6 +422,22 @@ router.get(
     }
     return fresh(`schedule:${day}`, TTL.schedule, KEEP.schedule, () => provider.schedule(day));
   }, 'public, s-maxage=3600, stale-while-revalidate=86400')
+);
+
+// One local calendar day of the release schedule: ?from=<unix>&to=<unix>, at most
+// 26 hours apart (daylight-saving days are 23 or 25 hours long).
+router.get(
+  '/airing',
+  handle((req) => {
+    const from = parseInt(req.query.from, 10);
+    const to = parseInt(req.query.to, 10);
+    if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from || to - from > 26 * 3600) {
+      const err = new Error('Bad range');
+      err.status = 400;
+      throw err;
+    }
+    return fresh(`airing:${from}:${to}`, TTL.schedule, KEEP.schedule, () => provider.airing(from, to));
+  }, 'public, s-maxage=1800, stale-while-revalidate=86400')
 );
 
 router.get(
