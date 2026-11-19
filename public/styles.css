@@ -101,7 +101,7 @@ html { scrollbar-color: #3a3c44 transparent; scrollbar-width: thin; }
 .page-top { padding-top: calc(var(--nav-h) + 28px); }
 .page { min-height: 70vh; animation: page-in 260ms var(--ease-out) both; }
 .page.leaving { animation: page-out 140ms ease-in both; }
-@keyframes page-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes page-in { from { opacity: 0; } }
 @keyframes page-out { to { opacity: 0; } }
 
 /* Icons: the app's duotone set. */
@@ -928,10 +928,12 @@ body[data-route="watch"] .footer { margin-top: 0; }
   .dh-syn { align-items: center; margin-top: 18px; }
   .dh-synopsis { font-size: 15px; }
   .dh-cta { display: none; }
+  body[data-route="detail"] .page { transform: none !important; }
   .dh-bar {
-    display: flex; align-items: center; gap: 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    padding: 18px 16px calc(12px + env(safe-area-inset-bottom));
-    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.92) 45%, #000);
+    display: flex; align-items: center; gap: 12px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+    padding: 16px 16px calc(14px + env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.92) 40%, #000);
+    pointer-events: auto;
   }
   .dh-bar .grow { flex: 1; min-width: 0; height: 56px; font-size: 17px; }
   .dh-bar .round-save { width: 56px; height: 56px; }
