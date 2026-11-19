@@ -185,7 +185,7 @@ router.get(
     if (art && (isSeason || (!artwork.SERIES_TYPES.has(anime.type) && art.tmdbKind === 'tv'))) {
       // It is a specific season or non-series TV entry:
       // Keep its own season cover (AniList anime.image or season-specific poster),
-      // Prefer anime.banner if available (so sequel doesn't show Season 1's backdrop),
+      // Prefer visuals.backdrop if available, falling back to anime.banner,
       // Drop series-wide season count and status so it doesn't show "2 Seasons | 20 Episodes | Airing".
       const seasonPoster = visuals.seasonPoster || visuals.tmdbPoster || anime.image;
       return {
@@ -194,9 +194,9 @@ router.get(
         relations,
         image: seasonPoster,
         tmdbPoster: seasonPoster,
-        banner: anime.banner || visuals.backdrop,
-        backdrop: anime.banner || visuals.backdrop,
-        backdropHd: anime.banner || visuals.backdropHd,
+        banner: visuals.backdrop || anime.banner,
+        backdrop: visuals.backdrop || anime.banner,
+        backdropHd: visuals.backdropHd || visuals.backdrop || anime.banner,
         seasonCount: null,
         episodeCount: anime.episodes || null,
         tmdbStatus: anime.status || null,
@@ -206,7 +206,7 @@ router.get(
     // Main show entry (Season 1):
     // Use season 1 poster (visuals.seasonPoster) if available to avoid TMDB whole-show poster being hijacked by sequels,
     // otherwise fallback to visuals.tmdbPoster or anime.image.
-    // Prefer authentic anime.banner if present so Season 1 doesn't display Season 2's backdrop.
+    // Use TMDB 4K/HD backdrop whenever available.
     const mainPoster = visuals.seasonPoster || visuals.tmdbPoster || anime.image;
     return {
       ...anime,
@@ -214,9 +214,9 @@ router.get(
       relations,
       image: mainPoster,
       tmdbPoster: mainPoster,
-      banner: anime.banner || visuals.backdrop,
-      backdrop: anime.banner || visuals.backdrop,
-      backdropHd: anime.banner || visuals.backdropHd,
+      banner: visuals.backdrop || anime.banner,
+      backdrop: visuals.backdrop || anime.banner,
+      backdropHd: visuals.backdropHd || visuals.backdrop || anime.banner,
       ...(art ? artwork.seriesFacts(art, anime) : {}),
       imdb: imdbRating,
     };

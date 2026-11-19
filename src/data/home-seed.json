@@ -65,13 +65,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       },
       "backdrop": "https://image.tmdb.org/t/p/w1280/j7KrALvuZgBdwVZkOIRc9Xaeyt4.jpg",
       "backdropHd": "https://image.tmdb.org/t/p/original/j7KrALvuZgBdwVZkOIRc9Xaeyt4.jpg",
@@ -536,90 +537,20 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       },
       "backdrop": "https://image.tmdb.org/t/p/w1280/2rmK7mnchw9Xr3XdiTFSxTTLXqv.jpg",
       "backdropHd": "https://image.tmdb.org/t/p/original/2rmK7mnchw9Xr3XdiTFSxTTLXqv.jpg",
       "logo": "https://image.tmdb.org/t/p/w500/9F7daAmibx8ZHTE17CdM5FAwiHE.png",
       "logoAspect": 2.883,
       "contentRating": "TV-14"
-    },
-    {
-      "id": "64340",
-      "malId": 64340,
-      "anilistId": 212888,
-      "title": "Overgeared",
-      "titleRomaji": "Tempal: Item no Chikara",
-      "titleJapanese": "テムパル～アイテムの力～",
-      "image": "https://image.tmdb.org/t/p/w500/94GLmulA9qVGsuo9kLpVKi01E2Z.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/94GLmulA9qVGsuo9kLpVKi01E2Z.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/212888-ZsnNegBCKXQq.jpg",
-      "color": "#f19335",
-      "synopsis": "Sin Yeong-U (a.k.a. Grid), an unlucky man in life and a low-level player in the popular VR game “Satisfy,” finds a powerful item that earns him a rare legendary class title: “Pagma’s Successor.” He’s now a skilled blacksmith who can forge unique weapons and equip the game’s most powerful gear. Grid resolves to use his new abilities to achieve fame and fortune, but as his very existence begins to stir up trouble in Satisfy, he realizes that life as a legend may be more than he bargained for….\n\nNote: Tempal: Item no Chikara is streaming a week in advance of the TV broadcast on Prime Video and Crunchyroll beginning September 27th, 2026. Regular broadcasting began on October 2nd, 2026.",
-      "score": 7.6,
-      "scoredBy": null,
-      "rank": null,
-      "popularity": null,
-      "members": 66365,
-      "episodes": 12,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "ONA",
-      "season": "fall",
-      "year": 2026,
-      "genres": [
-        "Action",
-        "Adventure",
-        "Comedy",
-        "Fantasy"
-      ],
-      "studios": [
-        "J.C.STAFF"
-      ],
-      "duration": "24 min per ep",
-      "ageRating": null,
-      "aired": "Sep 27, 2026 to ?",
-      "broadcast": null,
-      "trailer": "e1Km0FqUZl0",
-      "streaming": [
-        {
-          "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00384004"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 9,
-        "airingAt": 1795357800
-      },
-      "source": "anilist",
-      "family": [],
-      "group": "overgeared",
-      "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx212888-NhyvqPt5aIuJ.jpg",
-      "seasonCount": 1,
-      "episodeCount": 12,
-      "tmdbStatus": "Airing",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      },
-      "backdrop": "https://image.tmdb.org/t/p/w1280/745xqHbiUWwO51TM60MXRCR4Onm.jpg",
-      "backdropHd": "https://image.tmdb.org/t/p/original/745xqHbiUWwO51TM60MXRCR4Onm.jpg",
-      "logo": "https://image.tmdb.org/t/p/w500/ki2DwqPbI2LcWeOQrq7dtaDIHFB.png",
-      "logoAspect": 4.218,
-      "contentRating": null
     },
     {
       "id": "63382",
@@ -691,19 +622,92 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       },
       "backdrop": "https://image.tmdb.org/t/p/w1280/5obfnImCRn0LzQnRb4jxuCJRlxd.jpg",
       "backdropHd": "https://image.tmdb.org/t/p/original/5obfnImCRn0LzQnRb4jxuCJRlxd.jpg",
       "logo": "https://image.tmdb.org/t/p/w500/riCiNoSEkHZzHtMg1RUXPxgGcgc.png",
       "logoAspect": 2.486,
       "contentRating": "TV-14"
+    },
+    {
+      "id": "64340",
+      "malId": 64340,
+      "anilistId": 212888,
+      "title": "Overgeared",
+      "titleRomaji": "Tempal: Item no Chikara",
+      "titleJapanese": "テムパル～アイテムの力～",
+      "image": "https://image.tmdb.org/t/p/w500/94GLmulA9qVGsuo9kLpVKi01E2Z.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/94GLmulA9qVGsuo9kLpVKi01E2Z.jpg",
+      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/212888-ZsnNegBCKXQq.jpg",
+      "color": "#f19335",
+      "synopsis": "Sin Yeong-U (a.k.a. Grid), an unlucky man in life and a low-level player in the popular VR game “Satisfy,” finds a powerful item that earns him a rare legendary class title: “Pagma’s Successor.” He’s now a skilled blacksmith who can forge unique weapons and equip the game’s most powerful gear. Grid resolves to use his new abilities to achieve fame and fortune, but as his very existence begins to stir up trouble in Satisfy, he realizes that life as a legend may be more than he bargained for….\n\nNote: Tempal: Item no Chikara is streaming a week in advance of the TV broadcast on Prime Video and Crunchyroll beginning September 27th, 2026. Regular broadcasting began on October 2nd, 2026.",
+      "score": 7.6,
+      "scoredBy": null,
+      "rank": null,
+      "popularity": null,
+      "members": 66365,
+      "episodes": 12,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "ONA",
+      "season": "fall",
+      "year": 2026,
+      "genres": [
+        "Action",
+        "Adventure",
+        "Comedy",
+        "Fantasy"
+      ],
+      "studios": [
+        "J.C.STAFF"
+      ],
+      "duration": "24 min per ep",
+      "ageRating": null,
+      "aired": "Sep 27, 2026 to ?",
+      "broadcast": null,
+      "trailer": "e1Km0FqUZl0",
+      "streaming": [
+        {
+          "name": "Crunchyroll",
+          "url": "https://www.crunchyroll.com/series/GT00384004"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 9,
+        "airingAt": 1795357800
+      },
+      "source": "anilist",
+      "family": [],
+      "group": "overgeared",
+      "factsPending": false,
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx212888-NhyvqPt5aIuJ.jpg",
+      "seasonCount": 1,
+      "episodeCount": 12,
+      "tmdbStatus": "Airing",
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
+      },
+      "backdrop": "https://image.tmdb.org/t/p/w1280/745xqHbiUWwO51TM60MXRCR4Onm.jpg",
+      "backdropHd": "https://image.tmdb.org/t/p/original/745xqHbiUWwO51TM60MXRCR4Onm.jpg",
+      "logo": "https://image.tmdb.org/t/p/w500/ki2DwqPbI2LcWeOQrq7dtaDIHFB.png",
+      "logoAspect": 4.218,
+      "contentRating": null
     },
     {
       "id": "61967",
@@ -771,15 +775,17 @@
       ],
       "group": "black clover",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx195604-tSZcfKbVqSEG.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       },
       "backdrop": "https://image.tmdb.org/t/p/w1280/qu9epTZh29fGUkY7ZYc9PVsv0Ig.jpg",
       "backdropHd": "https://image.tmdb.org/t/p/original/qu9epTZh29fGUkY7ZYc9PVsv0Ig.jpg",
@@ -877,15 +883,17 @@
       ],
       "group": "the apothecary diaries",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx195516-MJpUZlOberqH.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       },
       "backdrop": "https://image.tmdb.org/t/p/w1280/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg",
       "backdropHd": "https://image.tmdb.org/t/p/original/gffVOVZ2Y9cmVIZ26Gt9ByMGCYH.jpg",
@@ -894,23 +902,100 @@
       "contentRating": "TV-14"
     },
     {
-      "id": "63754",
-      "malId": 63754,
-      "anilistId": 209502,
-      "title": "The Cold Sato-san is Only Sweet to Me",
-      "titleRomaji": "Shiotaiou no Satou-san ga Ore ni dake Amai",
-      "titleJapanese": "塩対応の佐藤さんが俺にだけ甘い",
-      "image": "https://image.tmdb.org/t/p/w500/eInC49veg0lHg13BaBiKmQiPk6U.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/eInC49veg0lHg13BaBiKmQiPk6U.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/209502-TATgyznMxQOe.jpg",
-      "color": "#f1bb50",
-      "synopsis": "Sato-san is the unattainable flower of the class. She is always cold and curt with classmates, but only I know she's actually very cute when she smiles, even if she's not much of a photographer.\n\nOshio-kun is friendly and lively, but only I know he works at his family's cafe after school. He does a great job with the cafe's SNS account, and his mischievous smile makes my heart skip a beat!\n\nInnocent and sweet, but sometimes frustrating, this is a 120%-pure fluffy story about two people falling in love for the first time.",
-      "score": 6.7,
+      "id": "63293",
+      "malId": 63293,
+      "anilistId": 205909,
+      "title": "Firefly Wedding",
+      "titleRomaji": "Hotaru no Yomeiri",
+      "titleJapanese": "ホタルの嫁入り",
+      "image": "https://image.tmdb.org/t/p/w500/Auw2NxgGThu6XAO2pyRoipMIDHG.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/Auw2NxgGThu6XAO2pyRoipMIDHG.jpg",
+      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/205909-hGeuFYrdhf9S.jpg",
+      "color": "#aebb35",
+      "synopsis": "On the surface, Satoko has it all—she’s beautiful, the daughter of a nobleman, and at a prime age for marriage. Unfortunately, she is also quite ill and only has a short time left to live. Before she can secure a marriage that will redeem her worth in her family’s eyes, she finds herself the target of the mysterious assassin Shinpei, and her plans are put in jeopardy. In order to save herself, she makes a desperate proposal—of marriage! When it comes to love, however, Shinpei takes “until death do we part” seriously.",
+      "score": 7.5,
       "scoredBy": null,
       "rank": null,
       "popularity": null,
-      "members": 24599,
+      "members": 56722,
       "episodes": 12,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "TV",
+      "season": "fall",
+      "year": 2026,
+      "genres": [
+        "Drama",
+        "Romance"
+      ],
+      "studios": [
+        "david production"
+      ],
+      "duration": "23 min per ep",
+      "ageRating": null,
+      "aired": "Oct 9, 2026 to ?",
+      "broadcast": null,
+      "trailer": "Ex9LrBK-7hk",
+      "streaming": [
+        {
+          "name": "Crunchyroll",
+          "url": "https://www.crunchyroll.com/series/GT00383999"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 7,
+        "airingAt": 1795185000
+      },
+      "source": "anilist",
+      "family": [
+        {
+          "rel": "SIDE_STORY",
+          "id": 218938,
+          "format": "ONA",
+          "episodes": null
+        }
+      ],
+      "group": "firefly wedding",
+      "factsPending": false,
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx205909-DM0fAzNQulod.jpg",
+      "seasonCount": 1,
+      "episodeCount": 12,
+      "tmdbStatus": "Airing",
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
+      },
+      "backdrop": "https://image.tmdb.org/t/p/w1280/3zmB6PLnjf7rNNC2lnvinQtlJMx.jpg",
+      "backdropHd": "https://image.tmdb.org/t/p/original/3zmB6PLnjf7rNNC2lnvinQtlJMx.jpg",
+      "logo": "https://image.tmdb.org/t/p/w500/jF0Y73x1pWq6noava9Cp900i8Tm.png",
+      "logoAspect": 5.603,
+      "contentRating": null
+    },
+    {
+      "id": "62484",
+      "malId": 62484,
+      "anilistId": 198727,
+      "title": "Chitose Is in the Ramune Bottle 2nd Cour",
+      "titleRomaji": "Chitose-kun wa Ramune Bin no Naka Part 2",
+      "titleJapanese": "千歳くんはラムネ瓶のなか 2クール",
+      "image": "https://image.tmdb.org/t/p/w500/7tpcFkOpLcWkJU6mV5ooJyHA3DR.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/7tpcFkOpLcWkJU6mV5ooJyHA3DR.jpg",
+      "banner": null,
+      "color": "#bbe4f1",
+      "synopsis": "The second part of Chitose-kun wa Ramune Bin no Naka.",
+      "score": 7.8,
+      "scoredBy": null,
+      "rank": 455,
+      "popularity": null,
+      "members": 17369,
+      "episodes": 11,
       "status": "Currently Airing",
       "airing": true,
       "type": "TV",
@@ -921,35 +1006,35 @@
         "Romance"
       ],
       "studios": [
-        "Tezuka Productions"
+        "feel."
       ],
       "duration": "24 min per ep",
       "ageRating": null,
-      "aired": "Oct 6, 2026 to ?",
+      "aired": "Oct 13, 2026 to Dec 22, 2026",
       "broadcast": null,
-      "trailer": "8XgKVzuLmJw",
+      "trailer": "8RHh2AyKRfY",
       "streaming": [
         {
           "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00384014/the-cold-sato-san-is-only-sweet-to-me"
-        },
-        {
-          "name": "Bilibili TV",
-          "url": "https://www.bilibili.tv/en/media/2433556"
+          "url": "https://www.crunchyroll.com/series/GT00364783/chitose-is-in-the-ramune-bottle"
         }
       ],
       "nextEpisode": {
-        "episode": 8,
-        "airingAt": 1795525200
+        "episode": 7,
+        "airingAt": 1795528800
       },
       "source": "anilist",
-      "family": [],
-      "group": "the cold sato san is only sweet to me",
+      "family": [
+        {
+          "rel": "PREQUEL",
+          "id": 180082,
+          "format": "TV",
+          "episodes": 13
+        }
+      ],
+      "group": "chitose is in the ramune bottle 2nd cour",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx198727-BL0JTpg0G8tq.jpg",
       "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx209502-C81oN8M4Smlo.jpg",
-      "seasonCount": 1,
-      "episodeCount": 12,
-      "tmdbStatus": "Airing",
       "languages": {
         "audio": [
           "Japanese"
@@ -960,79 +1045,10 @@
         "sub": true,
         "dub": null
       },
-      "backdrop": "https://image.tmdb.org/t/p/w1280/ukHKDQO3ILHEAsZ6uXRCeT7tKlO.jpg",
-      "backdropHd": "https://image.tmdb.org/t/p/original/ukHKDQO3ILHEAsZ6uXRCeT7tKlO.jpg",
-      "logo": "https://image.tmdb.org/t/p/w500/x7SnoIng0q5GyAO9AN8QhX6JPEi.png",
-      "logoAspect": 1.613,
-      "contentRating": null
-    },
-    {
-      "id": "63409",
-      "malId": 63409,
-      "anilistId": 207191,
-      "title": "Hello, I am a Witch and my Crush Wants me to Make a Love Potion!",
-      "titleRomaji": "Doumo, Suki na Hito ni Horegusuri wo Irai Sareta Majo desu.",
-      "titleJapanese": "どうも、好きな人に惚れ薬を依頼された魔女です。",
-      "image": "https://image.tmdb.org/t/p/w500/96ywNgKOgciVt33MFTaRLBg8Xnd.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/96ywNgKOgciVt33MFTaRLBg8Xnd.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/207191-xYgpkCDnXc5m.jpg",
-      "color": "#aed6e4",
-      "synopsis": "“Make me a love potion.”\n\nAnd with that single sentence, the Good Witch of the Lake’s secret crush on the dashing Sir Harij ends in heartbreak. Still, when he promises to help her gather the ingredients, Rose is thrilled at the chance to gaze upon a man she’d normally never get to interact with. She learns to brace her pounding heart for their usual stilted conversations…but what is she to do when he inexplicably shows up at her doorstep with bread and a jar of apple butter?",
-      "score": 7.4,
-      "scoredBy": null,
-      "rank": null,
-      "popularity": null,
-      "members": 33970,
-      "episodes": 12,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "TV",
-      "season": "fall",
-      "year": 2026,
-      "genres": [
-        "Fantasy",
-        "Romance"
-      ],
-      "studios": [
-        "diomedéa"
-      ],
-      "duration": "24 min per ep",
-      "ageRating": null,
-      "aired": "Oct 5, 2026 to ?",
-      "broadcast": null,
-      "trailer": "hGRtocAh3iw",
-      "streaming": [
-        {
-          "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00378072/hello-i-am-a-witch-and-my-crush-wants-me-to-make-a-love-potion"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 8,
-        "airingAt": 1795437000
-      },
-      "source": "anilist",
-      "family": [],
-      "group": "hello i am a witch and my crush wants me to make a love potion",
-      "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx207191-VgkIzfH92WoZ.jpg",
-      "seasonCount": 1,
-      "episodeCount": 12,
-      "tmdbStatus": "Airing",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      },
-      "backdrop": "https://image.tmdb.org/t/p/w1280/hEE9n9tZAjoT3eE5lL4MhZZ2DbB.jpg",
-      "backdropHd": "https://image.tmdb.org/t/p/original/hEE9n9tZAjoT3eE5lL4MhZZ2DbB.jpg",
-      "logo": "https://image.tmdb.org/t/p/w500/5D9kwwmONWYhWiAAL0jMZ83Skgz.png",
-      "logoAspect": 2.241,
+      "backdrop": "https://image.tmdb.org/t/p/w1280/4BE1aoCu5mCG3ZJ7alNDQkB3oK4.jpg",
+      "backdropHd": "https://image.tmdb.org/t/p/original/4BE1aoCu5mCG3ZJ7alNDQkB3oK4.jpg",
+      "logo": "https://image.tmdb.org/t/p/w500/ukWiOIWceHNGiS81CurwkfOSwWc.png",
+      "logoAspect": 2.739,
       "contentRating": null
     }
   ],
@@ -1102,13 +1118,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -1568,79 +1585,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
-      }
-    },
-    {
-      "id": "64340",
-      "malId": 64340,
-      "anilistId": 212888,
-      "title": "Overgeared",
-      "titleRomaji": "Tempal: Item no Chikara",
-      "titleJapanese": "テムパル～アイテムの力～",
-      "image": "https://image.tmdb.org/t/p/w500/94GLmulA9qVGsuo9kLpVKi01E2Z.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/94GLmulA9qVGsuo9kLpVKi01E2Z.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/212888-ZsnNegBCKXQq.jpg",
-      "color": "#f19335",
-      "synopsis": "Sin Yeong-U (a.k.a. Grid), an unlucky man in life and a low-level player in the popular VR game “Satisfy,” finds a powerful item that earns him a rare legendary class title: “Pagma’s Successor.” He’s now a skilled blacksmith who can forge unique weapons and equip the game’s most powerful gear. Grid resolves to use his new abilities to achieve fame and fortune, but as his very existence begins to stir up trouble in Satisfy, he realizes that life as a legend may be more than he bargained for….\n\nNote: Tempal: Item no Chikara is streaming a week in advance of the TV broadcast on Prime Video and Crunchyroll beginning September 27th, 2026. Regular broadcasting began on October 2nd, 2026.",
-      "score": 7.6,
-      "scoredBy": null,
-      "rank": null,
-      "popularity": null,
-      "members": 66365,
-      "episodes": 12,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "ONA",
-      "season": "fall",
-      "year": 2026,
-      "genres": [
-        "Action",
-        "Adventure",
-        "Comedy",
-        "Fantasy"
-      ],
-      "studios": [
-        "J.C.STAFF"
-      ],
-      "duration": "24 min per ep",
-      "ageRating": null,
-      "aired": "Sep 27, 2026 to ?",
-      "broadcast": null,
-      "trailer": "e1Km0FqUZl0",
-      "streaming": [
-        {
-          "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00384004"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 9,
-        "airingAt": 1795357800
-      },
-      "source": "anilist",
-      "family": [],
-      "group": "overgeared",
-      "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx212888-NhyvqPt5aIuJ.jpg",
-      "seasonCount": 1,
-      "episodeCount": 12,
-      "tmdbStatus": "Airing",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -1713,13 +1665,81 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
+      }
+    },
+    {
+      "id": "64340",
+      "malId": 64340,
+      "anilistId": 212888,
+      "title": "Overgeared",
+      "titleRomaji": "Tempal: Item no Chikara",
+      "titleJapanese": "テムパル～アイテムの力～",
+      "image": "https://image.tmdb.org/t/p/w500/94GLmulA9qVGsuo9kLpVKi01E2Z.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/94GLmulA9qVGsuo9kLpVKi01E2Z.jpg",
+      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/212888-ZsnNegBCKXQq.jpg",
+      "color": "#f19335",
+      "synopsis": "Sin Yeong-U (a.k.a. Grid), an unlucky man in life and a low-level player in the popular VR game “Satisfy,” finds a powerful item that earns him a rare legendary class title: “Pagma’s Successor.” He’s now a skilled blacksmith who can forge unique weapons and equip the game’s most powerful gear. Grid resolves to use his new abilities to achieve fame and fortune, but as his very existence begins to stir up trouble in Satisfy, he realizes that life as a legend may be more than he bargained for….\n\nNote: Tempal: Item no Chikara is streaming a week in advance of the TV broadcast on Prime Video and Crunchyroll beginning September 27th, 2026. Regular broadcasting began on October 2nd, 2026.",
+      "score": 7.6,
+      "scoredBy": null,
+      "rank": null,
+      "popularity": null,
+      "members": 66365,
+      "episodes": 12,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "ONA",
+      "season": "fall",
+      "year": 2026,
+      "genres": [
+        "Action",
+        "Adventure",
+        "Comedy",
+        "Fantasy"
+      ],
+      "studios": [
+        "J.C.STAFF"
+      ],
+      "duration": "24 min per ep",
+      "ageRating": null,
+      "aired": "Sep 27, 2026 to ?",
+      "broadcast": null,
+      "trailer": "e1Km0FqUZl0",
+      "streaming": [
+        {
+          "name": "Crunchyroll",
+          "url": "https://www.crunchyroll.com/series/GT00384004"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 9,
+        "airingAt": 1795357800
+      },
+      "source": "anilist",
+      "family": [],
+      "group": "overgeared",
+      "factsPending": false,
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx212888-NhyvqPt5aIuJ.jpg",
+      "seasonCount": 1,
+      "episodeCount": 12,
+      "tmdbStatus": "Airing",
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
       }
     },
     {
@@ -1788,15 +1808,17 @@
       ],
       "group": "black clover",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx195604-tSZcfKbVqSEG.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -1889,6 +1911,148 @@
       ],
       "group": "the apothecary diaries",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx195516-MJpUZlOberqH.jpg",
+      "factsPending": false,
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
+      }
+    },
+    {
+      "id": "63293",
+      "malId": 63293,
+      "anilistId": 205909,
+      "title": "Firefly Wedding",
+      "titleRomaji": "Hotaru no Yomeiri",
+      "titleJapanese": "ホタルの嫁入り",
+      "image": "https://image.tmdb.org/t/p/w500/Auw2NxgGThu6XAO2pyRoipMIDHG.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/Auw2NxgGThu6XAO2pyRoipMIDHG.jpg",
+      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/205909-hGeuFYrdhf9S.jpg",
+      "color": "#aebb35",
+      "synopsis": "On the surface, Satoko has it all—she’s beautiful, the daughter of a nobleman, and at a prime age for marriage. Unfortunately, she is also quite ill and only has a short time left to live. Before she can secure a marriage that will redeem her worth in her family’s eyes, she finds herself the target of the mysterious assassin Shinpei, and her plans are put in jeopardy. In order to save herself, she makes a desperate proposal—of marriage! When it comes to love, however, Shinpei takes “until death do we part” seriously.",
+      "score": 7.5,
+      "scoredBy": null,
+      "rank": null,
+      "popularity": null,
+      "members": 56722,
+      "episodes": 12,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "TV",
+      "season": "fall",
+      "year": 2026,
+      "genres": [
+        "Drama",
+        "Romance"
+      ],
+      "studios": [
+        "david production"
+      ],
+      "duration": "23 min per ep",
+      "ageRating": null,
+      "aired": "Oct 9, 2026 to ?",
+      "broadcast": null,
+      "trailer": "Ex9LrBK-7hk",
+      "streaming": [
+        {
+          "name": "Crunchyroll",
+          "url": "https://www.crunchyroll.com/series/GT00383999"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 7,
+        "airingAt": 1795185000
+      },
+      "source": "anilist",
+      "family": [
+        {
+          "rel": "SIDE_STORY",
+          "id": 218938,
+          "format": "ONA",
+          "episodes": null
+        }
+      ],
+      "group": "firefly wedding",
+      "factsPending": false,
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx205909-DM0fAzNQulod.jpg",
+      "seasonCount": 1,
+      "episodeCount": 12,
+      "tmdbStatus": "Airing",
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
+      }
+    },
+    {
+      "id": "62484",
+      "malId": 62484,
+      "anilistId": 198727,
+      "title": "Chitose Is in the Ramune Bottle 2nd Cour",
+      "titleRomaji": "Chitose-kun wa Ramune Bin no Naka Part 2",
+      "titleJapanese": "千歳くんはラムネ瓶のなか 2クール",
+      "image": "https://image.tmdb.org/t/p/w500/7tpcFkOpLcWkJU6mV5ooJyHA3DR.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/7tpcFkOpLcWkJU6mV5ooJyHA3DR.jpg",
+      "banner": null,
+      "color": "#bbe4f1",
+      "synopsis": "The second part of Chitose-kun wa Ramune Bin no Naka.",
+      "score": 7.8,
+      "scoredBy": null,
+      "rank": 455,
+      "popularity": null,
+      "members": 17369,
+      "episodes": 11,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "TV",
+      "season": "fall",
+      "year": 2026,
+      "genres": [
+        "Comedy",
+        "Romance"
+      ],
+      "studios": [
+        "feel."
+      ],
+      "duration": "24 min per ep",
+      "ageRating": null,
+      "aired": "Oct 13, 2026 to Dec 22, 2026",
+      "broadcast": null,
+      "trailer": "8RHh2AyKRfY",
+      "streaming": [
+        {
+          "name": "Crunchyroll",
+          "url": "https://www.crunchyroll.com/series/GT00364783/chitose-is-in-the-ramune-bottle"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 7,
+        "airingAt": 1795528800
+      },
+      "source": "anilist",
+      "family": [
+        {
+          "rel": "PREQUEL",
+          "id": 180082,
+          "format": "TV",
+          "episodes": 13
+        }
+      ],
+      "group": "chitose is in the ramune bottle 2nd cour",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx198727-BL0JTpg0G8tq.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -1898,6 +2062,157 @@
         ],
         "sub": true,
         "dub": null
+      }
+    },
+    {
+      "id": "61578",
+      "malId": 61578,
+      "anilistId": 191656,
+      "title": "Even the Student Council Has Its Holes!",
+      "titleRomaji": "Seitokai ni mo Ana wa Aru!",
+      "titleJapanese": "生徒会にも穴はある！",
+      "image": "https://image.tmdb.org/t/p/w500/6QKKFrBvlw8jlBe5QiGte2Te34w.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/6QKKFrBvlw8jlBe5QiGte2Te34w.jpg",
+      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/191656-JQILdzh3FQxN.jpg",
+      "color": "#5dbbe4",
+      "synopsis": "This is Fujinasu Academy, a private high school with top-achieving students located on the outskirts of town.\n\nHigh School 1st-Year Ume Mizunoe has excellent grades in Japanese language class and has received multiple literary awards.\nHowever, his terrible grades in the sciences are affecting his ability to move up a grade. To avoid repeating a year, he becomes a member of the student council to improve his academic standing.\n\nHowever, in the student council, he meets the charismatic yet sullen student council president Kotobuki Hisako, and the scary yet kind and refined treasurer, Arisu Terui. Other members include a cheeky and cute boy, Tan Otori, and Komaro Michinoku, the admin who's like a small abandoned cat. This is the start of a slapstick, heartful, rom-com about a busy student council full of cute, mismatched, and quirky students!",
+      "score": 7.4,
+      "scoredBy": null,
+      "rank": null,
+      "popularity": null,
+      "members": 55119,
+      "episodes": 12,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "TV",
+      "season": "fall",
+      "year": 2026,
+      "genres": [
+        "Comedy",
+        "Ecchi",
+        "Slice of Life"
+      ],
+      "studios": [
+        "Passione"
+      ],
+      "duration": "24 min per ep",
+      "ageRating": null,
+      "aired": "Oct 4, 2026 to Dec 20, 2026",
+      "broadcast": null,
+      "trailer": "VTRVLnzhl90",
+      "streaming": [
+        {
+          "name": "OceanVeil",
+          "url": "https://oceanveil.net/anime_titles/542"
+        },
+        {
+          "name": "Bilibili TV",
+          "url": "https://www.bilibili.tv/en/media/2433041"
+        },
+        {
+          "name": "iQ",
+          "url": "https://www.iq.com/album/28ki6pjn6a1"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 8,
+        "airingAt": 1795275000
+      },
+      "source": "anilist",
+      "family": [
+        {
+          "rel": "ALTERNATIVE",
+          "id": 179207,
+          "format": "ONA",
+          "episodes": 1
+        }
+      ],
+      "group": "even the student council has its holes",
+      "factsPending": false,
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx191656-xFHtxM8SUTdU.png",
+      "seasonCount": 1,
+      "episodeCount": 12,
+      "tmdbStatus": "Airing",
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
+      }
+    },
+    {
+      "id": "61323",
+      "malId": 61323,
+      "anilistId": 189123,
+      "title": "Blue Box Season 2",
+      "titleRomaji": "Ao no Hako Season 2",
+      "titleJapanese": "アオのハコ Season２",
+      "image": "https://image.tmdb.org/t/p/w500/mVAWCCNBxPX3EUf9XhcFff4wW5V.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/mVAWCCNBxPX3EUf9XhcFff4wW5V.jpg",
+      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/189123-aGJ7pIDUo2Xs.jpg",
+      "color": "#e4ae50",
+      "synopsis": "The second season of Ao no Hako.\n\nAs Taiki and Chinatsu navigate their evolving feelings, a fractured friendship from the past and fierce competition cloud the road to nationals.",
+      "score": 8.1,
+      "scoredBy": null,
+      "rank": 249,
+      "popularity": null,
+      "members": 54045,
+      "episodes": 12,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "TV",
+      "season": "fall",
+      "year": 2026,
+      "genres": [
+        "Romance",
+        "Slice of Life",
+        "Sports"
+      ],
+      "studios": [
+        "Electric Circus"
+      ],
+      "duration": "24 min per ep",
+      "ageRating": null,
+      "aired": "Oct 4, 2026 to ?",
+      "broadcast": null,
+      "trailer": "hJ6Y8PAOUk8",
+      "streaming": [
+        {
+          "name": "Netflix",
+          "url": "https://www.netflix.com/title/81663323"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 7,
+        "airingAt": 1795332600
+      },
+      "source": "anilist",
+      "family": [
+        {
+          "rel": "PREQUEL",
+          "id": 170942,
+          "format": "ONA",
+          "episodes": 25
+        }
+      ],
+      "group": "blue box",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx189123-0secXELIhkIW.jpg",
+      "factsPending": false,
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
       }
     },
     {
@@ -2033,151 +2348,149 @@
       }
     },
     {
-      "id": "61578",
-      "malId": 61578,
-      "anilistId": 191656,
-      "title": "Even the Student Council Has Its Holes!",
-      "titleRomaji": "Seitokai ni mo Ana wa Aru!",
-      "titleJapanese": "生徒会にも穴はある！",
-      "image": "https://image.tmdb.org/t/p/w500/6QKKFrBvlw8jlBe5QiGte2Te34w.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/6QKKFrBvlw8jlBe5QiGte2Te34w.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/191656-JQILdzh3FQxN.jpg",
-      "color": "#5dbbe4",
-      "synopsis": "This is Fujinasu Academy, a private high school with top-achieving students located on the outskirts of town.\n\nHigh School 1st-Year Ume Mizunoe has excellent grades in Japanese language class and has received multiple literary awards.\nHowever, his terrible grades in the sciences are affecting his ability to move up a grade. To avoid repeating a year, he becomes a member of the student council to improve his academic standing.\n\nHowever, in the student council, he meets the charismatic yet sullen student council president Kotobuki Hisako, and the scary yet kind and refined treasurer, Arisu Terui. Other members include a cheeky and cute boy, Tan Otori, and Komaro Michinoku, the admin who's like a small abandoned cat. This is the start of a slapstick, heartful, rom-com about a busy student council full of cute, mismatched, and quirky students!",
-      "score": 7.4,
+      "id": "60948",
+      "malId": 60948,
+      "anilistId": 186541,
+      "title": "Reborn as a Space Mercenary: I Woke Up Piloting the Strongest Starship!",
+      "titleRomaji": "Mezametara Saikyou Soubi to Uchuusen-mochi datta node, Ikkodate Mezashite Youhei to shite Jiyuu ni Ikitai",
+      "titleJapanese": "目覚めたら最強装備と宇宙船持ちだったので、一戸建て目指して傭兵として自由に生きたい",
+      "image": "https://image.tmdb.org/t/p/w500/uF5ls69ae5oskSCGcEGtXgwHy6N.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/uF5ls69ae5oskSCGcEGtXgwHy6N.jpg",
+      "banner": null,
+      "color": "#d6bb78",
+      "synopsis": "Sato Takahiro was an ordinary office worker and hobbyist gamer until the day he woke up on a spaceship–one that strangely resembled a craft from a favorite space-shooter game. With a decked-out ship, a crew full of babes, and a fantastic universe to explore, he's going to make the most of his good luck and create the life he's always dreamed of!",
+      "score": 6.9,
       "scoredBy": null,
       "rank": null,
       "popularity": null,
-      "members": 55119,
-      "episodes": 12,
+      "members": 31811,
+      "episodes": 13,
       "status": "Currently Airing",
       "airing": true,
       "type": "TV",
       "season": "fall",
       "year": 2026,
       "genres": [
+        "Action",
         "Comedy",
-        "Ecchi",
-        "Slice of Life"
-      ],
-      "studios": [
-        "Passione"
-      ],
-      "duration": "24 min per ep",
-      "ageRating": null,
-      "aired": "Oct 4, 2026 to Dec 20, 2026",
-      "broadcast": null,
-      "trailer": "VTRVLnzhl90",
-      "streaming": [
-        {
-          "name": "OceanVeil",
-          "url": "https://oceanveil.net/anime_titles/542"
-        },
-        {
-          "name": "Bilibili TV",
-          "url": "https://www.bilibili.tv/en/media/2433041"
-        },
-        {
-          "name": "iQ",
-          "url": "https://www.iq.com/album/28ki6pjn6a1"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 8,
-        "airingAt": 1795275000
-      },
-      "source": "anilist",
-      "family": [
-        {
-          "rel": "ALTERNATIVE",
-          "id": 179207,
-          "format": "ONA",
-          "episodes": 1
-        }
-      ],
-      "group": "even the student council has its holes",
-      "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx191656-xFHtxM8SUTdU.png",
-      "seasonCount": 1,
-      "episodeCount": 12,
-      "tmdbStatus": "Airing",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      }
-    },
-    {
-      "id": "61323",
-      "malId": 61323,
-      "anilistId": 189123,
-      "title": "Blue Box Season 2",
-      "titleRomaji": "Ao no Hako Season 2",
-      "titleJapanese": "アオのハコ Season２",
-      "image": "https://image.tmdb.org/t/p/w500/mVAWCCNBxPX3EUf9XhcFff4wW5V.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/mVAWCCNBxPX3EUf9XhcFff4wW5V.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/189123-aGJ7pIDUo2Xs.jpg",
-      "color": "#e4ae50",
-      "synopsis": "The second season of Ao no Hako.\n\nAs Taiki and Chinatsu navigate their evolving feelings, a fractured friendship from the past and fierce competition cloud the road to nationals.",
-      "score": 8.1,
-      "scoredBy": null,
-      "rank": 249,
-      "popularity": null,
-      "members": 54045,
-      "episodes": 12,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "TV",
-      "season": "fall",
-      "year": 2026,
-      "genres": [
+        "Drama",
+        "Mecha",
         "Romance",
-        "Slice of Life",
-        "Sports"
+        "Sci-Fi"
       ],
       "studios": [
-        "Electric Circus"
+        "studio A-CAT"
       ],
       "duration": "24 min per ep",
       "ageRating": null,
       "aired": "Oct 4, 2026 to ?",
       "broadcast": null,
-      "trailer": "hJ6Y8PAOUk8",
+      "trailer": "Z9ofT53sz2U",
       "streaming": [
         {
-          "name": "Netflix",
-          "url": "https://www.netflix.com/title/81663323"
+          "name": "Crunchyroll",
+          "url": "https://www.crunchyroll.com/series/GT00384006/reborn-as-a-space-mercenary-i-woke-up-piloting-the-strongest-starship"
         }
       ],
       "nextEpisode": {
-        "episode": 7,
-        "airingAt": 1795332600
+        "episode": 8,
+        "airingAt": 1795350600
       },
       "source": "anilist",
-      "family": [
-        {
-          "rel": "PREQUEL",
-          "id": 170942,
-          "format": "ONA",
-          "episodes": 25
-        }
-      ],
-      "group": "blue box",
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx189123-0secXELIhkIW.jpg",
+      "family": [],
+      "group": "reborn as a space mercenary i woke up piloting the strongest starship",
+      "factsPending": false,
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx186541-caYpLsLmbCh7.jpg",
+      "seasonCount": 1,
+      "episodeCount": 13,
+      "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
+      }
+    },
+    {
+      "id": "59741",
+      "malId": 59741,
+      "anilistId": 180136,
+      "title": "The Exiled Heavy Knight Knows How to Game the System",
+      "titleRomaji": "Tsuihou Sareta Tensei Juukishi wa Game Chishiki de Musou Suru",
+      "titleJapanese": "追放された転生重騎士はゲーム知識で無双する",
+      "image": "https://image.tmdb.org/t/p/w500/bADzMfofNWYdxLnlqNuMkO6du34.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/bADzMfofNWYdxLnlqNuMkO6du34.jpg",
+      "banner": null,
+      "color": "#50c9fe",
+      "synopsis": "Born into a prestigious family of master swordsmen, Elymas Edvaughn’s future shatters when he awakens the so-called “defective” Heavy Knight class. Disowned and cast out, he regains memories of another life—and realizes this world mirrors a VR game he once mastered. Armed with knowledge no one else possesses, he sets out to rewrite his fate and prove the strength of the “weakest” class.",
+      "score": 6.7,
+      "scoredBy": null,
+      "rank": null,
+      "popularity": null,
+      "members": 77651,
+      "episodes": 26,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "TV",
+      "season": "summer",
+      "year": 2026,
+      "genres": [
+        "Action",
+        "Fantasy"
+      ],
+      "studios": [
+        "GoHands"
+      ],
+      "duration": "24 min per ep",
+      "ageRating": null,
+      "aired": "Jul 3, 2026 to Dec 25, 2026",
+      "broadcast": null,
+      "trailer": "uC13b3_8riU",
+      "streaming": [
+        {
+          "name": "Crunchyroll",
+          "url": "https://www.crunchyroll.com/series/GT00378018/the-exiled-heavy-knight-knows-how-to-game-the-system"
+        },
+        {
+          "name": "YouTube",
+          "url": "https://www.youtube.com/playlist?list=PLwLSw1_eDZl3yq1oZEC8iNCwgMsg0NmIZ"
+        },
+        {
+          "name": "Bilibili TV",
+          "url": "https://www.bilibili.tv/media/2411725"
+        },
+        {
+          "name": "iQ",
+          "url": "https://www.iq.com/album/a5a0t3nwm1"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 21,
+        "airingAt": 1795101960
+      },
+      "source": "anilist",
+      "family": [],
+      "group": "the exiled heavy knight knows how to game the system",
+      "factsPending": false,
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx180136-gtMTCRlOD4OE.jpg",
+      "seasonCount": 1,
+      "episodeCount": 26,
+      "tmdbStatus": "Airing",
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
       }
     },
     {
@@ -2261,143 +2574,6 @@
       }
     },
     {
-      "id": "63293",
-      "malId": 63293,
-      "anilistId": 205909,
-      "title": "Firefly Wedding",
-      "titleRomaji": "Hotaru no Yomeiri",
-      "titleJapanese": "ホタルの嫁入り",
-      "image": "https://image.tmdb.org/t/p/w500/Auw2NxgGThu6XAO2pyRoipMIDHG.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/Auw2NxgGThu6XAO2pyRoipMIDHG.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/205909-hGeuFYrdhf9S.jpg",
-      "color": "#aebb35",
-      "synopsis": "On the surface, Satoko has it all—she’s beautiful, the daughter of a nobleman, and at a prime age for marriage. Unfortunately, she is also quite ill and only has a short time left to live. Before she can secure a marriage that will redeem her worth in her family’s eyes, she finds herself the target of the mysterious assassin Shinpei, and her plans are put in jeopardy. In order to save herself, she makes a desperate proposal—of marriage! When it comes to love, however, Shinpei takes “until death do we part” seriously.",
-      "score": 7.5,
-      "scoredBy": null,
-      "rank": null,
-      "popularity": null,
-      "members": 56722,
-      "episodes": 12,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "TV",
-      "season": "fall",
-      "year": 2026,
-      "genres": [
-        "Drama",
-        "Romance"
-      ],
-      "studios": [
-        "david production"
-      ],
-      "duration": "23 min per ep",
-      "ageRating": null,
-      "aired": "Oct 9, 2026 to ?",
-      "broadcast": null,
-      "trailer": "Ex9LrBK-7hk",
-      "streaming": [
-        {
-          "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00383999"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 7,
-        "airingAt": 1795185000
-      },
-      "source": "anilist",
-      "family": [
-        {
-          "rel": "SIDE_STORY",
-          "id": 218938,
-          "format": "ONA",
-          "episodes": null
-        }
-      ],
-      "group": "firefly wedding",
-      "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx205909-DM0fAzNQulod.jpg",
-      "seasonCount": 1,
-      "episodeCount": 12,
-      "tmdbStatus": "Airing",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      }
-    },
-    {
-      "id": "62484",
-      "malId": 62484,
-      "anilistId": 198727,
-      "title": "Chitose Is in the Ramune Bottle 2nd Cour",
-      "titleRomaji": "Chitose-kun wa Ramune Bin no Naka Part 2",
-      "titleJapanese": "千歳くんはラムネ瓶のなか 2クール",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx198727-BL0JTpg0G8tq.jpg",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx198727-BL0JTpg0G8tq.jpg",
-      "banner": null,
-      "color": "#bbe4f1",
-      "synopsis": "The second part of Chitose-kun wa Ramune Bin no Naka.",
-      "score": 7.8,
-      "scoredBy": null,
-      "rank": 455,
-      "popularity": null,
-      "members": 17369,
-      "episodes": 11,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "TV",
-      "season": "fall",
-      "year": 2026,
-      "genres": [
-        "Comedy",
-        "Romance"
-      ],
-      "studios": [
-        "feel."
-      ],
-      "duration": "24 min per ep",
-      "ageRating": null,
-      "aired": "Oct 13, 2026 to Dec 22, 2026",
-      "broadcast": null,
-      "trailer": "8RHh2AyKRfY",
-      "streaming": [
-        {
-          "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00364783/chitose-is-in-the-ramune-bottle"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 7,
-        "airingAt": 1795528800
-      },
-      "source": "anilist",
-      "family": [
-        {
-          "rel": "PREQUEL",
-          "id": 180082,
-          "format": "TV",
-          "episodes": 13
-        }
-      ],
-      "group": "chitose is in the ramune bottle 2nd cour",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      }
-    },
-    {
       "id": "63292",
       "malId": 63292,
       "anilistId": 205896,
@@ -2452,288 +2628,76 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
-      "id": "59741",
-      "malId": 59741,
-      "anilistId": 180136,
-      "title": "The Exiled Heavy Knight Knows How to Game the System",
-      "titleRomaji": "Tsuihou Sareta Tensei Juukishi wa Game Chishiki de Musou Suru",
-      "titleJapanese": "追放された転生重騎士はゲーム知識で無双する",
-      "image": "https://image.tmdb.org/t/p/w500/bADzMfofNWYdxLnlqNuMkO6du34.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/bADzMfofNWYdxLnlqNuMkO6du34.jpg",
-      "banner": null,
-      "color": "#50c9fe",
-      "synopsis": "Born into a prestigious family of master swordsmen, Elymas Edvaughn’s future shatters when he awakens the so-called “defective” Heavy Knight class. Disowned and cast out, he regains memories of another life—and realizes this world mirrors a VR game he once mastered. Armed with knowledge no one else possesses, he sets out to rewrite his fate and prove the strength of the “weakest” class.",
+      "id": "63509",
+      "malId": 63509,
+      "anilistId": 208025,
+      "title": "I'm Dating a Dark Summoner",
+      "titleRomaji": "Dark Summoner to Dekiteiru",
+      "titleJapanese": "ダークサモナーとデキている",
+      "image": "https://image.tmdb.org/t/p/w500/xD8bCXGlwC98mFq8mDyB15grUts.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/xD8bCXGlwC98mFq8mDyB15grUts.jpg",
+      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/208025-s7hcRQO7kwmH.jpg",
+      "color": "#fff1ae",
+      "synopsis": "Amona’s a dark summoner with demonic powers. Roni’s a devout priest who’s way too uptight. By all rights, they should hate each other. Instead, they end up fast-tracking their enemies-to-lovers arc with a one-night stand that somehow insists on becoming a recurring event. Now they must hide their situationship from the rest of the party while denying their growing attraction to one another, all while dealing with an imp who’s far too invested in their love life.",
       "score": 6.7,
       "scoredBy": null,
       "rank": null,
       "popularity": null,
-      "members": 77651,
-      "episodes": 26,
+      "members": 31516,
+      "episodes": 12,
       "status": "Currently Airing",
       "airing": true,
-      "type": "TV",
-      "season": "summer",
-      "year": 2026,
-      "genres": [
-        "Action",
-        "Fantasy"
-      ],
-      "studios": [
-        "GoHands"
-      ],
-      "duration": "24 min per ep",
-      "ageRating": null,
-      "aired": "Jul 3, 2026 to Dec 25, 2026",
-      "broadcast": null,
-      "trailer": "uC13b3_8riU",
-      "streaming": [
-        {
-          "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00378018/the-exiled-heavy-knight-knows-how-to-game-the-system"
-        },
-        {
-          "name": "YouTube",
-          "url": "https://www.youtube.com/playlist?list=PLwLSw1_eDZl3yq1oZEC8iNCwgMsg0NmIZ"
-        },
-        {
-          "name": "Bilibili TV",
-          "url": "https://www.bilibili.tv/media/2411725"
-        },
-        {
-          "name": "iQ",
-          "url": "https://www.iq.com/album/a5a0t3nwm1"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 21,
-        "airingAt": 1795101960
-      },
-      "source": "anilist",
-      "family": [],
-      "group": "the exiled heavy knight knows how to game the system",
-      "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx180136-gtMTCRlOD4OE.jpg",
-      "seasonCount": 1,
-      "episodeCount": 26,
-      "tmdbStatus": "Airing",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      }
-    },
-    {
-      "id": "61469",
-      "malId": 61469,
-      "anilistId": 210482,
-      "title": "STEEL BALL RUN JoJo's Bizarre Adventure 2nd - 3rd STAGE",
-      "titleRomaji": "JoJo no Kimyou na Bouken: Steel Ball Run - 2nd & 3rd STAGE",
-      "titleJapanese": "ジョジョの奇妙な冒険 スティール・ボール・ラン 2nd＆3rd STAGE",
-      "image": "https://image.tmdb.org/t/p/w500/kX9noqY0YpOPKwXpRXYg1hEIqmM.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/kX9noqY0YpOPKwXpRXYg1hEIqmM.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/210482-pYAD0IbzNbgS.jpg",
-      "color": "#f1ae50",
-      "synopsis": "In the 2nd STAGE, a desert crossing spanning roughly 750 miles- the land that Johnny Joestar and Gyro Zeppeli must challenge, is home to the area that is feared as the \"Devil's Palm.\" In 1875, a threat lurking in said desert wiped out a cavalry of 26 people, eliciting fear from the local native people. As ominous incidents begin to unfold, they are forced to realize that this race is far more than a mere competition. The two press forward, where countless hidden motives collide..",
-      "score": 8.6,
-      "scoredBy": null,
-      "rank": 5,
-      "popularity": null,
-      "members": 52698,
-      "episodes": 11,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "ONA",
+      "type": "TV Short",
       "season": "fall",
       "year": 2026,
       "genres": [
-        "Action",
-        "Adventure",
-        "Drama",
-        "Mystery",
-        "Supernatural"
+        "Comedy",
+        "Ecchi",
+        "Fantasy",
+        "Romance"
       ],
       "studios": [
-        "david production"
+        "AtoriE",
+        "Nyan Pollution-ω-"
       ],
-      "duration": "23 min per ep",
+      "duration": "12 min per ep",
       "ageRating": null,
-      "aired": "Sep 25, 2026 to ?",
+      "aired": "Oct 5, 2026 to Dec 21, 2026",
       "broadcast": null,
-      "trailer": "jXtG_lcR9P4",
+      "trailer": "-YCols5lYow",
       "streaming": [
         {
-          "name": "Netflix",
-          "url": "https://www.netflix.com/title/82116553"
+          "name": "HIDIVE",
+          "url": "https://www.hidive.com/season/39541"
         }
       ],
       "nextEpisode": {
-        "episode": 9,
-        "airingAt": 1795161600
+        "episode": 8,
+        "airingAt": 1795364400
       },
       "source": "anilist",
       "family": [
         {
-          "rel": "PREQUEL",
-          "id": 190327,
-          "format": "ONA",
-          "episodes": 1
+          "rel": "SPIN_OFF",
+          "id": 218217,
+          "format": "TV_SHORT",
+          "episodes": 12
         }
       ],
-      "group": "steel ball run jojo s bizarre adventure 2nd 3rd stage",
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx210482-P1VNKbqdJ6Zj.jpg",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      }
-    },
-    {
-      "id": "60948",
-      "malId": 60948,
-      "anilistId": 186541,
-      "title": "Reborn as a Space Mercenary: I Woke Up Piloting the Strongest Starship!",
-      "titleRomaji": "Mezametara Saikyou Soubi to Uchuusen-mochi datta node, Ikkodate Mezashite Youhei to shite Jiyuu ni Ikitai",
-      "titleJapanese": "目覚めたら最強装備と宇宙船持ちだったので、一戸建て目指して傭兵として自由に生きたい",
-      "image": "https://image.tmdb.org/t/p/w500/uF5ls69ae5oskSCGcEGtXgwHy6N.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/uF5ls69ae5oskSCGcEGtXgwHy6N.jpg",
-      "banner": null,
-      "color": "#d6bb78",
-      "synopsis": "Sato Takahiro was an ordinary office worker and hobbyist gamer until the day he woke up on a spaceship–one that strangely resembled a craft from a favorite space-shooter game. With a decked-out ship, a crew full of babes, and a fantastic universe to explore, he's going to make the most of his good luck and create the life he's always dreamed of!",
-      "score": 6.9,
-      "scoredBy": null,
-      "rank": null,
-      "popularity": null,
-      "members": 31811,
-      "episodes": 13,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "TV",
-      "season": "fall",
-      "year": 2026,
-      "genres": [
-        "Action",
-        "Comedy",
-        "Drama",
-        "Mecha",
-        "Romance",
-        "Sci-Fi"
-      ],
-      "studios": [
-        "studio A-CAT"
-      ],
-      "duration": "24 min per ep",
-      "ageRating": null,
-      "aired": "Oct 4, 2026 to ?",
-      "broadcast": null,
-      "trailer": "Z9ofT53sz2U",
-      "streaming": [
-        {
-          "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00384006/reborn-as-a-space-mercenary-i-woke-up-piloting-the-strongest-starship"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 8,
-        "airingAt": 1795350600
-      },
-      "source": "anilist",
-      "family": [],
-      "group": "reborn as a space mercenary i woke up piloting the strongest starship",
+      "group": "i m dating a dark summoner",
       "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx186541-caYpLsLmbCh7.jpg",
-      "seasonCount": 1,
-      "episodeCount": 13,
-      "tmdbStatus": "Airing",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      }
-    },
-    {
-      "id": "62922",
-      "malId": 62922,
-      "anilistId": 202250,
-      "title": "Magic Repo Man: Dumped by My Party, I’ll Cash In With a Cute Support Fairy to Become the Strongest!",
-      "titleRomaji": "Kashita Maryoku wa [Revo Barai] de Kyousei Choushuu",
-      "titleJapanese": "貸した魔力は【リボ払い】で強制徴収",
-      "image": "https://image.tmdb.org/t/p/w500/jPItUZ3PnbkGii2JS0QCeyNgLxt.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/jPItUZ3PnbkGii2JS0QCeyNgLxt.jpg",
-      "banner": null,
-      "color": "#bbe45d",
-      "synopsis": "If there's one thing you can never have enough of in a world of RPG-style swords and sorcery, it's magic points! Whether you're fueling spells, techniques, or showing off an incredible ability, you've gotta spend those points to do real damage. But what if you run out?\n\nLent is part of the up-and-coming party known as the “Skypiercers,” and thanks to his unique Gift, he can loan massive amounts of magic to others. No MP? No problem with Lent around! Except, now that his companions have become formidable heroes (thanks to his skill), his usefulness is questioned. Kicked out of the group, Lent is furious…until he discovers a hidden power to his Gift. Now, with his adorably devious fairy partner, he's going to claw back every last scrap of magic from his former party—with interest!",
-      "score": 6.2,
-      "scoredBy": null,
-      "rank": null,
-      "popularity": null,
-      "members": 27664,
-      "episodes": 12,
-      "status": "Currently Airing",
-      "airing": true,
-      "type": "TV",
-      "season": "fall",
-      "year": 2026,
-      "genres": [
-        "Action",
-        "Adventure",
-        "Fantasy"
-      ],
-      "studios": [
-        "SynergySP"
-      ],
-      "duration": "23 min per ep",
-      "ageRating": null,
-      "aired": "Oct 4, 2026 to Dec 20, 2026",
-      "broadcast": null,
-      "trailer": "kXqx3rFSkxc",
-      "streaming": [
-        {
-          "name": "Crunchyroll",
-          "url": "https://www.crunchyroll.com/series/GT00385867/magic-repo-man-dumped-by-my-party-ill-cash-in-with-a-cute-support-fairy-to-become-the-strongest"
-        },
-        {
-          "name": "Bilibili TV",
-          "url": "https://www.bilibili.tv/en/media/2432615"
-        },
-        {
-          "name": "YouTube",
-          "url": "https://www.youtube.com/playlist?list=PLAzayY4fPdjw"
-        }
-      ],
-      "nextEpisode": {
-        "episode": 8,
-        "airingAt": 1795278600
-      },
-      "source": "anilist",
-      "family": [],
-      "group": "magic repo man dumped by my party i ll cash in with a cute support fairy to become the strongest",
-      "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx202250-mpm2cvr92Au2.jpg",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx208025-JKvqWNr8rz8l.jpg",
       "seasonCount": 1,
       "episodeCount": 12,
       "tmdbStatus": "Airing",
@@ -2746,6 +2710,87 @@
         ],
         "sub": true,
         "dub": null
+      }
+    },
+    {
+      "id": "60601",
+      "malId": 60601,
+      "anilistId": 185756,
+      "title": "As a Reincarnated Aristocrat, I'll Use My Appraisal Skill to Rise in the World Season 3",
+      "titleRomaji": "Tensei Kizoku, Kantei Skill de Nariagaru 3rd Season",
+      "titleJapanese": "転生貴族、鑑定スキルで成り上がる 第3期",
+      "image": "https://image.tmdb.org/t/p/w500/jsugIfxS7mg7G254ZOi6b4jDIgM.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/jsugIfxS7mg7G254ZOi6b4jDIgM.jpg",
+      "banner": null,
+      "color": "#d6f1c9",
+      "synopsis": "The third season of Tensei Kizoku, Kantei Skill de Nariagaru.\n\nNote: On September 4, 2026, it was announced that GeyeG Pictures would take over the production from studio MOTHER while keeping the same staff.",
+      "score": 6.8,
+      "scoredBy": null,
+      "rank": null,
+      "popularity": null,
+      "members": 31606,
+      "episodes": 12,
+      "status": "Currently Airing",
+      "airing": true,
+      "type": "TV",
+      "season": "fall",
+      "year": 2026,
+      "genres": [
+        "Adventure",
+        "Fantasy"
+      ],
+      "studios": [
+        "GeyeG Pictures"
+      ],
+      "duration": "24 min per ep",
+      "ageRating": null,
+      "aired": "Sep 27, 2026 to Dec 13, 2026",
+      "broadcast": null,
+      "trailer": "8_Lxr7vO9l0",
+      "streaming": [
+        {
+          "name": "Crunchyroll",
+          "url": "https://www.crunchyroll.com/series/GG5H5XQMD/as-a-reincarnated-aristocrat-ill-use-my-appraisal-skill-to-rise-in-the-world"
+        },
+        {
+          "name": "iQ",
+          "url": "https://www.iq.com/album/onlibp0le1"
+        },
+        {
+          "name": "Bilibili TV",
+          "url": "https://www.bilibili.tv/en/media/2432255"
+        },
+        {
+          "name": "YouTube",
+          "url": "https://www.youtube.com/playlist?list=PLfEwGegYhFGY"
+        }
+      ],
+      "nextEpisode": {
+        "episode": 9,
+        "airingAt": 1795357800
+      },
+      "source": "anilist",
+      "family": [
+        {
+          "rel": "PREQUEL",
+          "id": 178434,
+          "format": "TV",
+          "episodes": 12
+        }
+      ],
+      "group": "as a reincarnated aristocrat i ll use my appraisal skill to rise in the world",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx185756-xPCl0RyQ7fXD.jpg",
+      "factsPending": false,
+      "languages": {
+        "audio": [
+          "Japanese",
+          "English"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": "full"
       }
     },
     {
@@ -2806,524 +2851,100 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
-      "id": "235",
-      "malId": 235,
-      "anilistId": 235,
-      "title": "Detective Conan",
-      "titleRomaji": "Meitantei Conan",
-      "titleJapanese": "名探偵コナン",
-      "image": "https://image.tmdb.org/t/p/w500/rRIEFvHRy01OYzmXQBbGeW0Qilc.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/rRIEFvHRy01OYzmXQBbGeW0Qilc.jpg",
-      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/235-MTmiz0uB0fMd.jpg",
-      "color": "#28a1e4",
-      "synopsis": "Kudo Shinichi is a seventeen year-old high school detective whom people call the \"Modern Sherlock Holmes.\" However, one night after a date with his childhood sweetheart, Ran, Shinichi witnessed an illegal trade and, caught off his guard, was knocked unconscious and fed a drug that was supposed to kill him... but he woke up and found himself shrunken to a seven year-old. In order to track down the men who did this to him, Shinichi hid his identity and lived with Ran, whose father happened to be a hopeless detective, and with that came a series of murders and mysteries that he must solve. \n\nNote:\n\n- Includes Keisatsu Gakkou-hen - Wild Police Story in episodes 1029, 1038, 1042, 1061\n\n- Episodes 11, 52, 76, 118, 162, 184, 208, 342, 356, 449, 452, 487, 488, 489, 490, 515, 516, 521, 522, 651, 734, 804, 805, 927, 928, 1187 aired with a runtime of ~50 minutes as opposed to the standard 25 minute long episode.\n\n- Episodes 96, 129, 174, 219, 263, 304, 383, 479 aired with a runtime of ~90 minutes as opposed to the standard 25 minute long episode.\n\n- Episode 345, 425 aired with a runtime of ~115 minutes as opposed to the standard 25 minute long episode.",
-      "score": 8.2,
+      "id": "53913",
+      "malId": 53913,
+      "anilistId": 159042,
+      "title": "Reincarnated as a Sword Season 2",
+      "titleRomaji": "Tensei Shitara Ken Deshita 2nd Season",
+      "titleJapanese": "転生したら剣でした 第2期",
+      "image": "https://image.tmdb.org/t/p/w500/hzcmCi1hmLva2qgufNgYveblqcl.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/hzcmCi1hmLva2qgufNgYveblqcl.jpg",
+      "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/159042-X0mqyaUFBkms.jpg",
+      "color": "#f19328",
+      "synopsis": "The second season of Tensei Shitara Ken Deshita.\n\nNote: Each episode was streamed one week in advance of the TV broadcast starting on October 1, 2026 on Abema. Regular broadcasting began on October 8, 2026.",
+      "score": 7.5,
       "scoredBy": null,
-      "rank": 201,
+      "rank": null,
       "popularity": null,
-      "members": 81658,
-      "episodes": null,
+      "members": 56881,
+      "episodes": 12,
       "status": "Currently Airing",
       "airing": true,
-      "type": "TV",
-      "season": "winter",
-      "year": 1996,
+      "type": "ONA",
+      "season": "fall",
+      "year": 2026,
       "genres": [
+        "Action",
         "Adventure",
-        "Comedy",
-        "Mystery",
-        "Psychological"
+        "Fantasy"
       ],
       "studios": [
-        "TMS Entertainment"
+        "C2C"
       ],
-      "duration": "25 min per ep",
+      "duration": "23 min per ep",
       "ageRating": null,
-      "aired": "Jan 8, 1996 to ?",
+      "aired": "Oct 1, 2026 to ?",
       "broadcast": null,
-      "trailer": null,
+      "trailer": "kbtRqqa2GyA",
       "streaming": [
         {
-          "name": "Crunchyroll",
-          "url": "http://www.crunchyroll.com/case-closed"
-        },
-        {
-          "name": "Netflix",
-          "url": "http://www.netflix.com/title/80090370"
-        },
-        {
-          "name": "Crackle",
-          "url": "https://www.crackle.com/details/00bf3d7c-564a-49a7-9661-b57c8743882c/case-closed"
+          "name": "HIDIVE",
+          "url": "https://www.hidive.com/season/39506"
         },
         {
           "name": "Amazon Prime Video",
-          "url": "https://www.amazon.com/The-Bizarre-Manhunt-Murder/dp/B09Q2CH8RS/ref=sr_1_1?crid=3667GOL0MHJ0P"
+          "url": "https://www.amazon.com/gp/video/detail/B0HLCHQS6T"
         },
         {
-          "name": "Tubi TV",
-          "url": "https://tubitv.com/series/300010357/case-closed-subbed?start=true"
-        },
-        {
-          "name": "Tubi TV",
-          "url": "https://tubitv.com/series/300008260/case-closed-dubbed?start=true"
+          "name": "iQ",
+          "url": "https://www.iq.com/album/1v4ebkyoz21"
         },
         {
           "name": "YouTube",
-          "url": "https://www.youtube.com/@conan_anime"
+          "url": "https://www.youtube.com/playlist?list=PLcSpWjb7H0lk"
+        },
+        {
+          "name": "Bilibili TV",
+          "url": "https://www.bilibili.tv/en/media/2432099"
         }
       ],
       "nextEpisode": {
-        "episode": 1221,
-        "airingAt": 1795251600
+        "episode": 8,
+        "airingAt": 1795015800
       },
       "source": "anilist",
       "family": [
         {
-          "rel": "SIDE_STORY",
-          "id": 779,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 780,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 781,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1363,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1364,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1365,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1366,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1367,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1505,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1506,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 2171,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 2512,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 2515,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 2597,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 4447,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 5348,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 5460,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 6115,
-          "format": "SPECIAL",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 6198,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 6231,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 6438,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 6467,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 8331,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 8609,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 9963,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 10531,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 12117,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 14735,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 20546,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 20859,
+          "rel": "PREQUEL",
+          "id": 139587,
           "format": "ONA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 20878,
-          "format": "SPECIAL",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 21470,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 21646,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 98222,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "ALTERNATIVE",
-          "id": 98604,
-          "format": "SPECIAL",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1368,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 100653,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 13837,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 10703,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 13839,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 106206,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 2514,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 2513,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 1369,
-          "format": "OVA",
-          "episodes": 1
-        },
-        {
-          "rel": "OTHER",
-          "id": 10766,
-          "format": "ONA",
-          "episodes": 2
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 113653,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "CHARACTER",
-          "id": 20790,
-          "format": "TV",
-          "episodes": 24
-        },
-        {
-          "rel": "CHARACTER",
-          "id": 8310,
-          "format": "SPECIAL",
           "episodes": 12
-        },
-        {
-          "rel": "SUMMARY",
-          "id": 131770,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 18429,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 139179,
-          "format": "SPECIAL",
-          "episodes": 1
-        },
-        {
-          "rel": "SPIN_OFF",
-          "id": 140002,
-          "format": "ONA",
-          "episodes": 6
-        },
-        {
-          "rel": "SPIN_OFF",
-          "id": 140005,
-          "format": "TV_SHORT",
-          "episodes": 12
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 142219,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 9785,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "CHARACTER",
-          "id": 5578,
-          "format": "SPECIAL",
-          "episodes": 7
-        },
-        {
-          "rel": "CHARACTER",
-          "id": 1293,
-          "format": "TV",
-          "episodes": 195
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 9786,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 156841,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SUMMARY",
-          "id": 158997,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "CHARACTER",
-          "id": 141208,
-          "format": "TV",
-          "episodes": 12
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 166060,
-          "format": "SPECIAL",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 169754,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "CHARACTER",
-          "id": 177046,
-          "format": "SPECIAL",
-          "episodes": 2
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 185212,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "CHARACTER",
-          "id": 2335,
-          "format": "TV",
-          "episodes": 52
-        },
-        {
-          "rel": "SUMMARY",
-          "id": 184369,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 198369,
-          "format": "MOVIE",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 212994,
-          "format": "SPECIAL",
-          "episodes": 1
-        },
-        {
-          "rel": "SIDE_STORY",
-          "id": 217126,
-          "format": "SPECIAL",
-          "episodes": 1
         }
       ],
-      "group": "detective conan",
+      "group": "reincarnated as a sword",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx159042-GGFwlDskc5vR.png",
       "factsPending": false,
-      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx235-MyYT7K3chBdO.jpg",
-      "seasonCount": 1,
-      "episodeCount": 1221,
-      "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     }
   ],
@@ -3382,15 +3003,17 @@
       ],
       "group": "cyberpunk edgerunners",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx195539-4LdfmKIHzuxr.png",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -3483,15 +3106,17 @@
       ],
       "group": "the apothecary diaries",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx195516-MJpUZlOberqH.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -3560,15 +3185,17 @@
       ],
       "group": "black clover",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx195604-tSZcfKbVqSEG.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -3628,13 +3255,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -3710,15 +3338,17 @@
       ],
       "group": "reincarnated as a sword",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx159042-GGFwlDskc5vR.png",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -3783,13 +3413,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -3863,13 +3494,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -3929,15 +3561,17 @@
       ],
       "group": "blue box",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx189123-0secXELIhkIW.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -3999,15 +3633,17 @@
       ],
       "group": "steel ball run jojo s bizarre adventure 2nd 3rd stage",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx210482-P1VNKbqdJ6Zj.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4075,13 +3711,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4091,7 +3728,7 @@
       "title": "Made in Abyss: Mezameru Shinpi",
       "titleRomaji": "Made in Abyss: Mezameru Shinpi",
       "titleJapanese": "メイドインアビス 目覚める神秘",
-      "image": "https://image.tmdb.org/t/p/w342/7HfBlYDlMVaHnvd7NEpZLd8r7FO.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/7HfBlYDlMVaHnvd7NEpZLd8r7FO.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/7HfBlYDlMVaHnvd7NEpZLd8r7FO.jpg",
       "banner": null,
       "color": "#e4d643",
@@ -4161,7 +3798,7 @@
       "title": "Witch on the Holy Night",
       "titleRomaji": "Mahoutsukai no Yoru",
       "titleJapanese": "魔法使いの夜",
-      "image": "https://image.tmdb.org/t/p/w342/xKpYIt7T6nJ8oqzV52yLtZdC0YB.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/xKpYIt7T6nJ8oqzV52yLtZdC0YB.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/xKpYIt7T6nJ8oqzV52yLtZdC0YB.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/143103-KwDRPfPl4OwL.jpg",
       "color": "#f1d6ae",
@@ -4209,13 +3846,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4276,15 +3914,17 @@
       ],
       "group": "the ramparts of ice",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx213805-Nokui3uWlIlw.png",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4361,13 +4001,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4377,8 +4018,8 @@
       "title": "Rascal Does Not Dream of a Dear Friend",
       "titleRomaji": "Seishun Buta Yarou wa Dear Friend no Yume wo Minai",
       "titleJapanese": "青春ブタ野郎はディアフレンドの夢を見ない",
-      "image": "https://image.tmdb.org/t/p/w342/HYruPq5Vh31jBZZatjRzsISC8G.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/HYruPq5Vh31jBZZatjRzsISC8G.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/772MwRZDJQa4b0NPGs7Fn5cfBeG.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/772MwRZDJQa4b0NPGs7Fn5cfBeG.jpg",
       "banner": null,
       "color": "#5da1f1",
       "synopsis": "\"Actually, I’m Touko Kirishima.\"\n\nThe audience erupted in excitement upon learning that the true identity of the mysterious, wildly popular internet singer was none other than the nation’s favorite actress, Mai Sakurajima. The scene was exactly the same as the dream Sakuta Azusagawa had seen on Christmas Eve.\n\nStarting with Mai’s shocking confession on April 1, the impossible events that everyone once dreamed of keep happening one after another.\n\nThe social media hashtag \"#Yumemiru,\" where dreams come true, has vanished, and as Sakuta struggles with the disconnect between the reality before him and his own perception, he receives a message from a version of himself in an alternate reality.\n\n―Stop Touko Kirishima,\n\n―Before reality is rewritten.\n\nTo restore the world to its original state, Sakuta sets out to find Touko Kirishima. This is a story about overcoming the \"Adolescent Syndrome\".",
@@ -4423,13 +4064,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4493,15 +4135,17 @@
       ],
       "group": "a returner s magic should be special",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx172192-W7P5xEUaxF3y.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4659,13 +4303,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4727,13 +4372,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4806,13 +4452,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -4883,15 +4530,17 @@
       ],
       "group": "as a reincarnated aristocrat i ll use my appraisal skill to rise in the world",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx185756-xPCl0RyQ7fXD.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -5031,15 +4680,17 @@
       ],
       "group": "aoashi",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx191788-XC6F24LdX6a4.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     }
   ],
@@ -5148,13 +4799,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -5164,8 +4816,8 @@
       "title": "Gintama: THE VERY FINAL",
       "titleRomaji": "Gintama: THE FINAL",
       "titleJapanese": "銀魂 THE FINAL",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx114129-RLgSuh6YbeYx.jpg",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx114129-RLgSuh6YbeYx.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/kxBHS1PGebEN0lrFdk0o9FZY6Rn.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/kxBHS1PGebEN0lrFdk0o9FZY6Rn.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/114129-ZsLDkdwaYeJY.jpg",
       "color": "#e48643",
       "synopsis": "Two years have passed following the Tendoshuu's invasion of the O-Edo Central Terminal. Since then, the Yorozuya have gone their separate ways. Foreseeing Utsuro's return, Gintoki Sakata begins surveying Earth's ley lines for traces of the other man's Altana. After an encounter with the remnants of the Tendoshuu—who continue to press on in search of immortality—Gintoki returns to Edo.\n\nLater, the regrouped Shinsengumi and Yorozuya begin an attack on the occupied Central Terminal. With the Altana harvested by the wreckage of the Tendoshuu's ship in danger of detonating, the Yorozuya and their allies fight their enemies while the safety of Edo—and the rest of the world—hangs in the balance. Fulfilling the wishes of their teacher, Shouyou Yoshida's former students unite and relive their pasts one final time in an attempt to save their futures.",
@@ -5173,7 +4825,7 @@
       "scoredBy": null,
       "rank": 1,
       "popularity": null,
-      "members": 56984,
+      "members": 57008,
       "episodes": 1,
       "status": "Finished Airing",
       "airing": false,
@@ -5215,15 +4867,18 @@
         }
       ],
       "group": "gintama the very final",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx114129-RLgSuh6YbeYx.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -5305,6 +4960,7 @@
       ],
       "group": "gintama",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx9969-0GaRABYVdUcH.png",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -5402,15 +5058,17 @@
       ],
       "group": "re zero starting life in another world",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx189046-yaHWtS5FII46.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -5514,13 +5172,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -5530,8 +5189,8 @@
       "title": "Chainsaw Man – The Movie: Reze Arc",
       "titleRomaji": "Chainsaw Man: Reze-hen",
       "titleJapanese": "チェンソーマン レゼ篇",
-      "image": "https://image.tmdb.org/t/p/w342/i69jR67amezdJ3sx6OOvOGn7HAR.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/i69jR67amezdJ3sx6OOvOGn7HAR.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/pHyxb2RV5wLlboAwm9ZJ9qTVEDw.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/pHyxb2RV5wLlboAwm9ZJ9qTVEDw.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/171627-7esVHhgw69rn.jpg",
       "color": "#e43550",
       "synopsis": "Denji became “Chainsaw Man”, a boy with a devil’s heart, and is now part of Special Division 4’s devil hunters. After a date with Makima, the woman of his dreams, Denji takes shelter from the rain. There he meets Reze, a girl who works in a café.",
@@ -5594,13 +5253,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -5619,7 +5279,7 @@
       "scoredBy": null,
       "rank": 5,
       "popularity": null,
-      "members": 624816,
+      "members": 625033,
       "episodes": 10,
       "status": "Finished Airing",
       "airing": false,
@@ -5692,15 +5352,17 @@
       ],
       "group": "attack on titan",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx104578-k61nx3LPjvgd.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -5710,8 +5372,8 @@
       "title": "ONE PIECE FAN LETTER",
       "titleRomaji": "ONE PIECE FAN LETTER",
       "titleJapanese": "ONE PIECE FAN LETTER",
-      "image": "https://image.tmdb.org/t/p/w342/dB4EDhre2dsC2kxYDavyKWqLQwi.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/dB4EDhre2dsC2kxYDavyKWqLQwi.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/9hW62RDq5Dno8vLABXscddjEq9M.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/9hW62RDq5Dno8vLABXscddjEq9M.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/182469-obNr7bznMzN7.jpg",
       "color": "#e4935d",
       "synopsis": "Two years after the Paramount War, the Straw Hats are about to reunite on the Sabaody Archipelago. At the same time, a girl who is head over heels for Nami is trying to hand a fan letter to her before the group leaves the island.\n\nNote: This work commemorates the 25th anniversary of the ONE PIECE anime through an animated adaptation of the \"ONE PIECE novel Mugiwara Stories\" light novel.",
@@ -5886,13 +5548,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -5957,6 +5620,7 @@
       ],
       "group": "owarimonogatari second season",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21745-VrhhJjZNdBXV.png",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -6047,15 +5711,17 @@
       ],
       "group": "fruits basket",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx124194-TJlqMMR7BGn9.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -6192,13 +5858,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -6272,6 +5939,7 @@
       ],
       "group": "tomorrow s joe",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx2921-PxFepBRCGD0K.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -6299,7 +5967,7 @@
       "scoredBy": null,
       "rank": 13,
       "popularity": null,
-      "members": 131580,
+      "members": 131588,
       "episodes": 22,
       "status": "Finished Airing",
       "airing": false,
@@ -6350,15 +6018,17 @@
       ],
       "group": "march comes in like a lion",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx98478-Yua5iL9zbrji.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -6442,13 +6112,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -6551,13 +6222,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -6630,15 +6302,17 @@
       ],
       "group": "the apothecary diaries",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx176301-TIGmldLffQGX.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     }
   ],
@@ -6774,13 +6448,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -6799,7 +6474,7 @@
       "scoredBy": null,
       "rank": 191,
       "popularity": null,
-      "members": 1016008,
+      "members": 1016300,
       "episodes": 26,
       "status": "Finished Airing",
       "airing": false,
@@ -6877,13 +6552,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -6902,7 +6578,7 @@
       "scoredBy": null,
       "rank": 111,
       "popularity": null,
-      "members": 997837,
+      "members": 998176,
       "episodes": 24,
       "status": "Finished Airing",
       "airing": false,
@@ -6978,13 +6654,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -7082,13 +6759,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -7175,13 +6853,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -7318,13 +6997,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -7432,13 +7112,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -7898,13 +7579,14 @@
       "tmdbStatus": "Airing",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8000,13 +7682,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8110,13 +7793,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8274,13 +7958,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8290,8 +7975,8 @@
       "title": "A Silent Voice",
       "titleRomaji": "Koe no Katachi",
       "titleJapanese": "聲の形",
-      "image": "https://image.tmdb.org/t/p/w342/tuFaWiqX0TXoWu7DGNcmX3UW7sT.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/tuFaWiqX0TXoWu7DGNcmX3UW7sT.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/drlyoSKDOPnxzJFrRWGqzDsyJvR.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/drlyoSKDOPnxzJFrRWGqzDsyJvR.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/20954-f30bHMXa5Qoe.jpg",
       "color": "#5dbbe4",
       "synopsis": "After transferring into a new school, a deaf girl, Shouko Nishimiya, is bullied by the popular Shouya Ishida. As Shouya continues to bully Shouko, the class turns its back on him. Shouko transfers and Shouya grows up as an outcast. Alone and depressed, the regretful Shouya finds Shouko to make amends.",
@@ -8340,13 +8025,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8462,13 +8148,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8478,8 +8165,8 @@
       "title": "Your Name.",
       "titleRomaji": "Kimi no Na wa.",
       "titleJapanese": "君の名は。",
-      "image": "https://image.tmdb.org/t/p/w342/vfJFJPepRKapMd5G2ro7klIRysq.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/vfJFJPepRKapMd5G2ro7klIRysq.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/21519-1ayMXgNlmByb.jpg",
       "color": "#0da1e4",
       "synopsis": "Mitsuha Miyamizu, a high school girl, yearns to live the life of a boy in the bustling city of Tokyo—a dream that stands in stark contrast to her present life in the countryside. Meanwhile in the city, Taki Tachibana lives a busy life as a high school student while juggling his part-time job and hopes for a future in architecture.\n\nOne day, Mitsuha awakens in a room that is not her own and suddenly finds herself living the dream life in Tokyo—but in Taki's body! Elsewhere, Taki finds himself living Mitsuha's life in the humble countryside. In pursuit of an answer to this strange phenomenon, they begin to search for one another.\n\nKimi no Na wa. revolves around Mitsuha and Taki's actions, which begin to have a dramatic impact on each other's lives, weaving them into a fabric held together by fate and circumstance.",
@@ -8552,13 +8239,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8678,13 +8366,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8703,7 +8392,7 @@
       "scoredBy": null,
       "rank": 140,
       "popularity": null,
-      "members": 644088,
+      "members": 644231,
       "episodes": 12,
       "status": "Finished Airing",
       "airing": false,
@@ -8762,13 +8451,14 @@
       "tmdbStatus": "Ended",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     }
   ],
@@ -8828,13 +8518,14 @@
       "group": "mashle magic and muscles the tri magicathlon divine visionary final exam arc",
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -8900,6 +8591,7 @@
       ],
       "group": "shangri la frontier",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx189323-gHXhqIOBUY8F.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -8959,7 +8651,7 @@
       "source": "anilist",
       "family": [],
       "group": "the guy she was interested in wasn t a guy at all",
-      "factsPending": false,
+      "factsPending": true,
       "languages": {
         "audio": [
           "Japanese"
@@ -9028,6 +8720,7 @@
       ],
       "group": "sekai saikou no ansatsusha isekai kizoku ni tensei suru",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx169579-KxMH0iq7jlPr.png",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -9046,8 +8739,8 @@
       "title": "THE ONE PIECE",
       "titleRomaji": "THE ONE PIECE",
       "titleJapanese": "THE ONE PIECE",
-      "image": "https://image.tmdb.org/t/p/w342/tcBHXNxz62RaAiDRbkm6DEwiXbJ.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/tcBHXNxz62RaAiDRbkm6DEwiXbJ.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/tV6Nf6iLyr8llbcZCa3l6UNPlQi.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/tV6Nf6iLyr8llbcZCa3l6UNPlQi.jpg",
       "banner": null,
       "color": "#28aef1",
       "synopsis": "To commemorate the ONE PIECE anime's 25th anniversary: THE ONE PIECE anime by WIT Studio will recreate the story of the original ONE PIECE manga, starting from the East Blue arc.",
@@ -9094,13 +8787,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -9159,15 +8853,17 @@
       ],
       "group": "sakamoto days",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx204363-MtBgHE8uhEpJ.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -9283,6 +8979,68 @@
       ],
       "group": "one punch man",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx204747-INMrngH10Kwq.png",
+      "factsPending": false,
+      "languages": {
+        "audio": [
+          "Japanese"
+        ],
+        "subtitles": [
+          "English"
+        ],
+        "sub": true,
+        "dub": null
+      }
+    },
+    {
+      "id": "59928",
+      "malId": 59928,
+      "anilistId": 181951,
+      "title": "Ookami to Koushinryou: MERCHANT MEETS THE WISE WOLF 2nd Season",
+      "titleRomaji": "Ookami to Koushinryou: MERCHANT MEETS THE WISE WOLF 2nd Season",
+      "titleJapanese": "狼と香辛料 MERCHANT MEETS THE WISE WOLF 2期",
+      "image": "https://image.tmdb.org/t/p/w500/fxzL2EWdiv19eZAoC8s7zuGCJG1.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/fxzL2EWdiv19eZAoC8s7zuGCJG1.jpg",
+      "banner": null,
+      "color": "#aee4f1",
+      "synopsis": "The second season of Ookami to Koushinryou: MERCHANT MEETS THE WISE WOLF.",
+      "score": null,
+      "scoredBy": null,
+      "rank": null,
+      "popularity": null,
+      "members": 17518,
+      "episodes": null,
+      "status": "Not yet aired",
+      "airing": false,
+      "type": "TV",
+      "season": "winter",
+      "year": 2027,
+      "genres": [
+        "Adventure",
+        "Fantasy",
+        "Romance"
+      ],
+      "studios": [
+        "Passione"
+      ],
+      "duration": null,
+      "ageRating": null,
+      "aired": "Jan 2027",
+      "broadcast": null,
+      "trailer": "e8Heas5oYOw",
+      "streaming": [],
+      "nextEpisode": null,
+      "source": "anilist",
+      "family": [
+        {
+          "rel": "PREQUEL",
+          "id": 145728,
+          "format": "TV",
+          "episodes": 25
+        }
+      ],
+      "group": "ookami to koushinryou merchant meets the wise wolf",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx181951-jTcWy5CUkS7L.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -9301,8 +9059,8 @@
       "title": "MARRIAGETOXIN 2nd Season",
       "titleRomaji": "MARRIAGETOXIN 2nd Season",
       "titleJapanese": "マリッジトキシン 第2期",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx213752-UNsERPORVGfJ.jpg",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx213752-UNsERPORVGfJ.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/2b1akkaoutSo3xbykjAKnEb92Rs.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/2b1akkaoutSo3xbykjAKnEb92Rs.jpg",
       "banner": null,
       "color": "#f150bb",
       "synopsis": "The second season of MARRIAGETOXIN.",
@@ -9343,6 +9101,8 @@
         }
       ],
       "group": "marriagetoxin",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx213752-UNsERPORVGfJ.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -9521,6 +9281,7 @@
       ],
       "group": "isekai de cheat skill wo te ni shita ore wa genjitsu sekai wo mo musou suru level up wa jinsei wo kaeta",
       "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx209980-CTTwiweBKBS2.png",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -9539,8 +9300,8 @@
       "title": "Futsutsuka na Akujo de wa Gozaimasu ga: Suuguu Chouso Torikae Den Part 2",
       "titleRomaji": "Futsutsuka na Akujo de wa Gozaimasu ga: Suuguu Chouso Torikae Den Part 2",
       "titleJapanese": "ふつつかな悪女ではございますが ～雛宮蝶鼠とりかえ伝～ 第二幕",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx217070-Muh7Kjw4RQsi.jpg",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx217070-Muh7Kjw4RQsi.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/yZHCMXL2xYS988rYxR1D8YrTzeD.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/yZHCMXL2xYS988rYxR1D8YrTzeD.jpg",
       "banner": null,
       "color": "#ae5de4",
       "synopsis": "The second cour of Futsutsuka na Akujo de wa Gozaimasu ga: Suuguu Chouso Torikae Den.\n\nThrough the actions of Reirin and Keigetsu, the series of disturbances caused by a curse in the inner court have settled down.\n\nThrough their swap, Reirin and Keigetsu learned of each other’s character, and a friendship was budding between the two of them.\n\nSeasons pass, and we are now at early autumn. The location of the ritual where the Crown Prince and the Maidens wish for a bountiful harvest (the Harvest Festival) has been set within the southern lands ruled by the Shu clan. With no consort as guardian, Keigetsu arduously continues with preparations despite feeling the pressure as the host of the Harvest Festival. Meanwhile, Reirin is wholeheartedly supporting Keigetsu while being thrilled about her first royal outing.\n\nHowever, right upon arrival, an unforeseen accident occurs and the ritual is interrupted. An agitated Keigetsu’s spell runs out of control, and she once again swaps bodies with Reirin. On top of that, among all the confusion, the post-swap Reirin is abducted...!?\n\nReirin’s two overprotective brothers Kou Keikou and Kou Keishou get involved and the situation heads in an unexpected direction.\n\nWho is the new mastermind who is sneaking up in order to frame Keigetsu...?\n\nThe gratifying tale of switched fates brought to you by two girls who are polar opposites—the curtain rises on the second act, \"The First Royal Outing\" Arc!",
@@ -9578,6 +9339,8 @@
         }
       ],
       "group": "futsutsuka na akujo de wa gozaimasu ga suuguu chouso torikae den",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx217070-Muh7Kjw4RQsi.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -9596,8 +9359,8 @@
       "title": "Kuroiwa Medaka ni Watashi no Kawaii ga Tsuujinai 2nd Season",
       "titleRomaji": "Kuroiwa Medaka ni Watashi no Kawaii ga Tsuujinai 2nd Season",
       "titleJapanese": "黒岩メダカに私の可愛いが通じない 第2期",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx188892-KpzXYChwPxyT.jpg",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx188892-KpzXYChwPxyT.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/8cjNjEYJVqj0nTeuZlMv8IUvI65.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/8cjNjEYJVqj0nTeuZlMv8IUvI65.jpg",
       "banner": null,
       "color": null,
       "synopsis": "The second season of Kuroiwa Medaka ni Watashi no Kawaii ga Tsuujinai.",
@@ -9636,6 +9399,8 @@
         }
       ],
       "group": "kuroiwa medaka ni watashi no kawaii ga tsuujinai",
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx188892-KpzXYChwPxyT.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -9764,7 +9529,6 @@
         }
       ],
       "group": "date a live f last date",
-      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -9881,7 +9645,7 @@
       "source": "anilist",
       "family": [],
       "group": "himekishi sama no himo",
-      "factsPending": false,
+      "factsPending": true,
       "languages": {
         "audio": [
           "Japanese"
@@ -9900,7 +9664,7 @@
       "title": "ghost – end of night",
       "titleRomaji": "ghost／yoru no hate",
       "titleJapanese": "ghost／夜の果て",
-      "image": "https://image.tmdb.org/t/p/w342/oKBUwuZiujlKeiEtwZ7GYZCOOxX.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/oKBUwuZiujlKeiEtwZ7GYZCOOxX.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/oKBUwuZiujlKeiEtwZ7GYZCOOxX.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/194213-IZb2of7CgJnp.jpg",
       "color": "#d61a1a",
@@ -9947,68 +9711,6 @@
         "sub": true,
         "dub": null
       }
-    },
-    {
-      "id": "64439",
-      "malId": 64439,
-      "anilistId": 213360,
-      "title": "Akane-banashi 2nd Season",
-      "titleRomaji": "Akane-banashi 2nd Season",
-      "titleJapanese": "あかね噺 第2期",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx213360-xNEWCLeQkXkI.jpg",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx213360-xNEWCLeQkXkI.jpg",
-      "banner": null,
-      "color": "#e4ae5d",
-      "synopsis": "“What you’re about to experience is nothing less than the living history of Rakugo.” \n\nInspired by her Rakugoka father, Akane Ousaki aims to become a Shin'uchi. After graduating high school, she formally joins Shiguma's school. Now known as Akane Arakawa, she takes her first steps as a Rakugoka. She arrives at Yasaka-tei, a traditional, bustling Rakugo theater. Surrounded by Shin'uchi, Akane finally begins her training at the heart of Rakugo performers.\nA full-fledged story of Rakugo, where master storytellers compete.\n\nThe Zenza Arc begins!",
-      "score": null,
-      "scoredBy": null,
-      "rank": null,
-      "popularity": null,
-      "members": 7916,
-      "episodes": null,
-      "status": "Not yet aired",
-      "airing": false,
-      "type": "TV",
-      "season": "winter",
-      "year": 2027,
-      "genres": [
-        "Drama"
-      ],
-      "studios": [
-        "ZEXCS"
-      ],
-      "duration": null,
-      "ageRating": null,
-      "aired": "Jan 2027",
-      "broadcast": null,
-      "trailer": "tkTiGj-Czio",
-      "streaming": [
-        {
-          "name": "YouTube",
-          "url": "https://www.youtube.com/@akane-banashi_global"
-        }
-      ],
-      "nextEpisode": null,
-      "source": "anilist",
-      "family": [
-        {
-          "rel": "PREQUEL",
-          "id": 196935,
-          "format": "TV",
-          "episodes": 12
-        }
-      ],
-      "group": "akane banashi",
-      "languages": {
-        "audio": [
-          "Japanese"
-        ],
-        "subtitles": [
-          "English"
-        ],
-        "sub": true,
-        "dub": null
-      }
     }
   ],
   "movies": [
@@ -10019,8 +9721,8 @@
       "title": "Gintama: THE VERY FINAL",
       "titleRomaji": "Gintama: THE FINAL",
       "titleJapanese": "銀魂 THE FINAL",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx114129-RLgSuh6YbeYx.jpg",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx114129-RLgSuh6YbeYx.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/kxBHS1PGebEN0lrFdk0o9FZY6Rn.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/kxBHS1PGebEN0lrFdk0o9FZY6Rn.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/114129-ZsLDkdwaYeJY.jpg",
       "color": "#e48643",
       "synopsis": "Two years have passed following the Tendoshuu's invasion of the O-Edo Central Terminal. Since then, the Yorozuya have gone their separate ways. Foreseeing Utsuro's return, Gintoki Sakata begins surveying Earth's ley lines for traces of the other man's Altana. After an encounter with the remnants of the Tendoshuu—who continue to press on in search of immortality—Gintoki returns to Edo.\n\nLater, the regrouped Shinsengumi and Yorozuya begin an attack on the occupied Central Terminal. With the Altana harvested by the wreckage of the Tendoshuu's ship in danger of detonating, the Yorozuya and their allies fight their enemies while the safety of Edo—and the rest of the world—hangs in the balance. Fulfilling the wishes of their teacher, Shouyou Yoshida's former students unite and relive their pasts one final time in an attempt to save their futures.",
@@ -10028,7 +9730,7 @@
       "scoredBy": null,
       "rank": 1,
       "popularity": null,
-      "members": 56984,
+      "members": 57008,
       "episodes": 1,
       "status": "Finished Airing",
       "airing": false,
@@ -10069,15 +9771,18 @@
           "episodes": 2
         }
       ],
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx114129-RLgSuh6YbeYx.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10087,8 +9792,8 @@
       "title": "Chainsaw Man – The Movie: Reze Arc",
       "titleRomaji": "Chainsaw Man: Reze-hen",
       "titleJapanese": "チェンソーマン レゼ篇",
-      "image": "https://image.tmdb.org/t/p/w342/i69jR67amezdJ3sx6OOvOGn7HAR.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/i69jR67amezdJ3sx6OOvOGn7HAR.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/pHyxb2RV5wLlboAwm9ZJ9qTVEDw.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/pHyxb2RV5wLlboAwm9ZJ9qTVEDw.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/171627-7esVHhgw69rn.jpg",
       "color": "#e43550",
       "synopsis": "Denji became “Chainsaw Man”, a boy with a devil’s heart, and is now part of Special Division 4’s devil hunters. After a date with Makima, the woman of his dreams, Denji takes shelter from the rain. There he meets Reze, a girl who works in a café.",
@@ -10150,13 +9855,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10166,7 +9872,7 @@
       "title": "Gintama the Movie 2026: Yoshiwara in Flames",
       "titleRomaji": "Shin Gintama Movie: Yoshiwara Daienjou",
       "titleJapanese": "新劇場版 銀魂 -吉原大炎上-",
-      "image": "https://image.tmdb.org/t/p/w342/ih3mFlEZzsN9uQT7P4Zvaq4GkSm.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/ih3mFlEZzsN9uQT7P4Zvaq4GkSm.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/ih3mFlEZzsN9uQT7P4Zvaq4GkSm.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/197474-dcJmLSLc3g10.jpg",
       "color": "#f1781a",
@@ -10220,13 +9926,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10236,8 +9943,8 @@
       "title": "A Silent Voice",
       "titleRomaji": "Koe no Katachi",
       "titleJapanese": "聲の形",
-      "image": "https://image.tmdb.org/t/p/w342/tuFaWiqX0TXoWu7DGNcmX3UW7sT.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/tuFaWiqX0TXoWu7DGNcmX3UW7sT.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/drlyoSKDOPnxzJFrRWGqzDsyJvR.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/drlyoSKDOPnxzJFrRWGqzDsyJvR.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/20954-f30bHMXa5Qoe.jpg",
       "color": "#5dbbe4",
       "synopsis": "After transferring into a new school, a deaf girl, Shouko Nishimiya, is bullied by the popular Shouya Ishida. As Shouya continues to bully Shouko, the class turns its back on him. Shouko transfers and Shouya grows up as an outcast. Alone and depressed, the regretful Shouya finds Shouko to make amends.",
@@ -10285,13 +9992,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10301,8 +10009,8 @@
       "title": "Gintama: The Final Chapter - Be Forever Yorozuya",
       "titleRomaji": "Gintama: Kanketsu-hen - Yorozuya yo Eien Nare",
       "titleJapanese": "劇場版 銀魂 完結篇 万事屋よ永遠なれ",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx15335-QjijwChGTBs0.png",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx15335-QjijwChGTBs0.png",
+      "image": "https://image.tmdb.org/t/p/w500/1wEl5WHQO2SdWQ6S3gLBaaobf4c.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/1wEl5WHQO2SdWQ6S3gLBaaobf4c.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/15335-uARkRgyx8adp.jpg",
       "color": "#bbd6f1",
       "synopsis": "When Gintoki apprehends a movie pirate at a premiere, he checks the camera's footage and finds himself transported to a bleak, post-apocalyptic version of Edo, where a mysterious epidemic called the \"White Plague\" has ravished the world's population. It turns out that the movie pirate wasn't a pirate after all—it was an android time machine, and Gintoki has been hurtled five years into the future! Shinpachi and Kagura, his Yorozuya cohorts, have had a falling out and are now battle-hardened solo vigilantes and he himself has been missing for years, disappearing without a trace after scribbling a strange message in his journal.\n\nSetting out in the disguise given to him by the android time machine, Gintoki haphazardly reunites the Yorozuya team to investigate the White Plague, and soon discovers that the key to saving the future lies in the darkness of his own past. Determined to confront a powerful foe, he makes an important discovery—with a ragtag band of friends and allies at his side, he doesn't have to fight alone.",
@@ -10353,6 +10061,8 @@
           "episodes": 13
         }
       ],
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx15335-QjijwChGTBs0.png",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -10371,8 +10081,8 @@
       "title": "Kizumonogatari Part 3: Reiketsu",
       "titleRomaji": "Kizumonogatari III: Reiketsu-hen",
       "titleJapanese": "傷物語〈Ⅲ冷血篇〉",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21400-38ykNo3j4xXo.png",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21400-38ykNo3j4xXo.png",
+      "image": "https://image.tmdb.org/t/p/w500/rfKHhHvSwyCv59Ow6wuGX67RkXR.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/rfKHhHvSwyCv59Ow6wuGX67RkXR.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/21400-5zcYUeVBptdG.jpg",
       "color": "#e4d628",
       "synopsis": "First season of the Monogatari Series, part 4/6. Contains the arc Koyomi Vamp from the Kizumonogatari light novel.\n\nWith help from Meme Oshino, the apparition specialist, Koyomi defeats the three powerful vampire hunters: Dramaturgy, Episode and Guillotinecutter. Koyomi takes back all the limbs of Kiss-Shot Acerola-Orion Heart-Under-Blade in order to become a human again. But, when he returns to Kiss-Shot, she reveals to him the cold truth of what it means to be a vampire—a creature of the night. Unable to take back what he has done, Koyomi feels nothing but regret and can only deny his dreadful fate. While Koyomi is struggling to face reality, his “friend” Tsubasa Hanekawa comes to him with a certain plan…",
@@ -10426,6 +10136,8 @@
           "episodes": 1
         }
       ],
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx21400-38ykNo3j4xXo.png",
+      "factsPending": false,
       "languages": {
         "audio": [
           "Japanese"
@@ -10444,7 +10156,7 @@
       "title": "Revue Starlight: The Movie",
       "titleRomaji": "Shoujo☆Kageki Revue Starlight Movie",
       "titleJapanese": "劇場版 少女☆歌劇 レヴュースタァライト",
-      "image": "https://image.tmdb.org/t/p/w342/q4HCMOUJUcHlbggcoZ03c7gN9RJ.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/q4HCMOUJUcHlbggcoZ03c7gN9RJ.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/q4HCMOUJUcHlbggcoZ03c7gN9RJ.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/113024-gjxwISIts05f.jpg",
       "color": "#e45d50",
@@ -10453,7 +10165,7 @@
       "scoredBy": null,
       "rank": 7,
       "popularity": null,
-      "members": 21683,
+      "members": 21691,
       "episodes": 1,
       "status": "Finished Airing",
       "airing": false,
@@ -10506,13 +10218,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10522,7 +10235,7 @@
       "title": "Violet Evergarden: the Movie",
       "titleRomaji": "Violet Evergarden Movie",
       "titleJapanese": "劇場版 ヴァイオレット・エヴァーガーデン",
-      "image": "https://image.tmdb.org/t/p/w342/bajajkoErDst0JxdFyBkABiF9rW.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/bajajkoErDst0JxdFyBkABiF9rW.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/bajajkoErDst0JxdFyBkABiF9rW.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/103047-Tjvsh5w1XZP4.jpg",
       "color": "#1a86d6",
@@ -10531,7 +10244,7 @@
       "scoredBy": null,
       "rank": 8,
       "popularity": null,
-      "members": 205418,
+      "members": 205475,
       "episodes": 1,
       "status": "Finished Airing",
       "airing": false,
@@ -10571,13 +10284,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10587,8 +10301,8 @@
       "title": "THE FIRST SLAM DUNK",
       "titleRomaji": "THE FIRST SLAM DUNK",
       "titleJapanese": "THE FIRST SLAM DUNK",
-      "image": "https://image.tmdb.org/t/p/w342/yq4tSiYvfGw150Ntq8NbsFZ12En.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/yq4tSiYvfGw150Ntq8NbsFZ12En.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/7i3EBXY87HdHagCoFbmjHQ8DlkG.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/7i3EBXY87HdHagCoFbmjHQ8DlkG.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/128207-NogeWbSs2SpJ.jpg",
       "color": null,
       "synopsis": "Shohoku's “speedster” and point guard, Ryota Miyagi, always plays with brains and lightning speed, running circles around his opponents while feigning composure. Born and raised in Okinawa, Ryota had a brother who was three years older. Following in the footsteps of his older brother, who was a famous local player from a young age, Ryota also became addicted to basketball.\n\nIn his second year of high school, Ryota plays with the Shohoku High School basketball team along with Sakuragi, Rukawa, Akagi, and Mitsui as they take the stage at the Inter-High School National Championship. And now, they are on the brink of challenging the reigning champions, Sannoh Kogyo High School.",
@@ -10635,13 +10349,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10651,7 +10366,7 @@
       "title": "Umamusume: Pretty Derby - Beginning of a New Era",
       "titleRomaji": "Uma Musume: Pretty Derby - Shin Jidai no Tobira",
       "titleJapanese": "ウマ娘 プリティーダービー 新時代の扉",
-      "image": "https://image.tmdb.org/t/p/w342/o4SM2hP63vMaPuAox6UuwVybHo4.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/o4SM2hP63vMaPuAox6UuwVybHo4.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/o4SM2hP63vMaPuAox6UuwVybHo4.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/172420-QVRFOAha7oy5.jpg",
       "color": "#f1bb43",
@@ -10724,8 +10439,8 @@
       "title": "Demon Slayer: Kimetsu no Yaiba Infinity Castle",
       "titleRomaji": "Kimetsu no Yaiba: Mugenjou-hen Movie 1 - Akaza Sairai",
       "titleJapanese": "劇場版「鬼滅の刃」無限城編 第一章 猗窩座再来",
-      "image": "https://image.tmdb.org/t/p/w342/fWVSwgjpT2D78VUh6X8UBd2rorW.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/fWVSwgjpT2D78VUh6X8UBd2rorW.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/aFRDH3P7TX61FVGpaLhKr6QiOC1.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/aFRDH3P7TX61FVGpaLhKr6QiOC1.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/178788-tSHb5MiaNBNL.jpg",
       "color": "#35bbe4",
       "synopsis": "Tanjiro Kamado – a boy who joined an organization dedicated to hunting down demons called the Demon Slayer Corps after his younger sister Nezuko was turned into a demon.\n\nWhile growing stronger and deepening his friendships and bonds with fellow corps members, Tanjiro has battled many demons with his comrades – Zenitsu Agatsuma and Inosuke Hashibira. Along the way, his journey has led him to fight alongside the Demon Slayer Corps’ highest-ranking swordsmen, the Hashira, including Flame Hashira Kyojuro Rengoku aboard the Mugen Train, Sound Hashira Tengen Uzui within the Entertainment District, as well as Mist Hashira Muichiro Tokito and Love Hashira Mitsuri Kanroji at the Swordsmith Village.\n\nAs the Demon Slayer Corps members and Hashira engaged in a group strength training program, the Hashira Training, in preparation for the forthcoming battle against the demons, Muzan Kibutsuji appears at the Ubuyashiki Mansion. With the head of the Demon Corps in danger, Tanjiro and the Hashira rush to the headquarters but are plunged into a deep descent to a mysterious space by the hands of Muzan Kibutsuji.\n\nThe destination of where Tanjiro and Demon Slayer Corps have fallen is the demons’ stronghold – the Infinity Castle. And so, the battleground is set as the final battle between the Demon Slayer Corps and the demons ignites.",
@@ -10785,13 +10500,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10801,7 +10517,7 @@
       "title": "HAIKYU!! The Dumpster Battle",
       "titleRomaji": "Haikyuu!!: Gomi Suteba no Kessen",
       "titleJapanese": "ハイキュー!! ゴミ捨て場の決戦",
-      "image": "https://image.tmdb.org/t/p/w342/ntRU0OA4etGGiMMmH1Yw0bnaMdW.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/ntRU0OA4etGGiMMmH1Yw0bnaMdW.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/ntRU0OA4etGGiMMmH1Yw0bnaMdW.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/153658-7MePQPgSHrH1.jpg",
       "color": "#e4a15d",
@@ -10860,13 +10576,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10876,8 +10593,8 @@
       "title": "The Legend of Hei 2",
       "titleRomaji": "Luo Xiaohei Zhan Ji 2",
       "titleJapanese": "罗小黑战记 2",
-      "image": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx166475-wkJyPnAqIA9G.jpg",
-      "image2x": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx166475-wkJyPnAqIA9G.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/dRCUBiTKtsmju3fmSS4MK0ywcqR.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/dRCUBiTKtsmju3fmSS4MK0ywcqR.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/166475-nAU6FAClLvhG.jpg",
       "color": "#e4ae50",
       "synopsis": "When an attack shatters the fragile peace between the spirit world and humanity, Hei teams up with Luye, the last disciple of his Shifu Wuxian, to expose a conspiracy that threatens both realms – and the bond they’ve sworn to protect.",
@@ -10922,15 +10639,18 @@
           "episodes": 28
         }
       ],
+      "cover": "https://s4.anilist.co/file/anilistcdn/media/anime/cover/medium/bx166475-wkJyPnAqIA9G.jpg",
+      "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -10940,7 +10660,7 @@
       "title": "LOOK BACK",
       "titleRomaji": "Look Back",
       "titleJapanese": "ルックバック",
-      "image": "https://image.tmdb.org/t/p/w342/4f2EcNkp1Mvp9wE5w7HKxcmACWg.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/4f2EcNkp1Mvp9wE5w7HKxcmACWg.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/4f2EcNkp1Mvp9wE5w7HKxcmACWg.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/174788-0ZM9g7npJH8X.jpg",
       "color": "#e4bb50",
@@ -10985,13 +10705,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -11001,7 +10722,7 @@
       "title": "Spirited Away",
       "titleRomaji": "Sen to Chihiro no Kamikakushi",
       "titleJapanese": "千と千尋の神隠し",
-      "image": "https://image.tmdb.org/t/p/w342/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/199-Sm2RU5PSqw7T.jpg",
       "color": "#e45d5d",
@@ -11059,13 +10780,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -11075,7 +10797,7 @@
       "title": "The Disappearance of Haruhi Suzumiya",
       "titleRomaji": "Suzumiya Haruhi no Shoushitsu",
       "titleJapanese": "涼宮ハルヒの消失",
-      "image": "https://image.tmdb.org/t/p/w342/x52WmUnfpB2AB0YUNGWJZaRzcBx.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/x52WmUnfpB2AB0YUNGWJZaRzcBx.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/x52WmUnfpB2AB0YUNGWJZaRzcBx.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/7311-LkdBCThgXouS.jpg",
       "color": "#f1d6bb",
@@ -11137,13 +10859,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -11153,7 +10876,7 @@
       "title": "Neon Genesis Evangelion: The End of Evangelion",
       "titleRomaji": "Shin Seiki Evangelion Movie: Air / Magokoro wo, Kimi ni",
       "titleJapanese": "新世紀エヴァンゲリオン劇場版 Air/まごころを、君に",
-      "image": "https://image.tmdb.org/t/p/w342/j6G24dqI4WgUtChhWjfnI4lnmiK.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/j6G24dqI4WgUtChhWjfnI4lnmiK.jpg",
       "image2x": "https://image.tmdb.org/t/p/w500/j6G24dqI4WgUtChhWjfnI4lnmiK.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/n32-BH9yHJBQqeOa.jpg",
       "color": "#e46b50",
@@ -11221,13 +10944,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -11237,8 +10961,8 @@
       "title": "Your Name.",
       "titleRomaji": "Kimi no Na wa.",
       "titleJapanese": "君の名は。",
-      "image": "https://image.tmdb.org/t/p/w342/vfJFJPepRKapMd5G2ro7klIRysq.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/vfJFJPepRKapMd5G2ro7klIRysq.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/q719jXXEzOoYaps6babgKnONONX.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/21519-1ayMXgNlmByb.jpg",
       "color": "#0da1e4",
       "synopsis": "Mitsuha Miyamizu, a high school girl, yearns to live the life of a boy in the bustling city of Tokyo—a dream that stands in stark contrast to her present life in the countryside. Meanwhile in the city, Taki Tachibana lives a busy life as a high school student while juggling his part-time job and hopes for a future in architecture.\n\nOne day, Mitsuha awakens in a room that is not her own and suddenly finds herself living the dream life in Tokyo—but in Taki's body! Elsewhere, Taki finds himself living Mitsuha's life in the humble countryside. In pursuit of an answer to this strange phenomenon, they begin to search for one another.\n\nKimi no Na wa. revolves around Mitsuha and Taki's actions, which begin to have a dramatic impact on each other's lives, weaving them into a fabric held together by fate and circumstance.",
@@ -11310,13 +11034,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -11326,8 +11051,8 @@
       "title": "Evangelion: 3.0+1.0 Thrice Upon a Time",
       "titleRomaji": "Shin Evangelion Movie:||",
       "titleJapanese": "シン・エヴァンゲリオン劇場版:||",
-      "image": "https://image.tmdb.org/t/p/w342/md5wZRRj8biHrGtyitgBZo7674t.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/md5wZRRj8biHrGtyitgBZo7674t.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/jDwZavHo99JtGsCyRzp4epeeBHx.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/jDwZavHo99JtGsCyRzp4epeeBHx.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/3786-IfWKqRp9grgo.jpg",
       "color": "#50bbe4",
       "synopsis": "In the aftermath of the Fourth Impact, stranded without their Evangelions, Shinji, Asuka, and Rei find refuge in one of the rare pockets of humanity that still exist on the ruined planet Earth. There, each of them live a life far different from their days as an Evangelion pilot. However, the danger to the world is far from over. A new impact is looming on the horizon—one that will prove to be the true end of Evangelion. Finally, the Human Instrumentality Project is set in motion, and WILLE makes one last grueling stand to prevent the Final Impact.\n\nNote: Exists in several versions, as denoted by the version number:\n\n• 3.0+1.0: March 8, 2021 - Original theatrical release\n\n•  3.0+1.01: June 12, 2021 - A second theatrical release which features updated cuts of various scenes while not changing the overall story of the film.\n\n•  3.0+1.11: March 8, 2023 - A home media release scheduled for the film's two-year anniversary.",
@@ -11395,13 +11120,14 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     },
     {
@@ -11411,8 +11137,8 @@
       "title": "Gurren Lagann The Movie: The Lights in the Sky are Stars",
       "titleRomaji": "Tengen Toppa Gurren Lagann: Lagann-hen",
       "titleJapanese": "天元突破グレンラガン 螺巌篇",
-      "image": "https://image.tmdb.org/t/p/w342/fJ1NsL2A7dwY63mBkHdP1K4kD3T.jpg",
-      "image2x": "https://image.tmdb.org/t/p/w500/fJ1NsL2A7dwY63mBkHdP1K4kD3T.jpg",
+      "image": "https://image.tmdb.org/t/p/w500/sBdCiTg4qd5pysb1tZcyQhWQUkZ.jpg",
+      "image2x": "https://image.tmdb.org/t/p/w500/sBdCiTg4qd5pysb1tZcyQhWQUkZ.jpg",
       "banner": "https://s4.anilist.co/file/anilistcdn/media/anime/banner/4565-Ngb9pZ0nuf8s.png",
       "color": "#5de4bb",
       "synopsis": "Seven years have passed after the battle of Teppelin... Humans have since reclaimed the surface of the earth and enjoy an unprecedented period of peace and prosperity. However, humanity's increasing population growth triggers the sudden emergence of an unknown, powerful enemy.\n\nThe fearsome, manipulative power of the mysterious Anti-Spiral proves too overwhelming for humans to even fight back. When everyone becomes desperate and loses hope, Team Dai-Gurren members reunite to stand up once again!",
@@ -11463,16 +11189,17 @@
       "factsPending": false,
       "languages": {
         "audio": [
-          "Japanese"
+          "Japanese",
+          "English"
         ],
         "subtitles": [
           "English"
         ],
         "sub": true,
-        "dub": null
+        "dub": "full"
       }
     }
   ],
   "partial": false,
-  "updatedAt": "2026-11-18T11:14:38.367Z"
+  "updatedAt": "2026-11-18T12:11:16.788Z"
 }

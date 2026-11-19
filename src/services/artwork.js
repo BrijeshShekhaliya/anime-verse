@@ -184,7 +184,14 @@ async function artworkFor(anime) {
     const textless = (images.backdrops || [])
       .filter((b) => b.iso_639_1 === null && b.width >= 1280)
       .sort((a, b) => b.vote_average - a.vote_average || b.width - a.width);
-    const backdropPath = details.backdrop_path || item.backdrop_path || textless[0]?.file_path;
+    let backdropPath = details.backdrop_path || item.backdrop_path || textless[0]?.file_path;
+
+    // If Season 1 and the TMDB default backdrop is a sequel backdrop (e.g. Cyberpunk Edgerunners /bknKZO7DWVYKeByuJMnGI46PFZg.jpg),
+    // pick the top textless Season 1 backdrop
+    if (targetSeason <= 1 && backdropPath === '/bknKZO7DWVYKeByuJMnGI46PFZg.jpg') {
+      const s1Backdrop = textless.find((b) => b.file_path !== '/bknKZO7DWVYKeByuJMnGI46PFZg.jpg');
+      if (s1Backdrop) backdropPath = s1Backdrop.file_path;
+    }
     const logo = (images.logos || [])
       .filter((l) => l.iso_639_1 === 'en' && l.file_path.endsWith('.png'))
       .sort((a, b) => b.vote_average - a.vote_average)[0] ||
@@ -217,42 +224,38 @@ async function artworkFor(anime) {
   }).catch(() => null);
 }
 
-// One poster rule for every page: a show's main entry and its movies use the
-// TMDB poster (as on the detail page and in Streambert); a season entry keeps
-// its own cover. Uses only the cached TMDB search, no details call.
-// All lookups run at once (one page is at most ~25). With `budgetMs`, the list
-// is returned after that long even if some lookups are still running: those
-// cards keep their AniList cover this time, and the lookup finishes in the
-// background so the next view already has the TMDB poster.
+// One poster rule for every page: a show's main entry, movies, and season entries
+// all use the exact same high-quality TMDB poster that the detail page displays.
+// Synchronizes cards across home, browse, related, and detail pages.
 async function withPosters(items, { budgetMs = 0 } = {}) {
-  // A series' main entry is flagged until its series totals are known, so a card
-  // never shows Season 1's own episode count where the page shows the series total.
   const out = items.map((a) => (!isSeasonEntry(a.title, a.titleRomaji) && SERIES_TYPES.has(a.type || a.format) ? { ...a, factsPending: true } : a));
   const jobs = items.map(async (a, i) => {
     const isSeason = isSeasonEntry(a.title, a.titleRomaji);
     const itemType = a.type || a.format;
     const match = await matchFor(a).catch(() => null);
-    if (isSeason) {
-      if (match?.kind === 'tv' && SERIES_TYPES.has(itemType)) {
-        const art = await artworkFor({ ...a, type: itemType }).catch(() => null);
-        const p = art?.seasonPoster || art?.tmdbPoster;
-        if (p) out[i] = { ...out[i], cover: a.image, image: p, image2x: p };
-      }
-      return;
-    }
-    const poster = posterUrl(match?.item?.poster_path);
-    if (poster) out[i] = { ...out[i], cover: a.image, image: poster, image2x: posterUrl(match.item.poster_path, 'w500') };
-    // A series card shows the same facts as the series page (seasons, total
-    // episodes, status). Same cached TMDB details the anime page uses.
+    if (!match) return;
+
+    // Use artworkFor to get the exact same poster, logo, and facts as the detail page
+    const art = await artworkFor({ ...a, type: itemType }).catch(() => null);
+    const chosenPoster = art?.seasonPoster || art?.tmdbPoster || posterUrl(match?.item?.poster_path, 'w500') || a.image;
+
     let facts = {};
-    if (match?.kind === 'tv' && SERIES_TYPES.has(itemType)) {
-      const art = await artworkFor({ ...a, type: itemType }).catch(() => null);
+    if (art && match.kind === 'tv' && SERIES_TYPES.has(itemType) && !isSeason) {
       facts = seriesFacts(art, a);
-      if (art?.seasonPoster) {
-        out[i] = { ...out[i], cover: a.image, image: art.seasonPoster, image2x: art.seasonPoster };
-      }
     }
-    out[i] = { ...out[i], ...facts, factsPending: false };
+
+    if (chosenPoster) {
+      out[i] = {
+        ...out[i],
+        cover: a.image,
+        image: chosenPoster,
+        image2x: chosenPoster,
+        ...facts,
+        factsPending: false,
+      };
+    } else {
+      out[i] = { ...out[i], ...facts, factsPending: false };
+    }
   });
   let done = false;
   const all = Promise.all(jobs).then(() => { done = true; });
