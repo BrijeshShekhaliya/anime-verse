@@ -35,8 +35,47 @@ function setCachedPlaylist(url, data) {
   _playlistCache.set(url, { data, expiresAt: Date.now() + PLAYLIST_CACHE_TTL });
 }
 
+// Where proxied stream URLs point. Unset: this same server (`/api/stream/proxy`).
+// Set STREAM_PROXY_BASE to an absolute origin (e.g. https://stream.example.com)
+// to send playlists and video segments to a separate proxy server instead, so
+// the video bytes never pass through this one (see stream-server.js).
+// Read on every call so a changed environment (or a test) takes effect at once.
+let _warnedBadBase = '';
+function proxyBase() {
+  const raw = String(process.env.STREAM_PROXY_BASE || '').trim();
+  if (!raw) return '';
+  let u;
+  try {
+    u = new URL(raw);
+  } catch {
+    u = null;
+  }
+  if (!u || (u.protocol !== 'https:' && u.protocol !== 'http:') || u.search || u.hash || u.username || u.password) {
+    if (_warnedBadBase !== raw) {
+      _warnedBadBase = raw;
+      console.warn(`[stream] Ignoring STREAM_PROXY_BASE="${raw}": it must be an absolute http(s) origin such as https://stream.example.com`);
+    }
+    return '';
+  }
+  return (u.origin + u.pathname).replace(/\/+$/, '');
+}
+
 function proxiedUrl(targetUrl, ref) {
-  return `/api/stream/proxy?url=${encodeURIComponent(targetUrl)}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}&v=2`;
+  return `${proxyBase()}/api/stream/proxy?url=${encodeURIComponent(targetUrl)}${ref ? `&ref=${encodeURIComponent(ref)}` : ''}&v=2`;
+}
+
+// CORS headers for the browser player. The standalone proxy (stream-server.js)
+// narrows the allowed origin through res.locals.corsOrigin; otherwise any origin.
+function corsHeaders(res) {
+  const origin = (res.locals && res.locals.corsOrigin) || '*';
+  const headers = {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers': 'Range, Accept, Origin, Content-Type',
+    'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
+  };
+  if (origin !== '*') headers.Vary = 'Origin';
+  return headers;
 }
 
 function rewritePlaylist(text, playlistUrl, ref) {
@@ -52,7 +91,7 @@ function rewritePlaylist(text, playlistUrl, ref) {
       }
       // Line is a segment or sub-playlist URL.
       // Proxy both sub-playlists and media segments through /api/stream/proxy
-      // so upstream CDNs receive the required Referer and the browser receives CORS headers without 403.
+      // (on STREAM_PROXY_BASE when set) so upstream CDNs receive the required Referer and the browser receives CORS headers without 403.
       const targetUrl = abs(t);
       return proxiedUrl(targetUrl, ref);
     })
@@ -74,10 +113,7 @@ async function handleProxy(req, res, hops = 0) {
     if (cached) {
       res.writeHead(200, {
         'Content-Type': 'application/vnd.apple.mpegurl',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-        'Access-Control-Allow-Headers': 'Range, Accept, Origin, Content-Type',
-        'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
+        ...corsHeaders(res),
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'X-Content-Type-Options': 'nosniff',
       });
@@ -130,10 +166,7 @@ async function handleProxy(req, res, hops = 0) {
         /mpegurl/i.test(contentType);
 
       // CORS headers for browser player
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Range, Accept, Origin, Content-Type');
-      res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+      for (const [name, value] of Object.entries(corsHeaders(res))) res.setHeader(name, value);
 
       if (isPlaylist && status === 200) {
         const chunks = [];
@@ -176,10 +209,7 @@ async function handleProxy(req, res, hops = 0) {
 
       // Media chunk or subtitle or direct binary stream
       const passHeaders = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
-        'Access-Control-Allow-Headers': 'Range, Accept, Origin, Content-Type',
-        'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges',
+        ...corsHeaders(res),
         'Cache-Control': 'public, max-age=86400, s-maxage=86400, immutable',
         'X-Content-Type-Options': 'nosniff',
       };
@@ -303,4 +333,7 @@ module.exports = {
   handleProxy,
   prewarmPlaylist,
   rewritePlaylist,
+  proxiedUrl,
+  proxyBase,
+  corsHeaders,
 };

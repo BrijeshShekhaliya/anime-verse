@@ -353,16 +353,15 @@ router.get(
       }
 
       const ref = resolved.referer || 'https://zokoanime.video/';
-      const proxiedMaster = `/api/stream/proxy?url=${encodeURIComponent(resolved.masterUrl)}&ref=${encodeURIComponent(ref)}&v=2`;
+      // Same-origin /api/stream/proxy, or the standalone proxy on STREAM_PROXY_BASE.
+      const proxiedMaster = streamProxy.proxiedUrl(resolved.masterUrl, ref);
       const proxiedSubs = (resolved.subtitles || []).map((s) => ({
         ...s,
-        src: `/api/stream/proxy?url=${encodeURIComponent(s.src)}&ref=${encodeURIComponent(ref)}&v=2`,
+        src: streamProxy.proxiedUrl(s.src, ref),
       }));
       const audioTracks = (resolved.audioTracks || []).map((track) => ({
         ...track,
-        uri: track.uri
-          ? `/api/stream/proxy?url=${encodeURIComponent(track.uri)}&ref=${encodeURIComponent(ref)}&v=2`
-          : null,
+        uri: track.uri ? streamProxy.proxiedUrl(track.uri, ref) : null,
       }));
 
       return {
@@ -379,8 +378,10 @@ router.get(
       };
     });
 
-    // Asynchronously pre-warm master playlist and variants in memory so player gets them in 1ms
-    if (result?.rawMasterUrl) {
+    // Asynchronously pre-warm master playlist and variants in memory so player gets them in 1ms.
+    // Only useful when this process serves the proxy: with STREAM_PROXY_BASE set,
+    // the player fetches playlists from the other server, which has its own cache.
+    if (result?.rawMasterUrl && !streamProxy.proxyBase()) {
       streamProxy.prewarmPlaylist(result.rawMasterUrl, result.referer).catch(() => {});
     }
 

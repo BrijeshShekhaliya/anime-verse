@@ -1,0 +1,41 @@
+# systemd unit for the standalone HLS video proxy (stream-server.js).
+# Install: see the README, "Video proxy on a VPS".
+#   sudo cp deploy/stream-proxy/animeverse-stream.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now animeverse-stream
+
+[Unit]
+Description=AnimeVerse HLS video proxy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=animeverse
+Group=animeverse
+WorkingDirectory=/opt/animeverse-stream
+Environment=NODE_ENV=production
+Environment=PORT=8080
+# Only Caddy (on the same machine) talks to Node; the internet reaches Caddy on 443.
+Environment=HOST=127.0.0.1
+Environment=ALLOWED_ORIGINS=https://watchanimeverse.dpdns.org
+# Check the path with `command -v node`.
+ExecStart=/usr/bin/node stream-server.js
+Restart=always
+RestartSec=2
+LimitNOFILE=65536
+
+# Hardening: the proxy only needs the network and to read its own files.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

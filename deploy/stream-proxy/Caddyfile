@@ -1,0 +1,10 @@
+# HTTPS in front of the stream proxy. The site is served over HTTPS, so the
+# browser only loads video from an HTTPS address. Caddy gets and renews the
+# certificate by itself; ports 80 and 443 must be open.
+#
+# Replace stream.example.com with the DNS name you pointed at this VPS,
+# then: sudo cp deploy/stream-proxy/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+
+stream.example.com {
+	reverse_proxy 127.0.0.1:8080
+}

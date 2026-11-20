@@ -8,6 +8,7 @@
     "vercel-build": "echo 'Static and serverless build ready'",
     "start": "node server.js",
     "dev": "node --watch-path=server.js --watch-path=src server.js",
+    "stream": "node stream-server.js",
     "desktop": "electron electron-main.js",
     "test": "node --test tests/*.test.mjs"
   },

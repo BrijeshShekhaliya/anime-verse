@@ -1,0 +1,18 @@
+# Only deploy/stream-proxy/Dockerfile builds from this context, and it copies
+# just package*.json, stream-server.js and src/services.
+.git
+.github
+.claude
+.vercel
+.cache
+node_modules
+legacy
+public
+api
+scripts
+src/data
+src/views
+src/seo
+*.log
+.env
+.env.*
