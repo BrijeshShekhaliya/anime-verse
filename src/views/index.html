@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <script>
-    // Opening animation (public/intro.js): only on the first visit in a tab.
-    // Not on reloads, page changes inside the site, tabs opened in the
-    // background, or within 30 minutes of the visitor last using the site.
+    // Opening animation (public/intro.js): plays whenever the site is opened
+    // fresh, in a new tab or from a link on another site. Not on reloads,
+    // Back/Forward, page changes inside the site, or tabs opened in the background.
     (function () {
       try {
-        var d = document.documentElement, ls = localStorage, ss = sessionStorage;
-        var last = +ls.getItem('av-active') || 0;
-        var mark = function () { try { ls.setItem('av-active', String(Date.now())); } catch (e) {} };
-        mark();
-        setInterval(function () { if (!document.hidden) mark(); }, 60000);
-        addEventListener('pagehide', mark);
-        if (ss.getItem('av-intro')) return;
+        var d = document.documentElement, ss = sessionStorage;
+        var nav = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+        var type = nav ? nav.type : '';
+        var fromOtherSite = false;
+        try { fromOtherSite = !!document.referrer && new URL(document.referrer).origin !== location.origin; } catch (e) {}
+        var playedInTab = ss.getItem('av-intro');
         ss.setItem('av-intro', '1');
-        if (Date.now() - last < 1800000 || document.visibilityState === 'hidden') return;
+        if (type === 'reload' || type === 'back_forward') return;
+        if (playedInTab && !fromOtherSite) return; // still browsing the site in this tab
+        if (document.visibilityState === 'hidden') return; // opened in a background tab
         if (navigator.webdriver || /bot|crawl|spider|slurp|lighthouse|headless/i.test(navigator.userAgent)) return;
         d.classList.add('av-intro', 'av-intro-cover');
         var s = document.createElement('script');
-        s.src = '/intro.js?v=1';
+        s.src = '/intro.js?v=2';
         s.async = true;
         document.head.appendChild(s);
         // Never leave the page covered if the intro can't load.

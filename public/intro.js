@@ -5,8 +5,9 @@
 // header's own logo. The launch sound plays when the browser allows it.
 //
 // The small script in the page's <head> decides whether this runs at all: only
-// on the first visit in a tab, never on reloads, page changes inside the site
-// or tabs opened in the background. It also covers the page in black until
+// when the site is opened fresh (a new tab, or a link from another site),
+// never on reloads, Back/Forward, page changes inside the site or tabs
+// opened in the background. It also covers the page in black until
 // this takes over, so nothing flashes first.
 //
 // Same timeline as the app. Every movement is a precomputed transform/opacity
