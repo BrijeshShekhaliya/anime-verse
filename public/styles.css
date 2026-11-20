@@ -586,7 +586,11 @@ body.is-scrolling .card, body.is-scrolling .cw, body.is-scrolling .ep { pointer-
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9) !important;
 }
 .season-sheet-header { display: none; }
-.ep-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 26px 18px; transition: opacity var(--fast); }
+/* Four episodes a row on desktop and laptop screens, three then two on tablets;
+   phones switch to one per row with the thumbnail beside the text (below). */
+.ep-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px 18px; transition: opacity var(--fast); }
+@media (max-width: 1100px) { .ep-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .ep-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ep-list.refreshing { opacity: 0.4; }
 .ep { display: flex; flex-direction: column; gap: 10px; min-width: 0; animation: rise 420ms var(--ease-out) both; animation-delay: calc(var(--i, 0) * 30ms); }
 .ep-thumb { position: relative; aspect-ratio: 16 / 9; border-radius: var(--r-md); overflow: hidden; background: var(--surface-2); flex: none; }
