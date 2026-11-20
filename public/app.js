@@ -67,7 +67,21 @@
     bookmarkOn: svg(`<path ${solid} d="${BOOKMARK}"/>`),
     history: svg('<path d="M4 12a8 8 0 102.4-5.7"/><path d="M4 4.5v4h4"/><path d="M12 8v4.5l3 1.8"/>'),
     trash: svg('<path d="M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7"/>'),
+    phone: svg(`<rect ${tint} x="6" y="2.5" width="12" height="19" rx="3"/><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/>`),
   };
+
+  // ---------- The Android app ----------
+  // The app (animeverse-app) uses the same title ids, so an anime page here
+  // can open the same page there. Without the app installed, Android's browser
+  // goes to /app instead, which explains how to get it.
+  const APP_PACKAGE = 'com.anonymous.animeverseapp';
+  const UA = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = !isIOS && /Android/i.test(UA);
+  document.documentElement.classList.toggle('is-ios', isIOS);
+  document.documentElement.classList.toggle('is-android', isAndroid);
+  const appLink = (path) =>
+    `intent://${path}#Intent;scheme=animeverse;package=${APP_PACKAGE};S.browser_fallback_url=${encodeURIComponent(`${location.origin}/app`)};end`;
 
   // Detect season number from anime title or romaji (e.g. "Season 2", "2nd Season", "Part 3", "2", "II")
   function detectSeasonNumber(title, romaji = '') {
@@ -3224,6 +3238,7 @@
             ${actionBookmarkHtml(a)}
             <button type="button" class="action" id="shareBtn">${icon.share}<span>Share</span></button>
             ${a.trailer ? `<button type="button" class="action" data-trailer="${esc(a.trailer)}">${icon.play}<span>Trailer</span></button>` : ''}
+            ${isAndroid ? `<a class="action action-app" href="${esc(appLink(`anime/${encodeURIComponent(a.id)}`))}">${icon.phone}<span>Open in app</span></a>` : ''}
           </div>
           ${a.nextEpisode ? `<div class="countdown">${icon.clock}<span>Episode ${a.nextEpisode.episode} airs in <b data-countdown="${a.nextEpisode.airingAt}">${formatCountdown(a.nextEpisode.airingAt - Date.now() / 1000)}</b></span></div>` : ''}
           ${a.synopsis ? `<div class="dh-syn"><p class="dh-synopsis">${esc(a.synopsis)}</p><button type="button" class="link-accent" id="moreDetails">More Details</button></div>` : ''}
@@ -3924,6 +3939,64 @@
     return 'Privacy Policy & Terms — AnimeVerse';
   }
 
+  // ---------- "Try the app" banner (Android phones) ----------
+  // A small card above the tab bar on browsing pages, a few seconds after the
+  // page settles. "Not now" hides it for a week; anyone who has already
+  // downloaded the app (from /app) never sees it again.
+  const AppBanner = (() => {
+    const SNOOZE_KEY = 'av-app-banner';
+    const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
+    const ROUTES = new Set(['home', 'browse', 'schedule', 'library', 'article']);
+    let el = null;
+    let timer = null;
+    let closedThisVisit = false;
+
+    const stored = (key) => {
+      try { return Number(localStorage.getItem(key) || 0); } catch { return 0; }
+    };
+    const wanted = () =>
+      isAndroid && phone() && !closedThisVisit && ROUTES.has(document.body.dataset.route)
+      && !stored('av-app-got') && Date.now() - stored(SNOOZE_KEY) > SNOOZE_MS;
+
+    function build() {
+      el = document.createElement('aside');
+      el.className = 'app-banner';
+      el.setAttribute('aria-label', 'AnimeVerse app');
+      el.innerHTML = `
+        <img src="/brand/logo-96.png" width="44" height="44" alt="">
+        <div class="app-banner-text"><b>Better in the app</b><span>Smoother player, swipe controls, made for your phone</span></div>
+        <a class="app-banner-go" href="/app">Try it</a>
+        <button type="button" class="app-banner-x" aria-label="Not now">${icon.x}</button>`;
+      el.querySelector('.app-banner-x').addEventListener('click', () => {
+        closedThisVisit = true;
+        try { localStorage.setItem(SNOOZE_KEY, String(Date.now())); } catch { /* storage blocked */ }
+        hide();
+      });
+      el.querySelector('.app-banner-go').addEventListener('click', () => { closedThisVisit = true; hide(); });
+      document.body.appendChild(el);
+    }
+    function show() {
+      // Wait for the opening animation, and never cover the search.
+      if (document.documentElement.classList.contains('av-intro') || !overlay.hidden) {
+        timer = setTimeout(show, 1500);
+        return;
+      }
+      if (!wanted()) return;
+      if (!el) build();
+      requestAnimationFrame(() => el.classList.add('show'));
+    }
+    function hide() {
+      el?.classList.remove('show');
+    }
+    function update() {
+      clearTimeout(timer);
+      if (!wanted()) { hide(); return; }
+      if (el?.classList.contains('show')) return;
+      timer = setTimeout(show, 3500);
+    }
+    return { update };
+  })();
+
   // ---------- Router ----------
   const cleanup = [];
   let renderToken = 0;
@@ -3963,6 +4036,7 @@
     heroCtl = null;
 
     const path = location.pathname;
+    if (path !== '/app') window.AVGetApp?.unmount();
     const params = new URLSearchParams(location.search);
     const route = routes.find((r) => r.re.test(path));
     setActiveNav(route?.nav);
@@ -3977,13 +4051,16 @@
     // Article pages (guides, keyword pages, A–Z lists) arrive fully rendered.
     if (!route) {
       if (ssrStatic && ssrStatic.path === path) {
-        document.body.dataset.route = 'article';
+        document.body.dataset.route = path === '/app' ? 'getapp' : 'article';
         if (!isFirst) {
           app.innerHTML = ssrStatic.html;
           document.title = ssrStatic.title;
           window.scrollTo({ top: restoreY ?? 0, behavior: 'instant' });
         }
+        // The "Get the app" page's motion (public/getapp.js, loaded with that page).
+        if (path === '/app') window.AVGetApp?.mount(app);
         updateNav();
+        AppBanner.update();
         return;
       }
       // Another server-rendered page: let the server send it.
@@ -4013,6 +4090,7 @@
       progress.done();
       return;
     }
+    AppBanner.update();
     try {
       const title = await route.run(view, path.match(route.re), params);
       if (token === renderToken && title && seoLockToken !== token) document.title = title;
@@ -4074,7 +4152,7 @@
   // Transparent bar over the hero, solid black once the page scrolls (like the app).
   const toTop = document.getElementById('toTop');
   function updateNav() {
-    nav.classList.toggle('solid', window.scrollY > 40 || !$('.hero, .dh', app));
+    nav.classList.toggle('solid', window.scrollY > 40 || !$('.hero, .dh, .ga-hero', app));
     toTop.classList.toggle('show', window.scrollY > 1200);
   }
   toTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));

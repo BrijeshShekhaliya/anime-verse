@@ -2,6 +2,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const app = require('../server.js');
@@ -144,6 +145,81 @@ test('keyword pages, A–Z lists and guides render as static article pages', asy
   assert.ok(ldOf(hindi.body).some((l) => l['@type'] === 'FAQPage'));
 });
 
+test('the "Get the app" page is fully server-rendered with its own styles, script and app data', async () => {
+  const r = await get('/app');
+  assert.equal(r.status, 200);
+  assert.match(r.body, /data-ssr="static"/);
+  assert.match(r.body, /<title>Download the AnimeVerse App for Android/);
+  assert.match(r.body, /<link rel="canonical" href="http:\/\/127\.0\.0\.1:\d+\/app">/);
+  assert.doesNotMatch(r.body, /<meta name="robots" content="noindex/);
+  assert.match(r.body, /<link rel="stylesheet" href="\/getapp\.css\?v=\d+">/);
+  assert.match(r.body, /<script src="\/getapp\.js\?v=\d+" defer><\/script>/);
+  assert.match(r.body, /<h1 class="ga-title[^"]*" id="ga-title"[^>]*>AnimeVerse is/);
+  // Every download button goes through the redirect, so the file can move freely.
+  const downloads = [...r.body.matchAll(/data-ga-download="[^"]+"/g)].length;
+  const directLinks = [...r.body.matchAll(/href="\/download\/android"/g)].length;
+  assert.ok(downloads >= 2 && downloads === directLinks, 'all download buttons use /download/android');
+  for (const shot of ['home', 'detail', 'player', 'settings']) assert.match(r.body, new RegExp(`/app-shots/${shot}\\.webp`));
+  const ld = ldOf(r.body);
+  const appLd = ld.find((l) => l['@type'] === 'MobileApplication');
+  assert.ok(appLd, 'MobileApplication structured data');
+  assert.equal(appLd.offers.price, '0');
+  assert.match(appLd.downloadUrl, /\/download\/android$/);
+  assert.ok(ld.some((l) => l['@type'] === 'FAQPage'));
+  // Plain words for visitors: no file-type jargon on the page.
+  const text = r.body.replace(/<script[\s\S]*?<\/script>/g, '').replace(/<[^>]+>/g, ' ');
+  assert.doesNotMatch(text, /\bAPK\b|sideload|\.apk/i);
+});
+
+test('/download/android redirects to the app file, which APP_DOWNLOAD_URL can move', async () => {
+  const saved = process.env.APP_DOWNLOAD_URL;
+  try {
+    delete process.env.APP_DOWNLOAD_URL;
+    const r = await get('/download/android');
+    assert.equal(r.status, 302);
+    assert.equal(r.location, '/download/AnimeVerse.apk');
+    assert.match(r.cacheControl, /s-maxage=300/);
+
+    process.env.APP_DOWNLOAD_URL = 'https://files.example.com/AnimeVerse-1.0.1.apk';
+    assert.equal((await get('/download/android')).location, 'https://files.example.com/AnimeVerse-1.0.1.apk');
+    process.env.APP_DOWNLOAD_URL = 'javascript:alert(1)';
+    assert.equal((await get('/download/android')).location, '/download/AnimeVerse.apk', 'only web addresses are accepted');
+
+    const short = await get('/download');
+    assert.equal(short.status, 301);
+    assert.equal(short.location, '/app');
+  } finally {
+    if (saved === undefined) delete process.env.APP_DOWNLOAD_URL;
+    else process.env.APP_DOWNLOAD_URL = saved;
+  }
+});
+
+test('the app file ships with the site, downloads as a file, and the page states its real size', async () => {
+  const fs = require('node:fs');
+  const { APP } = require('../src/seo/app-page.js');
+  const bytes = fs.statSync(fileURLToPath(new URL('../public/download/AnimeVerse.apk', import.meta.url))).size;
+  assert.equal(Math.round(bytes / 1e6), APP.sizeMB, 'update APP.sizeMB in src/seo/app-page.js after replacing the file');
+
+  const res = await fetch(`${base}/download/AnimeVerse.apk`, { method: 'HEAD' });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('content-type'), 'application/vnd.android.package-archive');
+  assert.equal(res.headers.get('content-disposition'), 'attachment; filename="AnimeVerse.apk"');
+  assert.equal(Number(res.headers.get('content-length')), bytes);
+
+  // Vercel serves the same file with the same headers.
+  const vercel = JSON.parse(fs.readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  const rule = vercel.headers.find((h) => h.source.startsWith('/download/'));
+  const header = (k) => rule.headers.find((h) => h.key === k)?.value;
+  assert.equal(header('Content-Type'), 'application/vnd.android.package-archive');
+  assert.equal(header('Content-Disposition'), 'attachment; filename="AnimeVerse.apk"');
+});
+
+test('every page links to the app page from the top bar and footer', async () => {
+  const r = await get('/browse');
+  assert.match(r.body, /<a class="app-pill" href="\/app"/);
+  assert.match(r.body, /<a class="footer-app" href="\/app">/);
+});
+
 test('unknown pages are real 404s and trailing slashes redirect', async () => {
   const missing = await get('/no-such-page');
   assert.equal(missing.status, 404);
@@ -159,6 +235,7 @@ test('robots.txt and sitemaps are generated and well-formed', async () => {
   assert.match(robots.type, /text\/plain/);
   assert.match(robots.body, /Sitemap: http:\/\/127\.0\.0\.1:\d+\/sitemap\.xml/);
   assert.doesNotMatch(robots.body, /Disallow: \/api\/\n/, 'page data must stay crawlable for rendering');
+  assert.match(robots.body, /Disallow: \/download\//);
 
   const index = await get('/sitemap.xml');
   assert.match(index.type, /application\/xml/);
@@ -170,6 +247,7 @@ test('robots.txt and sitemaps are generated and well-formed', async () => {
   assert.match(pages.body, /\/watch-anime-in-hindi<\/loc>/);
   assert.match(pages.body, /\/blog\/naruto-watch-order<\/loc>/);
   assert.match(pages.body, /\/anime-list\/a<\/loc>/);
+  assert.match(pages.body, /\/app<\/loc>/);
 
   const anime = await get('/sitemaps/anime-1.xml');
   assert.match(anime.body, /<urlset/);

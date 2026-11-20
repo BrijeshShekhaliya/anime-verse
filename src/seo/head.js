@@ -35,6 +35,9 @@ function headTags(page, ctx) {
     // Tells the app these tags already match this URL, so it leaves them alone on first load.
     `<meta name="ssr-path" content="${esc(ctx.path)}">`,
   ].filter(Boolean);
+  // Page-specific stylesheet and script (e.g. the /app page's motion).
+  (page.styles || []).forEach((href) => tags.push(`<link rel="stylesheet" href="${esc(href)}">`));
+  (page.scripts || []).forEach((src) => tags.push(`<script src="${esc(src)}" defer></script>`));
   (page.jsonLd || []).filter(Boolean).forEach((ld, i) => {
     tags.push(`<script type="application/ld+json"${i === 0 ? ' id="seoStructuredData"' : ' class="seo-ld"'}>${safeJson(ld)}</script>`);
   });

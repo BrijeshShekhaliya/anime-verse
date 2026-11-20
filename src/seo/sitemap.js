@@ -33,6 +33,7 @@ function pagesSitemap(base) {
     { loc: `${base}/`, lastmod: d },
     { loc: `${base}/browse`, lastmod: d },
     { loc: `${base}/schedule`, lastmod: d },
+    { loc: `${base}/app` },
     ...Object.keys(landing.PAGES).map((p) => ({ loc: base + p, lastmod: d })),
     ...landing.animeListPaths().map((p) => ({ loc: base + p, lastmod: d })),
     { loc: `${base}/blog`, lastmod: blog.POSTS.map((p) => p.updated || p.published).sort().pop() },
@@ -58,11 +59,13 @@ Allow: /api/
 # Video segments and the raw player: nothing to index there.
 Disallow: /api/stream
 Disallow: /player/
+# The app download (a redirect to the file).
+Disallow: /download/
 
 Sitemap: ${base}/sitemap.xml
 `;
 }
 
-const totalUrls = () => index.all().length + landing.animeListPaths().length + Object.keys(landing.PAGES).length + blog.POSTS.length + 5;
+const totalUrls = () => index.all().length + landing.animeListPaths().length + Object.keys(landing.PAGES).length + blog.POSTS.length + 6;
 
 module.exports = { sitemapIndex, pagesSitemap, animeSitemap, robotsTxt, totalUrls, PER_FILE };

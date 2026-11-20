@@ -59,6 +59,12 @@ app.use(
     setHeaders(res, filePath) {
       const vendor = path.basename(filePath) === 'hls.min.js';
       res.setHeader('Cache-Control', vendor ? 'public, max-age=604800' : 'no-cache');
+      // The Android app (public/download): always a download, never a page. Same headers as vercel.json.
+      if (filePath.endsWith('.apk')) {
+        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+        res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
+        res.setHeader('X-Robots-Tag', 'noindex');
+      }
     },
   })
 );

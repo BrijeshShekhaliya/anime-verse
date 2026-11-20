@@ -9,6 +9,7 @@ const { siteUrlFor } = require('./util');
 const pages = require('./pages');
 const landing = require('./landing');
 const blog = require('./blog');
+const appPage = require('./app-page');
 const sitemap = require('./sitemap');
 const { renderHtml } = require('./head');
 
@@ -35,6 +36,7 @@ async function resolve(ctx) {
   if (p === '/browse') return pages.browsePage(ctx);
   if (p === '/schedule') return pages.schedulePage(ctx);
   if (p === '/library') return pages.appShellPage('My List & Continue Watching — AnimeVerse', 'Your anime list and watch progress, saved on this device.', '/library');
+  if (p === '/app') return appPage.appPage(ctx);
   if (p === '/privacy') return pages.appShellPage('Privacy Policy & Terms — AnimeVerse', 'How AnimeVerse handles your data: no accounts, no tracking, and everything stored on your own device.', '/privacy', undefined);
   if (/^\/player\/[\w-]{1,40}$/.test(p)) return pages.appShellPage('Player — AnimeVerse', 'Video player.', null);
   if (landing.PAGES[p]) return landing.landingPage(ctx, p);
@@ -93,6 +95,15 @@ function sendXml(res, xml, seconds = 6 * 60 * 60) {
 }
 
 function mount(app) {
+  // Every "Download for Android" button. The file itself can live anywhere
+  // (APP_DOWNLOAD_URL), so moving it never means editing the page.
+  app.get(appPage.DOWNLOAD_PATH, (req, res) => {
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300');
+    res.setHeader('X-Robots-Tag', 'noindex');
+    res.redirect(302, appPage.downloadUrl());
+  });
+  app.get(['/download', '/get-app'], (req, res) => res.redirect(301, '/app'));
+
   app.get('/robots.txt', (req, res) => {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', cacheHeader(24 * 60 * 60));

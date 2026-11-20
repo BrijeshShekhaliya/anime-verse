@@ -44,7 +44,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=7.4">
+  <link rel="stylesheet" href="/styles.css?v=7.5">
   <link rel="stylesheet" href="/player.css?v=7.2">
 </head>
 <body>
@@ -71,6 +71,10 @@
         <span class="search-hint"><span class="search-hint-text" id="searchHint">Search anime</span></span>
         <kbd>/</kbd>
       </button>
+      <a class="app-pill" href="/app" aria-label="Get the AnimeVerse app for Android">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect fill="currentColor" stroke="none" opacity=".25" x="6" y="2.5" width="12" height="19" rx="3"/><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10.5 18.5h3"/></svg>
+        <span class="app-pill-long">Get the app</span><span class="app-pill-short">App</span>
+      </a>
     </div>
   </header>
 
@@ -90,6 +94,11 @@
           <span class="badge-chip">On-Device Storage</span>
           <span class="badge-chip">Non-Commercial Index</span>
         </div>
+        <a class="footer-app" href="/app">
+          <img src="/brand/logo-96.png" width="44" height="44" alt="" loading="lazy">
+          <span><small>Get the free app</small><b>AnimeVerse for Android</b></span>
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6.5l5.5 5.5-5.5 5.5" stroke-width="2.4"/></svg>
+        </a>
       </div>
       <div class="footer-cols">
         <div>
@@ -179,6 +188,6 @@
   </div>
 
   <script src="/hls.min.js" defer></script>
-  <script src="/app.js?v=7.3" defer></script>
+  <script src="/app.js?v=7.4" defer></script>
 </body>
 </html>
