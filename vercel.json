@@ -3,16 +3,34 @@
   "framework": null,
   "buildCommand": null,
   "outputDirectory": "public",
-  "cleanUrls": true,
+  "cleanUrls": false,
   "trailingSlash": false,
+  "functions": {
+    "api/ssr.js": {
+      "includeFiles": "{src/views/**,src/data/**}",
+      "maxDuration": 20
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api"
     },
     {
+      "source": "/robots.txt",
+      "destination": "/api/ssr?__path=/robots.txt"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/ssr?__path=/sitemap.xml"
+    },
+    {
+      "source": "/sitemaps/:file",
+      "destination": "/api/ssr?__path=/sitemaps/:file"
+    },
+    {
       "source": "/((?!api/|.*\\.[\\w]+$).*)",
-      "destination": "/index.html"
+      "destination": "/api/ssr?__path=/$1"
     }
   ],
   "headers": [

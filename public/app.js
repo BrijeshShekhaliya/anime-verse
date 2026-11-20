@@ -7,6 +7,20 @@
 
   const app = document.getElementById('app');
   const nav = document.getElementById('nav');
+
+  // ---------- Server-rendered page handoff (src/seo) ----------
+  // The server sends each URL with its own title, meta tags and structured data
+  // (<meta name="ssr-path">); the first render leaves those as they are, since
+  // that's what search engines index. Article pages (guides, A–Z lists) arrive
+  // fully rendered (data-ssr="static") and are kept. #seoExtra (language guide
+  // and FAQ under a title page) belongs to one URL and hides on other pages.
+  const SITE_BASE = (document.querySelector('link[rel="canonical"]')?.href.match(/^https?:\/\/[^/]+/) || [location.origin])[0];
+  let ssrHeadPath = document.querySelector('meta[name="ssr-path"]')?.content || null;
+  const ssrStatic = app.dataset.ssr === 'static' ? { path: location.pathname, html: app.innerHTML, title: document.title } : null;
+  const seoExtra = document.getElementById('seoExtra');
+  let seoLockToken = -1;
+  let firstRender = true;
+
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const phone = () => window.matchMedia('(max-width: 760px)').matches;
 
@@ -279,7 +293,9 @@
     const renderMenu = () => {
       const opts = options().filter((o) => !filter || o.textContent.toLowerCase().includes(filter));
       const searchable = options().length > 12;
+      const isSeason = wrap.classList.contains('season-select');
       menu.innerHTML = `
+        ${isSeason ? '<div class="season-sheet-header"><div class="season-sheet-pill"></div><span class="season-sheet-title">Select Season</span></div>' : ''}
         ${searchable ? `<div class="cs-search">${icon.search}<input type="text" placeholder="Type to filter…" value="${esc(filter)}" aria-label="Filter options"></div>` : ''}
         <div class="cs-list">${opts.map((o, i) => `
           <button type="button" class="cs-opt${o.selected ? ' on' : ''}" role="option" aria-selected="${o.selected}" data-value="${esc(o.value)}" style="--i:${Math.min(i, 12)}">
@@ -316,7 +332,8 @@
       wrap.classList.add('open');
       btn.setAttribute('aria-expanded', 'true');
       const r = btn.getBoundingClientRect();
-      wrap.classList.toggle('up', window.innerHeight - r.bottom < 280 && r.top > 320);
+      const isSeason = wrap.classList.contains('season-select');
+      wrap.classList.toggle('up', !isSeason && window.innerHeight - r.bottom < 280 && r.top > 320);
       wrap.classList.toggle('right', r.left + 240 > window.innerWidth);
       openDropdown = ctl;
       const items = visible();
@@ -375,7 +392,10 @@
     return ctl;
   }
   document.addEventListener('pointerdown', (e) => {
-    if (openDropdown && !openDropdown.wrap.contains(e.target)) openDropdown.close();
+    if (!openDropdown) return;
+    if (e.target === openDropdown.wrap || !openDropdown.wrap.contains(e.target)) {
+      openDropdown.close();
+    }
   });
 
   // ---------- Shared fragments (the app's components) ----------
@@ -407,6 +427,68 @@
   }
 
   // TMDB serves each picture in several sizes: let the browser take the one it needs.
+  // ---------- Dynamic Client-side SEO ----------
+  function applyClientSeo({
+    title,
+    description,
+    image,
+    canonicalPath,
+    type = 'website',
+    structuredData = null,
+  } = {}) {
+    // First load of a server-rendered URL: its head tags are already right.
+    if (seoLockToken === renderToken) return;
+    const fullTitle = title ? (title.includes('AnimeVerse') ? title : `${title} — AnimeVerse`) : 'Watch Anime Online Free — English Sub, Dub & Hindi | AnimeVerse';
+    document.title = fullTitle;
+    $$('script.seo-ld, meta[name="ssr-path"]').forEach((el) => el.remove());
+
+    const setMeta = (attr, key, val) => {
+      if (!val) return;
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', val);
+    };
+
+    if (description) {
+      setMeta('name', 'description', description);
+      setMeta('property', 'og:description', description);
+      setMeta('name', 'twitter:description', description);
+    }
+    setMeta('property', 'og:title', fullTitle);
+    setMeta('name', 'twitter:title', fullTitle);
+    setMeta('property', 'og:type', type);
+
+    if (image) {
+      setMeta('property', 'og:image', image);
+      setMeta('name', 'twitter:image', image);
+    }
+
+    const canonicalUrl = `${SITE_BASE}${canonicalPath || location.pathname}`;
+    setMeta('property', 'og:url', canonicalUrl);
+    let link = document.querySelector('link[rel="canonical"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      document.head.appendChild(link);
+    }
+    link.setAttribute('href', canonicalUrl);
+
+    let script = document.getElementById('seoStructuredData');
+    if (structuredData) {
+      if (!script) {
+        script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.id = 'seoStructuredData';
+        document.head.appendChild(script);
+      }
+      script.textContent = JSON.stringify(structuredData);
+    }
+  }
+
   const TMDB_SIZED = /\/t\/p\/(w\d+|original)\//;
   const tmdbSize = (url, size) => (url && TMDB_SIZED.test(url) ? url.replace(TMDB_SIZED, `/t/p/${size}/`) : url);
   function posterImg(a, i = 0, sizes = '(max-width: 760px) 124px, 190px') {
@@ -415,7 +497,7 @@
     const set = TMDB_SIZED.test(src)
       ? ` srcset="${esc(tmdbSize(src, 'w342'))} 342w, ${esc(tmdbSize(src, 'w500'))} 500w" sizes="${sizes}"`
       : a.image2x && a.image2x !== src ? ` srcset="${esc(src)} 1x, ${esc(a.image2x)} 2x"` : '';
-    return `<img src="${esc(src)}"${set} alt="" loading="${i < 8 ? 'eager' : 'lazy'}" decoding="async"${i < 4 ? ' fetchpriority="high"' : ''}>`;
+    return `<img src="${esc(src)}"${set} alt="${esc(a.title || 'Anime')} poster" loading="${i < 8 ? 'eager' : 'lazy'}" decoding="async"${i < 4 ? ' fetchpriority="high"' : ''}>`;
   }
 
   // The app's poster card: 2:3 picture (Airing / Upcoming pill, Top-10 number),
@@ -480,7 +562,7 @@
     const card = `
       <a class="cw${compact ? ' compact' : ''}" href="${esc(href)}" data-link style="--i:${Math.min(i, 8)}" aria-label="Continue ${esc(a.title)}, episode ${st.targetEp}">
         <div class="cw-art">
-          ${art ? `<img src="${esc(tmdbSize(art, 'w780'))}" alt="" loading="lazy" decoding="async">` : ''}
+          ${art ? `<img src="${esc(tmdbSize(art, 'w780'))}" alt="${esc(a.title || 'Anime')} Episode ${st.targetEp}" loading="lazy" decoding="async">` : ''}
           <span class="cw-ep">${st.finished ? 'FINISHED' : `EP ${st.targetEp}`}</span>
           <span class="cw-play">${icon.play}</span>
           ${compact ? '' : `<div class="cw-info"><strong>${esc(a.title)}</strong><span>${line}${detail}</span></div>`}
@@ -666,7 +748,7 @@
     const set = TMDB_SIZED.test(src)
       ? ` srcset="${esc(tmdbSize(src, 'w780'))} 780w, ${esc(tmdbSize(src, 'w1280'))} 1280w, ${esc(tmdbSize(src, 'original'))} 2400w" sizes="100vw"`
       : '';
-    return `<img class="${cls}" src="${esc(tmdbSize(src, 'w1280'))}"${set} alt="" decoding="async"${eager ? ' fetchpriority="high"' : ' loading="lazy"'}>`;
+    return `<img class="${cls}" src="${esc(tmdbSize(src, 'w1280'))}"${set} alt="${esc(a.title || 'Anime')} backdrop" decoding="async"${eager ? ' fetchpriority="high"' : ' loading="lazy"'}>`;
   }
 
   // Official title logo when TMDB has one, the title in big type otherwise.
@@ -799,7 +881,25 @@
     const season = data.seasonNow?.[0];
     const dubbed = [...data.popular, ...data.topRated].filter((a, i, arr) => a.languages?.dub && arr.findIndex((b) => b.id === a.id) === i);
     const cont = Library.continueList();
+    applyClientSeo({
+      title: 'Watch Anime Online Free — English Sub, Dub & Hindi | AnimeVerse',
+      description: 'Watch anime online free in HD on AnimeVerse: new episodes, classics and movies in Japanese with English subtitles, English dub and Hindi. No sign-up, no tracking.',
+      canonicalPath: '/',
+      type: 'website',
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'AnimeVerse',
+        url: `${SITE_BASE}/`,
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${SITE_BASE}/browse?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
+    });
     view.innerHTML = `
+      <h1 class="sr-only">Watch Anime Online Free — AnimeVerse</h1>
       ${heroHtml(data.spotlight)}
       <div class="rows${data.spotlight?.length ? '' : ' no-hero'}">
         ${cont.length ? rowHtml({ title: 'Continue Watching', more: '/library', html: cont.slice(0, 12).map((p, i) => continueCardHtml(p, i)).join(''), cls: 'continue' }) : ''}
@@ -1283,6 +1383,14 @@
       storageKeyExactTime,
       renderEpisodeCardsHtml,
       epData,
+    });
+
+    applyClientSeo({
+      title: `Watch Episode ${currentEp}: ${a.title} — AnimeVerse`,
+      description: `Watch ${a.title} Episode ${currentEp} in 1080p with multi-audio sub/dub and zero buffering on AnimeVerse.`,
+      image: a.banner || a.image,
+      canonicalPath: `/watch/${a.id}?season=${viewingSeason}&ep=${currentEp}`,
+      type: 'video.episode',
     });
 
     return `Watch E${currentEp}: ${a.title} — AnimeVerse`;
@@ -2869,7 +2977,7 @@
     const cards = rel.map((r, i) => {
       const inner = `
         <div class="poster${r.image ? '' : ' no-img'}" data-title="${esc(r.title)}">
-          ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy" decoding="async">` : ''}
+          ${r.image ? `<img src="${esc(r.image)}" alt="${esc(r.title || 'Anime')}" loading="lazy" decoding="async">` : ''}
           <span class="pill card-tag">${esc(r.relation)}</span>
         </div>
         <h3 class="card-title">${esc(r.title)}</h3>
@@ -3005,7 +3113,7 @@
     const still = ep.still_path ? tmdbSize(ep.still_path, 'w500') : null;
     const body = `
       <div class="ep-thumb${still ? '' : ' no-img'}">
-        ${still ? `<img src="${esc(still)}" alt="" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async">` : ''}
+        ${still ? `<img src="${esc(still)}" alt="${esc(a.title || 'Anime')} Episode ${n}${name ? ` - ${esc(name)}` : ''}" loading="${i < 4 ? 'eager' : 'lazy'}" decoding="async">` : ''}
         ${ep.runtime ? `<span class="ep-dur">${ep.runtime}m</span>` : ''}
         ${upcoming ? '<span class="ep-lock">Coming soon</span>' : `<span class="ep-play">${icon.play}</span>`}
         ${pct > 0 ? `<span class="ep-prog"><i style="--p:${Math.min(1, pct / 100).toFixed(3)}"></i></span>` : ''}
@@ -3146,7 +3254,33 @@
     enhance(view);
     loadEpisodes(view, a);
     loadExtras(view, id);
-    return `${a.title} — AnimeVerse`;
+
+    const cleanSynopsis = a.synopsis ? a.synopsis.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160) : '';
+    const isMovie = String(a.type).toLowerCase() === 'movie';
+    // Same title format as the server-rendered page (src/seo/pages.js).
+    const watchTitle = `Watch ${a.title} Online Free — English Sub${a.languages?.dub ? ' & Dub' : ''} | AnimeVerse`;
+    applyClientSeo({
+      title: watchTitle,
+      description: cleanSynopsis || `Discover ${a.title} ratings, episodes, release dates, and dubbing information on AnimeVerse.`,
+      image: a.banner || a.image,
+      canonicalPath: `/anime/${a.id}`,
+      type: isMovie ? 'video.movie' : 'video.tv_show',
+      structuredData: {
+        '@context': 'https://schema.org',
+        '@type': isMovie ? 'Movie' : 'TVSeries',
+        name: a.title,
+        alternateName: a.titleRomaji && a.titleRomaji !== a.title ? a.titleRomaji : undefined,
+        description: cleanSynopsis,
+        image: a.banner || a.image,
+        url: `${SITE_BASE}/anime/${a.id}`,
+        genre: Array.isArray(a.genres) ? a.genres : [],
+        startDate: a.year ? String(a.year) : undefined,
+        // No aggregateRating: Google only allows ratings collected on this site,
+        // and these scores come from AniList/MyAnimeList.
+      },
+    });
+
+    return watchTitle;
   }
 
   async function loadExtras(view, id) {
@@ -3166,7 +3300,7 @@
           <section class="d-section reveal">
             <h2 class="d-h">Characters &amp; Voice Cast</h2>
             <div class="char-grid">${characters.map((c) => `
-              <div class="char"><span class="char-img">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy">` : ''}</span><div><strong>${esc(c.name)}</strong><span>${esc(c.role)}${c.voiceActor ? ` · ${esc(c.voiceActor)}` : ''}</span></div></div>`).join('')}
+              <div class="char"><span class="char-img">${c.image ? `<img src="${esc(c.image)}" alt="${esc(c.name || 'Character')}" loading="lazy">` : ''}</span><div><strong>${esc(c.name)}</strong><span>${esc(c.role)}${c.voiceActor ? ` · ${esc(c.voiceActor)}` : ''}</span></div></div>`).join('')}
             </div>
           </section>`;
         enhance(chars);
@@ -3275,7 +3409,7 @@
       const qs = new URLSearchParams(Object.entries(state).filter(([, v]) => v));
       history.replaceState({}, '', `/browse${qs.toString() ? `?${qs}` : ''}`);
       $('#browseTitle', view).textContent = titleFor();
-      document.title = `${titleFor()} — AnimeVerse`;
+      if (seoLockToken !== renderToken) document.title = `${titleFor()} — AnimeVerse`;
       const chips = filterLabels();
       $('#activeFilters', view).innerHTML = chips
         .map(([k, label]) => `<button type="button" class="chip chip-x" data-clear="${k}">${esc(label)}${icon.x}</button>`)
@@ -3408,6 +3542,12 @@
     syncUi();
     load();
     if (params.get('focus') === '1') qInput.focus();
+    applyClientSeo({
+      title: `${titleFor()} — AnimeVerse`,
+      description: 'Explore trending, upcoming, and top-rated anime series and movies. Filter by genre, release season, and English dub status.',
+      canonicalPath: '/browse',
+      type: 'website',
+    });
     return `${titleFor()} — AnimeVerse`;
   }
 
@@ -3486,7 +3626,7 @@
           <a class="slot${past ? ' past' : ''}" href="/anime/${esc(a.id)}" data-link data-id="${esc(a.id)}" style="--i:${Math.min(i, 12)}">
             <time><b>${esc(hm)}</b><small>${esc(ampm || '')}</small></time>
             <span class="rail"><i></i></span>
-            <span class="slot-img${a.image ? '' : ' no-img'}">${a.image ? `<img src="${esc(tmdbSize(a.image, 'w185'))}" alt="" loading="lazy" decoding="async">` : ''}</span>
+            <span class="slot-img${a.image ? '' : ' no-img'}">${a.image ? `<img src="${esc(tmdbSize(a.image, 'w185'))}" alt="${esc(a.title || 'Anime')}" loading="lazy" decoding="async">` : ''}</span>
             <div class="slot-body">
               <h3>${esc(a.title)}</h3>
               ${a.nextEpisode ? `<p class="slot-ep">Episode ${a.nextEpisode.episode}</p>` : ''}
@@ -3541,6 +3681,12 @@
 
     requestAnimationFrame(() => movePill(true));
     await show();
+    applyClientSeo({
+      title: 'Weekly Anime Release Schedule — AnimeVerse',
+      description: 'Track the real-time weekly anime release timetable with episode countdowns, live broadcast airings, and simulcast schedules.',
+      canonicalPath: '/schedule',
+      type: 'website',
+    });
     return 'Schedule — AnimeVerse';
   }
 
@@ -3578,7 +3724,7 @@
              <div class="hist">${hist.map((h, i) => `
               <div class="hist-row" style="--i:${Math.min(i, 12)}">
                 <a href="/watch/${esc(h.id)}?season=${h.season || 1}&ep=${h.ep}" data-link class="hist-link">
-                  <span class="slot-img${h.anime.image ? '' : ' no-img'}">${h.anime.image ? `<img src="${esc(tmdbSize(h.anime.image, 'w185'))}" alt="" loading="lazy">` : ''}</span>
+                  <span class="slot-img${h.anime.image ? '' : ' no-img'}">${h.anime.image ? `<img src="${esc(tmdbSize(h.anime.image, 'w185'))}" alt="${esc(h.anime.title || 'Anime')}" loading="lazy">` : ''}</span>
                   <div><strong>${esc(h.anime.title)}</strong><span class="hist-ep">Episode ${h.ep}${h.season > 1 ? ` · Season ${h.season}` : ''}</span><small>${timeAgo(h.at)}</small></div>
                 </a>
                 <button type="button" class="x-btn" data-remove-history="${h.at}" aria-label="Remove from history">${icon.x}</button>
@@ -3622,6 +3768,12 @@
     });
     cleanup.push(Library.onChange(() => { if (view.isConnected) draw(); }));
     draw();
+    applyClientSeo({
+      title: 'My List & Continue Watching — AnimeVerse',
+      description: 'Your private anime watchlist, episode playback history, and saved favorites stored on your device without tracking.',
+      canonicalPath: '/library',
+      type: 'website',
+    });
     return 'My List — AnimeVerse';
   }
 
@@ -3643,6 +3795,146 @@
     };
   })();
 
+  // ---------- Privacy Policy & Terms ----------
+  async function privacyPage(view) {
+    view.innerHTML = `
+      <div class="privacy-wrap container page-top">
+        <div class="privacy-hero">
+          <div class="privacy-mascot-box">
+            <div class="mascot-speech">
+              <strong>Meet Astra!</strong>
+              <span>Your privacy is protected here. Your bookmarks and watch history never leave your browser!</span>
+            </div>
+            <img class="mascot-img" src="/brand/mascot-pointing.png" alt="AnimeVerse Mascot Astra pointing to privacy policy" width="380" height="500">
+          </div>
+          <div class="privacy-hero-text">
+            <span class="pill pill-accent">Legal Transparency</span>
+            <h1 class="privacy-title">Privacy Policy & Terms</h1>
+            <p class="privacy-subtitle">AnimeVerse is built by and for anime fans. We believe in absolute privacy: zero required accounts, zero personal tracking cookies, and 100% on-device decentralized storage.</p>
+            <div class="privacy-highlights">
+              <div class="ph-chip"><span class="ph-dot"></span> On-Device Storage Only</div>
+              <div class="ph-chip"><span class="ph-dot"></span> Zero Invasive Tracking</div>
+              <div class="ph-chip"><span class="ph-dot"></span> Non-Hosting Discovery Index</div>
+            </div>
+            <p class="privacy-date">${icon.clock}<span>Last Updated: November 2026</span></p>
+          </div>
+        </div>
+
+        <div class="privacy-toc" role="navigation" aria-label="Privacy Table of Contents">
+          <a class="toc-link" href="#disclaimer">1. Non-Hosting Disclaimer</a>
+          <a class="toc-link" href="#data">2. Data We Collect</a>
+          <a class="toc-link" href="#storage">3. Local Storage & Preferences</a>
+          <a class="toc-link" href="#sources">4. Third-Party Data Sources</a>
+          <a class="toc-link" href="#dmca">5. DMCA & Copyright</a>
+          <a class="toc-link" href="#security">6. Security & Contact</a>
+        </div>
+
+        <div class="privacy-cards">
+          <section class="p-card" id="disclaimer">
+            <div class="p-card-header">
+              <span class="p-num">01</span>
+              <h2>Non-Hosting Index & Discovery Disclaimer</h2>
+            </div>
+            <p>AnimeVerse operates exclusively as an index and discovery directory for anime enthusiasts. It organizes metadata, scheduled broadcasting dates, community ratings, and official sub/dub availability.</p>
+            <div class="p-alert">
+              <strong>Notice Regarding Media Files:</strong>
+              <p>AnimeVerse does <b>not</b> host, upload, scrape, encode, or store video media files, episodes, or audiovisual streams on any of its servers. All streams and video renditions delivered through our interfaces are supplied directly by decentralized, independent third-party servers. AnimeVerse has no affiliation with or control over external streaming hosts.</p>
+            </div>
+          </section>
+
+          <section class="p-card" id="data">
+            <div class="p-card-header">
+              <span class="p-num">02</span>
+              <h2>Data We Collect (Zero Personal Tracking)</h2>
+              <p>We respect your anonymity and believe privacy should be the default, not an option.</p>
+            </div>
+            <ul class="p-list">
+              <li><b>No Account Requirement:</b> You are not required to provide your name, email, credit card, or social login to browse anime, search catalogs, or watch content.</li>
+              <li><b>Zero Data Broker Tracking:</b> We do not collect or sell your browsing history, IP address, device fingerprints, or search queries to data brokers or advertising exchanges.</li>
+              <li><b>Ephemeral Server Logs:</b> Standard web server access logs (HTTP method, status code, response time) are used solely for real-time performance monitoring and DDoS prevention, and are automatically discarded.</li>
+            </ul>
+          </section>
+
+          <section class="p-card" id="storage">
+            <div class="p-card-header">
+              <span class="p-num">03</span>
+              <h2>Local Storage & User Preferences</h2>
+              <p>AnimeVerse relies exclusively on client-side HTML5 Web Storage (<code>localStorage</code>) to store your personal playback data locally on your own device:</p>
+            </div>
+            <div class="p-storage-grid">
+              <div class="p-storage-item">
+                <h4>Watch Progress</h4>
+                <p>Saved timestamps and episode numbers so you can continue watching right where you paused.</p>
+              </div>
+              <div class="p-storage-item">
+                <h4>"My List" Bookmarks</h4>
+                <p>Your bookmarked anime titles, completely private to your current browser.</p>
+              </div>
+              <div class="p-storage-item">
+                <h4>Player Customizations</h4>
+                <p>Volume levels, preferred audio language (SUB vs. DUB), and theatre mode state.</p>
+              </div>
+            </div>
+            <p class="p-tip">You have total control: clearing your browser data or cache immediately wipes all stored information from your device.</p>
+          </section>
+
+          <section class="p-card" id="sources">
+            <div class="p-card-header">
+              <span class="p-num">04</span>
+              <h2>Third-Party Data Sources & External Links</h2>
+              <p>To provide high-definition visuals, cast lists, and airing countdowns, AnimeVerse queries open community APIs:</p>
+            </div>
+            <ul class="p-list">
+              <li><b>AniList:</b> Synopsis summaries, character lists, voice actors, and airing schedules.</li>
+              <li><b>The Movie Database (TMDB):</b> High-resolution studio backdrops, official title logos, and episode stills.</li>
+              <li><b>Jikan / MyAnimeList:</b> Global community ratings, review metrics, and member rankings.</li>
+              <li><b>MAL-Dubs:</b> Verified database tracking English dubbed anime availability.</li>
+            </ul>
+            <p>Links to third-party services (such as official Crunchyroll links, social share sheets, or community forums) are subject to the privacy terms of those individual third parties.</p>
+          </section>
+
+          <section class="p-card" id="dmca">
+            <div class="p-card-header">
+              <span class="p-num">05</span>
+              <h2>DMCA & Copyright Inquiries</h2>
+              <p>AnimeVerse complies with the provisions of the Digital Millennium Copyright Act (17 U.S.C. &sect; 512) and international intellectual property laws.</p>
+              <p>Because AnimeVerse does not possess, store, or host any copyrighted audiovisual files, copyright owners seeking removal of hosted content should contact the actual hosting file server directly. However, if you are a copyright owner or authorized agent wishing to request removal of specific index links, please submit a formal request containing:</p>
+            </div>
+            <ul class="p-list">
+              <li>Identification of the copyrighted work claimed to have been infringed.</li>
+              <li>The exact URL / link on AnimeVerse where the material is indexed.</li>
+              <li>Your contact information (name, address, email, telephone number).</li>
+              <li>A statement of good faith belief and statement of accuracy under penalty of perjury.</li>
+            </ul>
+            <div class="p-contact-box">
+              <strong>DMCA Agent Contact:</strong>
+              <p>Email: <a href="mailto:dmca@animeverse.app">dmca@animeverse.app</a></p>
+            </div>
+          </section>
+
+          <section class="p-card" id="security">
+            <div class="p-card-header">
+              <span class="p-num">06</span>
+              <h2>Security & Contact Information</h2>
+              <p>AnimeVerse employs modern security protocols including HTTP Strict Transport Security (HSTS), Content Security Policies, TLS 1.3 encryption, and strict origin validation.</p>
+              <p>If you have any questions regarding this Privacy Policy or our open-source indexing architecture, feel free to reach out:</p>
+              <div class="p-contact-box">
+                <p>General Inquiries: <a href="mailto:privacy@animeverse.app">privacy@animeverse.app</a></p>
+                <p>Website: <a href="https://watchanimeverse.dpdns.org" target="_blank" rel="noopener">watchanimeverse.dpdns.org</a></p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>`;
+    applyClientSeo({
+      title: 'Privacy Policy & Terms of Service — AnimeVerse',
+      description: 'AnimeVerse transparent legal and privacy policy: zero account tracking, 100% on-device decentralized storage, and non-hosting discovery standards.',
+      canonicalPath: '/privacy',
+      type: 'website',
+    });
+    return 'Privacy Policy & Terms — AnimeVerse';
+  }
+
   // ---------- Router ----------
   const cleanup = [];
   let renderToken = 0;
@@ -3654,6 +3946,7 @@
     { re: /^\/browse\/?$/, nav: 'browse', run: (v, m, p) => browsePage(v, p) },
     { re: /^\/schedule\/?$/, nav: 'schedule', run: (v, m, p) => schedulePage(v, p) },
     { re: /^\/library\/?$/, nav: 'library', run: (v, m, p) => libraryPage(v, p) },
+    { re: /^\/privacy\/?$/, nav: null, kind: 'privacy', run: (v) => privacyPage(v) },
     // Player for licensed streams (public/player.js).
     { re: /^\/player\/([\w-]{1,40})\/?$/, nav: null, kind: 'watch', run: (v, m, p) => window.AVPlayer.mount(v, m[1], p, (fn) => cleanup.push(fn)) },
   ];
@@ -3686,6 +3979,31 @@
     setActiveNav(route?.nav);
     document.body.dataset.route = route?.nav || route?.kind || 'none';
 
+    const isFirst = firstRender;
+    firstRender = false;
+    if (seoExtra) seoExtra.hidden = seoExtra.dataset.path !== path;
+    seoLockToken = isFirst && ssrHeadPath === path ? token : -1;
+    ssrHeadPath = null;
+
+    // Article pages (guides, keyword pages, A–Z lists) arrive fully rendered.
+    if (!route) {
+      if (ssrStatic && ssrStatic.path === path) {
+        document.body.dataset.route = 'article';
+        if (!isFirst) {
+          app.innerHTML = ssrStatic.html;
+          document.title = ssrStatic.title;
+          window.scrollTo({ top: restoreY ?? 0, behavior: 'instant' });
+        }
+        updateNav();
+        return;
+      }
+      // Another server-rendered page: let the server send it.
+      if (!isFirst) {
+        window.location.reload();
+        return;
+      }
+    }
+
     progress.start();
     const old = $('.page', app);
     if (old && !keepScroll && !reduceMotion) {
@@ -3708,7 +4026,9 @@
     }
     try {
       const title = await route.run(view, path.match(route.re), params);
-      if (token === renderToken && title) document.title = title;
+      if (token === renderToken && title && seoLockToken !== token) document.title = title;
+      // The server's tags stay for this first view; later changes (filters) update them.
+      if (seoLockToken === token) seoLockToken = -1;
       if (token === renderToken) {
         progress.done();
         updateNav();
@@ -3729,14 +4049,27 @@
   function navigate(url, { replace = false, keepScroll = false } = {}) {
     window.__isAppNavigation = true;
     const target = new URL(url, location.origin);
+    const hash = target.hash;
     if (target.pathname + target.search === location.pathname + location.search && !replace) {
       window.__isAppNavigation = false;
-      if (!keepScroll) window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+      if (hash) {
+        const el = document.querySelector(hash);
+        if (el) el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+      } else if (!keepScroll) {
+        window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+      }
       return;
     }
     if (!replace) history.replaceState({ ...(history.state || {}), scroll: window.scrollY }, '');
-    history[replace ? 'replaceState' : 'pushState'](replace ? history.state : {}, '', target.pathname + target.search);
-    render({ keepScroll });
+    history[replace ? 'replaceState' : 'pushState'](replace ? history.state : {}, '', target.pathname + target.search + target.hash);
+    render({ keepScroll: Boolean(hash) || keepScroll }).then(() => {
+      if (hash) {
+        setTimeout(() => {
+          const el = document.querySelector(hash);
+          if (el) el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+        }, 60);
+      }
+    });
     setTimeout(() => { window.__isAppNavigation = false; }, 200);
   }
 
@@ -3812,7 +4145,7 @@
     const pending = a.posterPending && a.image;
     return `
       <a class="result" href="/anime/${esc(a.id)}" data-link data-id="${esc(a.id)}" style="--i:${i}">
-        <span class="result-img${a.image ? '' : ' no-img'}${pending ? ' pending' : ''}"${pending ? ` data-fallback="${esc(a.image)}"` : ''}>${a.image && !pending ? `<img src="${esc(tmdbSize(a.image, 'w185'))}" alt="" loading="eager" decoding="async">` : ''}</span>
+        <span class="result-img${a.image ? '' : ' no-img'}${pending ? ' pending' : ''}"${pending ? ` data-fallback="${esc(a.image)}"` : ''}>${a.image && !pending ? `<img src="${esc(tmdbSize(a.image, 'w185'))}" alt="${esc(a.title || 'Anime')}" loading="eager" decoding="async">` : ''}</span>
         <div><strong>${highlight(a.title, q)}</strong>
           <div class="meta">${scoreHtml(a)}${langHtml(a)}${factsOf(a).length ? `<span>${esc(factsOf(a).join(' · '))}</span>` : ''}</div>
           ${a.titleRomaji && a.titleRomaji !== a.title ? `<div class="alt">${highlight(a.titleRomaji, q)}</div>` : ''}

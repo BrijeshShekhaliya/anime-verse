@@ -5,6 +5,7 @@ const path = require('path');
 
 const animeRoutes = require('./src/routes/anime');
 const dubs = require('./src/services/dubs');
+const seo = require('./src/seo');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,13 +37,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// API data is for the app (and for search engines rendering it), not for search results.
+app.use('/api', (req, res, next) => {
+  res.setHeader('X-Robots-Tag', 'noindex');
+  next();
+});
 app.use('/api', animeRoutes);
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
 
+// robots.txt and the sitemaps are generated, so they always name the live site.
+seo.mount(app);
+
 // Static files: browsers keep a copy and only re-download when the file changed
 // (ETag check), so refreshes are fast but edits still show up immediately.
+// `index: false`: "/" is a rendered page like every other, not a static file.
 app.use(
   express.static(PUBLIC_DIR, {
+    index: false,
     etag: true,
     lastModified: true,
     setHeaders(res, filePath) {
@@ -52,12 +63,9 @@ app.use(
   })
 );
 
-// Client-side routes all serve the single-page app.
-app.use((req, res, next) => {
-  if (req.method !== 'GET') return next();
-  res.setHeader('Cache-Control', 'no-cache');
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
-});
+// Every page URL gets full server-rendered HTML (titles, structured data and
+// content) for search engines; the app takes over in the browser as before.
+app.use(seo.pageHandler);
 
 if (require.main === module) {
   dubs.start();

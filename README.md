@@ -61,3 +61,23 @@ Set `PROVIDER=anilist` to skip Jikan entirely.
 | `GET /api/status` | Active provider, dub list size, IMDb status |
 
 The earlier HLS player prototype is kept in `legacy/` for reference and is no longer served.
+
+## SEO (search engines and AI crawlers)
+
+Every page URL is rendered on the server (`src/seo/`) with its own title, description, canonical link, Open Graph tags, JSON-LD structured data and the page's content, so Google, Bing and AI crawlers see the full page without running JavaScript. The app then takes over in the browser exactly as before. On Vercel, page URLs, `robots.txt` and the sitemaps are routed through `api/ssr.js` (see `vercel.json`).
+
+- **Site address:** canonical links use `https://watchanimeverse.dpdns.org`. Set the `SITE_URL` environment variable to change it.
+- **Anime pages** (`/anime/:id`): synopsis, details, episode names, characters and voice cast, where to watch, related titles, a language guide (Japanese / English dub / Hindi) and FAQs, plus `TVSeries`/`Movie`, `BreadcrumbList` and `FAQPage` data.
+- **Keyword pages:** `/watch-anime`, `/watch-anime-free`, `/watch-anime-in-hindi`, `/watch-anime-in-english`, `/watch-anime-in-japanese`, `/watch-anime-in-tamil`, `/watch-anime-in-telugu`, `/watch-anime-movies`.
+- **Anime list A–Z:** `/anime-list`, `/anime-list/:letter`, `/anime-list/:letter/:page`, linking every title.
+- **Guides:** `/blog` and `/blog/:slug` (posts live in `src/seo/blog.js`).
+- Keyword pages, the A–Z list and the guides are deliberately not linked from the menus or footer; search engines find them through the sitemap and the links between them.
+- **Sitemaps:** `/sitemap.xml` is an index of `/sitemaps/pages.xml` and `/sitemaps/anime-N.xml` (5,000 titles each).
+
+The full title list comes from `src/data/anime-index.json`. Rebuild it every month or two to pick up new titles (about 20 minutes, kept under AniList's rate limit; don't run the tests at the same time):
+
+```powershell
+node scripts/build-anime-index.js
+```
+
+After deploying, submit `https://watchanimeverse.dpdns.org/sitemap.xml` in Google Search Console and Bing Webmaster Tools.

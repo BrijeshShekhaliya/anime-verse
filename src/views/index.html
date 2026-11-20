@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>AnimeVerse — Discover Anime</title>
-  <meta name="description" content="Discover trending anime, ratings, release schedules and which titles are available subbed or dubbed.">
+  <!--SEO_HEAD-->
   <meta name="theme-color" content="#000000">
   <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png">
   <link rel="icon" type="image/png" sizes="96x96" href="/brand/logo-96.png">
@@ -13,8 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=7.1">
-  <link rel="stylesheet" href="/player.css?v=7.0">
+  <link rel="stylesheet" href="/styles.css?v=7.3">
+  <link rel="stylesheet" href="/player.css?v=7.2">
 </head>
 <body>
   <a class="skip-link" href="#app">Skip to content</a>
@@ -43,7 +42,8 @@
     </div>
   </header>
 
-  <main id="app" tabindex="-1"></main>
+  <main id="app" tabindex="-1" data-ssr=""><!--SSR_MAIN--></main>
+  <!--SSR_EXTRA-->
 
   <footer class="footer">
     <div class="footer-inner">
@@ -52,27 +52,49 @@
           <img class="brand-logo" src="/brand/logo-96.png" width="36" height="36" alt="" loading="lazy">
           <span class="brand-word" aria-hidden="true"><span class="w-anime">ANIME</span><span class="w-verse">VERSE</span></span>
         </a>
-        <p class="footer-note">Anime discovery: ratings, schedules and sub/dub availability. AnimeVerse does not host or stream video. Use the official links on each title to watch.</p>
+        <p class="footer-note">Anime discovery: ratings, schedules, and sub/dub availability. AnimeVerse does not host or upload video files. Media is streamed from decentralized third-party servers. All trademarks and artwork belong to their respective owners.</p>
+        <div class="footer-badges">
+          <span class="badge-chip">Zero Tracking</span>
+          <span class="badge-chip">On-Device Storage</span>
+          <span class="badge-chip">Non-Commercial Index</span>
+        </div>
       </div>
       <div class="footer-cols">
         <div>
           <h4>Explore</h4>
-          <a href="/browse?order=score" data-link>Top rated</a>
-          <a href="/browse?status=airing" data-link>Airing now</a>
+          <a href="/browse?order=score" data-link>Top Rated</a>
+          <a href="/browse?status=airing" data-link>Airing Now</a>
           <a href="/browse?status=upcoming" data-link>Upcoming</a>
           <a href="/browse?type=movie" data-link>Movies</a>
-          <a href="/browse?dub=1" data-link>Dubbed</a>
+          <a href="/browse?dub=1" data-link>Dubbed Anime</a>
         </div>
         <div>
-          <h4>Data from</h4>
+          <h4>Legal & Privacy</h4>
+          <a href="/privacy" data-link>Privacy Policy</a>
+          <a href="/privacy#terms" data-link>Terms of Service</a>
+          <a href="/privacy#dmca" data-link>DMCA Notice</a>
+          <a href="/privacy#storage" data-link>Data & Storage</a>
+        </div>
+        <div>
+          <h4>Data Sources</h4>
           <a href="https://anilist.co" target="_blank" rel="noopener">AniList</a>
           <a href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a>
-          <a href="https://jikan.moe" target="_blank" rel="noopener">Jikan / MyAnimeList</a>
+          <a href="https://jikan.moe" target="_blank" rel="noopener">Jikan / MAL</a>
           <a href="https://github.com/MAL-Dubs/MAL-Dubs" target="_blank" rel="noopener">MAL-Dubs</a>
         </div>
       </div>
     </div>
-    <p class="footer-status" id="footerStatus"></p>
+    <div class="footer-bottom">
+      <div class="footer-bottom-inner container">
+        <p class="footer-copy">&copy; 2026 AnimeVerse. Made with passion for anime fans.</p>
+        <div class="footer-legal-links">
+          <a href="/privacy" data-link>Privacy Policy</a>
+          <span class="sep">&bull;</span>
+          <a href="/privacy#dmca" data-link>DMCA Disclaimer</a>
+        </div>
+      </div>
+      <p class="footer-status" id="footerStatus"></p>
+    </div>
   </footer>
 
   <!-- Phone tab bar, the same four tabs as the app. -->
@@ -125,6 +147,6 @@
   </div>
 
   <script src="/hls.min.js" defer></script>
-  <script src="/app.js?v=7.0" defer></script>
+  <script src="/app.js?v=7.3" defer></script>
 </body>
 </html>

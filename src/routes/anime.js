@@ -209,18 +209,17 @@ router.get(
   }, 'public, s-maxage=3600, stale-while-revalidate=86400')
 );
 
-router.get(
-  '/anime/:id/episodes',
-  handle(async (req) => {
-    const id = req.params.id;
+// Episode list (names, air dates, sub/dub flags) for one season of a title.
+// Shared by the API and the server-rendered anime pages (src/seo).
+async function getEpisodes(id, requestedSeason = null, { refresh = false } = {}) {
     const anime = await getDetail(id);
     const detectedSeason = artwork.detectSeasonNumber ? artwork.detectSeasonNumber(anime.title, anime.titleRomaji) : 1;
-    const season = Math.max(1, parseInt(req.query.season, 10) || detectedSeason || 1);
+    const season = Math.max(1, parseInt(requestedSeason, 10) || detectedSeason || 1);
     const isAiring = !!anime.airing;
     const cacheTtl = isAiring ? 15 * 60 : TTL.detail; // 15 mins for airing titles to reflect newly released & dubbed episodes
 
     const cacheKey = `episodes:${id}:s${season}`;
-    if (req.query.refresh === '1') {
+    if (refresh) {
       cache.store?.delete(cacheKey);
     }
 
@@ -296,7 +295,11 @@ router.get(
 
       return result;
     });
-  }, 'public, s-maxage=1800, stale-while-revalidate=86400')
+}
+
+router.get(
+  '/anime/:id/episodes',
+  handle((req) => getEpisodes(req.params.id, req.query.season, { refresh: req.query.refresh === '1' }), 'public, s-maxage=1800, stale-while-revalidate=86400')
 );
 
 router.get(
@@ -456,3 +459,7 @@ router.get('/status', (req, res) => {
 
 module.exports = router;
 module.exports.warmUp = warmUp;
+// Shared with the server-rendered pages (src/seo) so both use one cache.
+module.exports.getDetail = getDetail;
+module.exports.getEpisodes = getEpisodes;
+module.exports.getExtras = (id) => fresh(`extras:${id}`, TTL.detail, KEEP.detail, () => provider.extras(id));
