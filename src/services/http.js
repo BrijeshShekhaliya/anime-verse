@@ -23,16 +23,18 @@ const { isBackground } = require('./priority');
 
 // Rate limiter for an API: starts at most one request per `gapMs`, with up to
 // `maxInFlight` running at once. Visitors' requests always go before background
-// work (warm-up, cache refreshes), so nobody waits behind a refresh.
+// work (warm-up, cache refreshes), and background work never takes the last
+// slot, so a visitor never waits behind a slow or stuck refresh.
 function createThrottle(gapMs, maxInFlight = 3) {
   const queues = { now: [], later: [] };
   let inFlight = 0;
   let lastStart = 0;
   let timer = null;
+  const backgroundLimit = Math.max(1, maxInFlight - 1);
 
   const pump = () => {
     timer = null;
-    while (inFlight < maxInFlight && (queues.now.length || queues.later.length)) {
+    while (queues.now.length ? inFlight < maxInFlight : queues.later.length && inFlight < backgroundLimit) {
       const wait = lastStart + gapMs - Date.now();
       if (wait > 0) {
         timer = setTimeout(pump, wait);

@@ -13,7 +13,8 @@ const ssrHandler = require('../api/ssr.js');
 const FAKE_ID = '999999901';
 const FAKE = {
   id: FAKE_ID,
-  malId: Number(FAKE_ID),
+  // No MyAnimeList id, so the live dub list doesn't override the languages below.
+  malId: null,
   title: 'Test Blade Chronicle',
   titleRomaji: 'Tesuto Bureedo',
   titleJapanese: 'テストブレード',

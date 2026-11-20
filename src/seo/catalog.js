@@ -3,6 +3,7 @@
 
 const cache = require('../services/cache');
 const animeRoutes = require('../routes/anime');
+const dubs = require('../services/dubs');
 const { unique } = require('./util');
 
 // Titles people search for by name ("watch naruto in hindi"), so they always
@@ -126,8 +127,11 @@ async function detail(id, timeoutMs = 4500) {
   }
 }
 
+// Dub status is read from the live MAL-Dubs list when it's loaded, so a title
+// cached before the list arrived isn't stuck showing "no dub".
 function langInfo(a) {
-  const l = (a && a.languages) || {};
+  const live = a && a.malId && dubs.status().updatedAt ? dubs.languagesFor(a.malId) : null;
+  const l = live || (a && a.languages) || {};
   return {
     sub: l.sub !== false,
     dub: l.dub === 'full' ? 'full' : l.dub === 'partial' ? 'partial' : null,

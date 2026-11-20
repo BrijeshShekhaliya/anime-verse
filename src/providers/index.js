@@ -14,6 +14,7 @@ const anilist = require('./anilist');
 const dubs = require('../services/dubs');
 const franchise = require('../services/franchise');
 const art = require('../services/artwork');
+const { isBackground } = require('../services/priority');
 
 const SOURCES = { anilist, jikan };
 const PREFERRED = (process.env.PROVIDER || 'anilist').toLowerCase() === 'jikan' ? 'jikan' : 'anilist';
@@ -23,6 +24,10 @@ const breakers = Object.fromEntries(ORDER.map((name) => [name, { failures: 0, op
 let lastSource = null;
 
 function trip(name, err) {
+  // Background work (startup warm-up, cache refreshes) doesn't count: on Vercel
+  // a server is paused between requests, so its requests time out while paused,
+  // and that must not make visitors skip a healthy source.
+  if (isBackground()) return;
   const b = breakers[name];
   b.failures += 1;
   b.lastError = err.message;
@@ -39,9 +44,11 @@ function heal(name) {
   b.lastError = null;
 }
 
+// Healthy sources first; a source being skipped is still tried last, so a
+// visitor sees an error only when every source has actually failed.
 const healthyFirst = (names) => {
   const healthy = names.filter((n) => Date.now() >= breakers[n].openUntil);
-  return healthy.length ? healthy : names; // all open: still try, in order
+  return [...healthy, ...names.filter((n) => !healthy.includes(n))];
 };
 
 // Runs `method` on the first healthy source that has it.
@@ -81,6 +88,7 @@ function withLanguages(item) {
 // drops repeats of the same show, null leaves the list alone.
 async function list(method, mode, ...args) {
   let items = await run(method, args);
+  await dubs.ready();
   if (mode) items = franchise.collapse(items, mode);
   return (await art.withPosters(items)).map(withLanguages);
 }
@@ -118,7 +126,9 @@ module.exports = {
   // One request to one source. AniList-only ids (no MAL entry) can only come from AniList.
   async detail(id) {
     const only = String(id).startsWith('al') ? 'anilist' : undefined;
-    return withLanguages(await run('detail', [id], { only }));
+    const item = await run('detail', [id], { only });
+    await dubs.ready();
+    return withLanguages(item);
   },
 
   // Cast + recommendations: one AniList request; Jikan needs two, so it's the fallback.
@@ -136,6 +146,7 @@ module.exports = {
     }
     // Same 12 recommendations as the app's "More Like This".
     const recs = await art.withPosters(recommendations);
+    await dubs.ready();
     return { characters, recommendations: recs.map(withLanguages) };
   },
 
@@ -156,6 +167,7 @@ module.exports = {
       }
     }
     if (!result) throw lastErr;
+    await dubs.ready();
     // Every entry as AniList lists it (seasons included), like the app's Browse.
     // Don't hold the page for slow poster lookups (see withPosters).
     const withArt = await art.withPosters(result.items, { budgetMs });
@@ -169,3 +181,6 @@ module.exports = {
     return (await run('genres', [])).map((g) => g.name).sort();
   },
 };
+
+// For tests only.
+module.exports._breakers = { breakers, trip, heal, healthyFirst, ORDER };

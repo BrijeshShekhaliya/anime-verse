@@ -9,6 +9,7 @@
 const { SITE_NAME, esc, truncate, cleanSynopsis, paragraphs, unique, cap } = require('./util');
 const catalog = require('./catalog');
 const animeRoutes = require('../routes/anime');
+const dubs = require('../services/dubs');
 const R = require('./render');
 
 const DAY = 24 * 60 * 60;
@@ -155,7 +156,7 @@ function animeFaq(a, { streaming }) {
 }
 
 async function animePage(ctx, id, { watch = false } = {}) {
-  const { anime, notFound, unavailable } = await catalog.detail(id);
+  const [{ anime, notFound, unavailable }] = await Promise.all([catalog.detail(id), dubs.ready()]);
   if (notFound) return notFoundPage(ctx);
   if (!anime) {
     // Upstream is slow or down: a minimal page now, cached briefly, full page on the next visit.
@@ -305,7 +306,8 @@ async function animePage(ctx, id, { watch = false } = {}) {
     main,
     mode: 'spa',
     extra: watch ? '' : extra,
-    cdnSeconds: a.airing ? 2 * 60 * 60 : DAY,
+    // Without the dub list the language guide may be wrong: cache it only briefly.
+    cdnSeconds: !dubs.status().updatedAt ? 5 * 60 : a.airing ? 2 * 60 * 60 : DAY,
     jsonLd: [showLd, R.breadcrumbLd(crumbs, ctx.base), R.faqLd(faq)].filter(Boolean),
   };
 }

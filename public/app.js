@@ -131,13 +131,17 @@
     };
     const promise = (async () => {
       try {
+        // A server error or dropped connection is usually a blip (a server
+        // waking up, a rate limit): try twice more before showing an error.
         let data;
-        try {
-          data = await attempt();
-        } catch (err) {
-          if (err.status && err.status < 500) throw err; // 404 etc: a real answer
-          await new Promise((r) => setTimeout(r, 800));
-          data = await attempt();
+        for (const wait of [0, 800, 2000]) {
+          if (wait) await new Promise((r) => setTimeout(r, wait));
+          try {
+            data = await attempt();
+            break;
+          } catch (err) {
+            if ((err.status && err.status < 500) || wait === 2000) throw err; // 404 etc: a real answer
+          }
         }
         memo.set(path, { t: Date.now(), data });
         if (!path.includes('/stream/')) {

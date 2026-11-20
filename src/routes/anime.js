@@ -72,6 +72,8 @@ function handle(fn, cacheControl = null) {
     } catch (err) {
       console.error(`[api] ${req.originalUrl}: ${err.message}`);
       const status = typeof err.status === 'number' && err.status >= 400 && err.status < 600 ? err.status : 502;
+      // Never let the CDN keep an outage: only a real "not found" is cached, briefly.
+      res.set('Cache-Control', status >= 500 ? 'no-store' : 'public, max-age=0, s-maxage=300');
       res.status(status).json({ error: err.status === 400 ? err.message : 'Anime data is temporarily unavailable. Please try again shortly.' });
     }
   };
@@ -196,6 +198,8 @@ router.get(
       backdropHd: backdropHd,
       ...(art ? (isSeason ? { seasonCount: null, episodeCount: anime.episodes || null, tmdbStatus: anime.status || null } : artwork.seriesFacts(art, anime)) : {}),
       imdb: imdbRating,
+      // Live from the dub list, in case this title was cached before the list loaded.
+      ...(anime.malId && dubs.status().updatedAt ? { languages: dubs.languagesFor(anime.malId) } : {}),
     };
   }, 'public, s-maxage=3600, stale-while-revalidate=86400')
 );
