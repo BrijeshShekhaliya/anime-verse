@@ -9,7 +9,7 @@ const DEFAULT_ROBOTS = 'index, follow, max-image-preview:large, max-snippet:-1, 
 // JSON inside <script> must never contain "</script>" or HTML comment openers.
 const safeJson = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026');
 
-const absolute = (url, base) => (!url ? `${base}/brand/logo-192.png` : /^https?:\/\//.test(url) ? url : `${base}${url.startsWith('/') ? '' : '/'}${url}`);
+const absolute = (url, base) => (!url ? `${base}/brand/logo-512.png` : /^https?:\/\//.test(url) ? url : `${base}${url.startsWith('/') ? '' : '/'}${url}`);
 
 function headTags(page, ctx) {
   const title = esc(page.title || SITE_NAME);

@@ -78,6 +78,31 @@ test('home page is server-rendered with keyword title and structured data', asyn
   assert.match(r.cacheControl, /s-maxage=\d+/);
 });
 
+test('favicon and site name meet Google’s requirements', async () => {
+  const home = await get('/');
+  // Google only shows favicons that are a multiple of 48px square; the first icon must qualify.
+  const firstIcon = home.body.match(/<link rel="icon"[^>]*>/)[0];
+  assert.match(firstIcon, /href="\/favicon\.ico"/);
+  assert.match(firstIcon, /48x48/);
+  assert.match(home.body, /<link rel="manifest" href="\/site\.webmanifest">/);
+  assert.match(home.body, /<meta property="og:site_name" content="AnimeVerse">/);
+
+  const ico = await fetch(`${base}/favicon.ico`);
+  assert.equal(ico.status, 200);
+  const bytes = Buffer.from(await ico.arrayBuffer());
+  assert.equal(bytes.readUInt16LE(2), 1, 'ICO header');
+  const sizes = Array.from({ length: bytes.readUInt16LE(4) }, (_, i) => bytes[6 + i * 16] || 256);
+  assert.ok(sizes.includes(48), `favicon.ico has a 48px image (has ${sizes})`);
+
+  const manifest = await (await fetch(`${base}/site.webmanifest`)).json();
+  assert.equal(manifest.short_name, 'AnimeVerse');
+
+  const site = ldOf(home.body).find((l) => l['@type'] === 'WebSite');
+  assert.equal(site.name, 'AnimeVerse');
+  const org = ldOf(home.body).find((l) => l['@type'] === 'Organization');
+  assert.match(org.logo.url, /\/brand\/logo-512\.png$/);
+});
+
 test('anime page carries episodes, cast, language guide and valid structured data', async () => {
   const r = await get(`/anime/${FAKE_ID}`);
   assert.equal(r.status, 200);

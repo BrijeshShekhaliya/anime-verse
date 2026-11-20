@@ -76,7 +76,7 @@ function homePage(ctx) {
         '@id': `${ctx.base}/#organization`,
         name: SITE_NAME,
         url: `${ctx.base}/`,
-        logo: `${ctx.base}/brand/logo-192.png`,
+        logo: { '@type': 'ImageObject', url: `${ctx.base}/brand/logo-512.png`, width: 512, height: 512 },
       },
       R.itemListLd(catalog.row('trending'), ctx.base, 'Trending anime'),
     ],
