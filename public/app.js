@@ -435,10 +435,13 @@
     canonicalPath,
     type = 'website',
     structuredData = null,
+    view = null,
   } = {}) {
+    // A page that finished loading after you'd already left must not retitle the next one.
+    if (view && !view.isConnected) return;
     // First load of a server-rendered URL: its head tags are already right.
     if (seoLockToken === renderToken) return;
-    const fullTitle = title ? (title.includes('AnimeVerse') ? title : `${title} — AnimeVerse`) : 'Watch Anime Online Free — English Sub, Dub & Hindi | AnimeVerse';
+    const fullTitle = title ? (title.includes('AnimeVerse') ? title : `${title} — AnimeVerse`) : 'AnimeVerse: Watch Anime Online Free — English Sub, Dub & Hindi';
     document.title = fullTitle;
     $$('script.seo-ld, meta[name="ssr-path"]').forEach((el) => el.remove());
 
@@ -882,7 +885,8 @@
     const dubbed = [...data.popular, ...data.topRated].filter((a, i, arr) => a.languages?.dub && arr.findIndex((b) => b.id === a.id) === i);
     const cont = Library.continueList();
     applyClientSeo({
-      title: 'Watch Anime Online Free — English Sub, Dub & Hindi | AnimeVerse',
+      view,
+      title: 'AnimeVerse: Watch Anime Online Free — English Sub, Dub & Hindi',
       description: 'Watch anime online free in HD on AnimeVerse: new episodes, classics and movies in Japanese with English subtitles, English dub and Hindi. No sign-up, no tracking.',
       canonicalPath: '/',
       type: 'website',
@@ -890,6 +894,7 @@
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         name: 'AnimeVerse',
+        alternateName: ['Anime Verse', 'Watch AnimeVerse'],
         url: `${SITE_BASE}/`,
         potentialAction: {
           '@type': 'SearchAction',
@@ -899,7 +904,7 @@
       },
     });
     view.innerHTML = `
-      <h1 class="sr-only">Watch Anime Online Free — AnimeVerse</h1>
+      <h1 class="sr-only">AnimeVerse: Watch Anime Online Free</h1>
       ${heroHtml(data.spotlight)}
       <div class="rows${data.spotlight?.length ? '' : ' no-hero'}">
         ${cont.length ? rowHtml({ title: 'Continue Watching', more: '/library', html: cont.slice(0, 12).map((p, i) => continueCardHtml(p, i)).join(''), cls: 'continue' }) : ''}
@@ -913,7 +918,7 @@
       </div>`;
     enhance(view);
     heroCtl = startHero(view);
-    return 'AnimeVerse — Discover Anime';
+    return 'AnimeVerse: Watch Anime Online Free — English Sub, Dub & Hindi';
   }
 
   // ---------- Detail page helpers ----------
@@ -1386,6 +1391,7 @@
     });
 
     applyClientSeo({
+      view,
       title: `Watch Episode ${currentEp}: ${a.title} — AnimeVerse`,
       description: `Watch ${a.title} Episode ${currentEp} in 1080p with multi-audio sub/dub and zero buffering on AnimeVerse.`,
       image: a.banner || a.image,
@@ -3260,6 +3266,7 @@
     // Same title format as the server-rendered page (src/seo/pages.js).
     const watchTitle = `Watch ${a.title} Online Free — English Sub${a.languages?.dub ? ' & Dub' : ''} | AnimeVerse`;
     applyClientSeo({
+      view,
       title: watchTitle,
       description: cleanSynopsis || `Discover ${a.title} ratings, episodes, release dates, and dubbing information on AnimeVerse.`,
       image: a.banner || a.image,
@@ -3682,12 +3689,13 @@
     requestAnimationFrame(() => movePill(true));
     await show();
     applyClientSeo({
+      view,
       title: 'Weekly Anime Release Schedule — AnimeVerse',
       description: 'Track the real-time weekly anime release timetable with episode countdowns, live broadcast airings, and simulcast schedules.',
       canonicalPath: '/schedule',
       type: 'website',
     });
-    return 'Schedule — AnimeVerse';
+    return 'Weekly Anime Release Schedule — AnimeVerse';
   }
 
   // ---------- My List (Continue · My List · History) ----------

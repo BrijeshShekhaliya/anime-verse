@@ -70,7 +70,7 @@ test('canonical address: SITE_URL, then local host, then the live domain', () =>
 test('home page is server-rendered with keyword title and structured data', async () => {
   const r = await get('/');
   assert.equal(r.status, 200);
-  assert.match(r.body, /<title>Watch Anime Online Free — English Sub, Dub &amp; Hindi \| AnimeVerse<\/title>/);
+  assert.match(r.body, /<title>AnimeVerse: Watch Anime Online Free — English Sub, Dub &amp; Hindi<\/title>/);
   assert.match(r.body, /<link rel="canonical" href="http:\/\/127\.0\.0\.1:\d+\/">/);
   assert.match(r.body, /<main id="app" tabindex="-1" data-ssr="spa">/);
   assert.match(r.body, /id="seoExtra" data-path="\/"/);
@@ -97,8 +97,12 @@ test('favicon and site name meet Google’s requirements', async () => {
   const manifest = await (await fetch(`${base}/site.webmanifest`)).json();
   assert.equal(manifest.short_name, 'AnimeVerse');
 
+  // Google picks the site name shown in results from these; they must all say AnimeVerse.
   const site = ldOf(home.body).find((l) => l['@type'] === 'WebSite');
   assert.equal(site.name, 'AnimeVerse');
+  assert.match(site.url, /\/$/);
+  assert.match(home.body, /<title>AnimeVerse: /);
+  assert.match(home.body, /<h1>AnimeVerse: /);
   const org = ldOf(home.body).find((l) => l['@type'] === 'Organization');
   assert.match(org.logo.url, /\/brand\/logo-512\.png$/);
 });

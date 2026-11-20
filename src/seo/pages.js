@@ -29,7 +29,7 @@ function homePage(ctx) {
   const popular = catalog.evergreen().slice(0, 36);
 
   const main = `<div class="${SPA_FALLBACK} container page-top">
-      <h1>Watch Anime Online Free</h1>
+      <h1>AnimeVerse: Watch Anime Online Free</h1>
       <p>Stream anime in Japanese with English subtitles, in English dub, and in Hindi, Tamil or Telugu where a multi-audio source carries it. No sign-up, no tracking.</p>
       ${rows.map(([h, items]) => `<section><h2>${esc(h)}</h2>${R.linkList(items.slice(0, 24))}</section>`).join('')}
       <section><h2>Popular anime to watch</h2>${R.linkList(popular)}</section>
@@ -45,7 +45,9 @@ function homePage(ctx) {
     </div>`;
 
   return {
-    title: `Watch Anime Online Free — English Sub, Dub & Hindi | ${SITE_NAME}`,
+    // Brand first on the home page: Google reads the site name from this title,
+    // the headings, og:site_name and the WebSite data below, and they must agree.
+    title: `${SITE_NAME}: Watch Anime Online Free — English Sub, Dub & Hindi`,
     description: 'Watch anime online free in HD on AnimeVerse: new episodes, classics and movies in Japanese with English subtitles, English dub and Hindi. No sign-up, no tracking.',
     canonicalPath: '/',
     ogType: 'website',
