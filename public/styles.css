@@ -174,15 +174,16 @@ html.av-intro .topbar .brand { visibility: hidden; } /* the intro's logo lands i
 
 .search-btn {
   margin-left: auto; display: flex; align-items: center; gap: 10px;
-  height: 42px; padding: 0 8px 0 14px; min-width: 260px;
+  /* A fixed width, so the bar doesn't grow and shrink as the suggested title changes. */
+  height: 42px; padding: 0 8px 0 14px; width: clamp(260px, 24vw, 320px); flex: none;
   border-radius: 999px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--muted); font-size: 14px; text-align: left;
   transition: background var(--fast), border-color var(--fast), color var(--fast);
 }
 .search-btn:hover { background: rgba(255, 255, 255, 0.13); color: var(--text-2); border-color: rgba(255, 255, 255, 0.18); }
 .search-btn .ic { color: #fff; }
-.search-hint { flex: 1; overflow: hidden; white-space: nowrap; }
-.search-hint-text { display: inline-block; transition: opacity 260ms, transform 260ms var(--ease-out); }
+.search-hint { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
+.search-hint-text { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; transition: opacity 260ms, transform 260ms var(--ease-out); }
 .search-hint-text.out { opacity: 0; transform: translateY(-6px); }
 
 /* ============ Phone tab bar (the app's) ============ */
