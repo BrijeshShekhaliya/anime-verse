@@ -3808,136 +3808,113 @@
   })();
 
   // ---------- Privacy Policy & Terms ----------
+  // A plain document: an intro, a contents list and one readable column,
+  // split into the privacy part and the terms part.
   async function privacyPage(view) {
     view.innerHTML = `
-      <div class="privacy-wrap container page-top">
-        <div class="privacy-hero">
-          <div class="privacy-mascot-box">
-            <div class="mascot-speech">
-              <strong>Meet Astra!</strong>
-              <span>Your privacy is protected here. Your bookmarks and watch history never leave your browser!</span>
-            </div>
-            <img class="mascot-img" src="/brand/mascot-pointing.png" alt="AnimeVerse Mascot Astra pointing to privacy policy" width="380" height="500">
+      <article class="legal container page-top">
+        <header class="legal-intro">
+          <div class="legal-intro-text">
+            <p class="legal-eyebrow">Legal</p>
+            <h1 class="legal-title">Privacy Policy &amp; Terms</h1>
+            <p class="legal-lead">AnimeVerse is built by and for anime fans. We believe in absolute privacy: zero required accounts, zero personal tracking cookies, and 100% on-device decentralized storage.</p>
+            <ul class="legal-points">
+              <li>${icon.check}On-device storage only</li>
+              <li>${icon.check}Zero invasive tracking</li>
+              <li>${icon.check}Non-hosting discovery index</li>
+            </ul>
+            <p class="legal-date">${icon.clock}<span>Last updated: November 2026</span></p>
           </div>
-          <div class="privacy-hero-text">
-            <span class="pill pill-accent">Legal Transparency</span>
-            <h1 class="privacy-title">Privacy Policy & Terms</h1>
-            <p class="privacy-subtitle">AnimeVerse is built by and for anime fans. We believe in absolute privacy: zero required accounts, zero personal tracking cookies, and 100% on-device decentralized storage.</p>
-            <div class="privacy-highlights">
-              <div class="ph-chip"><span class="ph-dot"></span> On-Device Storage Only</div>
-              <div class="ph-chip"><span class="ph-dot"></span> Zero Invasive Tracking</div>
-              <div class="ph-chip"><span class="ph-dot"></span> Non-Hosting Discovery Index</div>
-            </div>
-            <p class="privacy-date">${icon.clock}<span>Last Updated: November 2026</span></p>
-          </div>
-        </div>
+          <img class="legal-art legal-art-privacy" src="/brand/legal-privacy.webp" width="640" height="990" alt="Naruto giving a thumbs-up and holding a privacy checklist with a lock shield" fetchpriority="high" decoding="async">
+        </header>
 
-        <div class="privacy-toc" role="navigation" aria-label="Privacy Table of Contents">
-          <a class="toc-link" href="#disclaimer">1. Non-Hosting Disclaimer</a>
-          <a class="toc-link" href="#data">2. Data We Collect</a>
-          <a class="toc-link" href="#storage">3. Local Storage & Preferences</a>
-          <a class="toc-link" href="#sources">4. Third-Party Data Sources</a>
-          <a class="toc-link" href="#dmca">5. DMCA & Copyright</a>
-          <a class="toc-link" href="#security">6. Security & Contact</a>
-        </div>
+        <div class="legal-layout">
+          <nav class="legal-toc" aria-label="On this page">
+            <p>On this page</p>
+            <ol>
+              <li><a href="#data">Data we collect</a></li>
+              <li><a href="#storage">Local storage &amp; preferences</a></li>
+              <li><a href="#sources">Third-party data sources</a></li>
+              <li><a href="#security">Security &amp; contact</a></li>
+              <li><a href="#disclaimer">Non-hosting disclaimer</a></li>
+              <li><a href="#dmca">DMCA &amp; copyright</a></li>
+            </ol>
+          </nav>
 
-        <div class="privacy-cards">
-          <section class="p-card" id="disclaimer">
-            <div class="p-card-header">
-              <span class="p-num">01</span>
-              <h2>Non-Hosting Index & Discovery Disclaimer</h2>
-            </div>
-            <p>AnimeVerse operates exclusively as an index and discovery directory for anime enthusiasts. It organizes metadata, scheduled broadcasting dates, community ratings, and official sub/dub availability.</p>
-            <div class="p-alert">
-              <strong>Notice Regarding Media Files:</strong>
-              <p>AnimeVerse does <b>not</b> host, upload, scrape, encode, or store video media files, episodes, or audiovisual streams on any of its servers. All streams and video renditions delivered through our interfaces are supplied directly by decentralized, independent third-party servers. AnimeVerse has no affiliation with or control over external streaming hosts.</p>
-            </div>
-          </section>
-
-          <section class="p-card" id="data">
-            <div class="p-card-header">
-              <span class="p-num">02</span>
-              <h2>Data We Collect (Zero Personal Tracking)</h2>
+          <div class="legal-body">
+            <section class="legal-sec" id="data">
+              <h2><span class="legal-num">01</span>Data We Collect (Zero Personal Tracking)</h2>
               <p>We respect your anonymity and believe privacy should be the default, not an option.</p>
-            </div>
-            <ul class="p-list">
-              <li><b>No Account Requirement:</b> You are not required to provide your name, email, credit card, or social login to browse anime, search catalogs, or watch content.</li>
-              <li><b>Zero Data Broker Tracking:</b> We do not collect or sell your browsing history, IP address, device fingerprints, or search queries to data brokers or advertising exchanges.</li>
-              <li><b>Ephemeral Server Logs:</b> Standard web server access logs (HTTP method, status code, response time) are used solely for real-time performance monitoring and DDoS prevention, and are automatically discarded.</li>
-            </ul>
-          </section>
+              <ul>
+                <li><b>No Account Requirement:</b> You are not required to provide your name, email, credit card, or social login to browse anime, search catalogs, or watch content.</li>
+                <li><b>Zero Data Broker Tracking:</b> We do not collect or sell your browsing history, IP address, device fingerprints, or search queries to data brokers or advertising exchanges.</li>
+                <li><b>Ephemeral Server Logs:</b> Standard web server access logs (HTTP method, status code, response time) are used solely for real-time performance monitoring and DDoS prevention, and are automatically discarded.</li>
+              </ul>
+            </section>
 
-          <section class="p-card" id="storage">
-            <div class="p-card-header">
-              <span class="p-num">03</span>
-              <h2>Local Storage & User Preferences</h2>
+            <section class="legal-sec" id="storage">
+              <h2><span class="legal-num">02</span>Local Storage &amp; User Preferences</h2>
               <p>AnimeVerse relies exclusively on client-side HTML5 Web Storage (<code>localStorage</code>) to store your personal playback data locally on your own device:</p>
-            </div>
-            <div class="p-storage-grid">
-              <div class="p-storage-item">
-                <h4>Watch Progress</h4>
-                <p>Saved timestamps and episode numbers so you can continue watching right where you paused.</p>
-              </div>
-              <div class="p-storage-item">
-                <h4>"My List" Bookmarks</h4>
-                <p>Your bookmarked anime titles, completely private to your current browser.</p>
-              </div>
-              <div class="p-storage-item">
-                <h4>Player Customizations</h4>
-                <p>Volume levels, preferred audio language (SUB vs. DUB), and theatre mode state.</p>
-              </div>
-            </div>
-            <p class="p-tip">You have total control: clearing your browser data or cache immediately wipes all stored information from your device.</p>
-          </section>
+              <dl>
+                <div><dt>Watch Progress</dt><dd>Saved timestamps and episode numbers so you can continue watching right where you paused.</dd></div>
+                <div><dt>"My List" Bookmarks</dt><dd>Your bookmarked anime titles, completely private to your current browser.</dd></div>
+                <div><dt>Player Customizations</dt><dd>Volume levels, preferred audio language (SUB vs. DUB), and theatre mode state.</dd></div>
+              </dl>
+              <p class="legal-aside">You have total control: clearing your browser data or cache immediately wipes all stored information from your device.</p>
+            </section>
 
-          <section class="p-card" id="sources">
-            <div class="p-card-header">
-              <span class="p-num">04</span>
-              <h2>Third-Party Data Sources & External Links</h2>
+            <section class="legal-sec" id="sources">
+              <h2><span class="legal-num">03</span>Third-Party Data Sources &amp; External Links</h2>
               <p>To provide high-definition visuals, cast lists, and airing countdowns, AnimeVerse queries open community APIs:</p>
-            </div>
-            <ul class="p-list">
-              <li><b>AniList:</b> Synopsis summaries, character lists, voice actors, and airing schedules.</li>
-              <li><b>The Movie Database (TMDB):</b> High-resolution studio backdrops, official title logos, and episode stills.</li>
-              <li><b>Jikan / MyAnimeList:</b> Global community ratings, review metrics, and member rankings.</li>
-              <li><b>MAL-Dubs:</b> Verified database tracking English dubbed anime availability.</li>
-            </ul>
-            <p>Links to third-party services (such as official Crunchyroll links, social share sheets, or community forums) are subject to the privacy terms of those individual third parties.</p>
-          </section>
+              <ul>
+                <li><b>AniList:</b> Synopsis summaries, character lists, voice actors, and airing schedules.</li>
+                <li><b>The Movie Database (TMDB):</b> High-resolution studio backdrops, official title logos, and episode stills.</li>
+                <li><b>Jikan / MyAnimeList:</b> Global community ratings, review metrics, and member rankings.</li>
+                <li><b>MAL-Dubs:</b> Verified database tracking English dubbed anime availability.</li>
+              </ul>
+              <p>Links to third-party services (such as official Crunchyroll links, social share sheets, or community forums) are subject to the privacy terms of those individual third parties.</p>
+            </section>
 
-          <section class="p-card" id="dmca">
-            <div class="p-card-header">
-              <span class="p-num">05</span>
-              <h2>DMCA & Copyright Inquiries</h2>
-              <p>AnimeVerse complies with the provisions of the Digital Millennium Copyright Act (17 U.S.C. &sect; 512) and international intellectual property laws.</p>
-              <p>Because AnimeVerse does not possess, store, or host any copyrighted audiovisual files, copyright owners seeking removal of hosted content should contact the actual hosting file server directly. However, if you are a copyright owner or authorized agent wishing to request removal of specific index links, please submit a formal request containing:</p>
-            </div>
-            <ul class="p-list">
-              <li>Identification of the copyrighted work claimed to have been infringed.</li>
-              <li>The exact URL / link on AnimeVerse where the material is indexed.</li>
-              <li>Your contact information (name, address, email, telephone number).</li>
-              <li>A statement of good faith belief and statement of accuracy under penalty of perjury.</li>
-            </ul>
-            <div class="p-contact-box">
-              <strong>DMCA Agent Contact:</strong>
-              <p>Email: <a href="mailto:dmca@animeverse.app">dmca@animeverse.app</a></p>
-            </div>
-          </section>
-
-          <section class="p-card" id="security">
-            <div class="p-card-header">
-              <span class="p-num">06</span>
-              <h2>Security & Contact Information</h2>
+            <section class="legal-sec" id="security">
+              <h2><span class="legal-num">04</span>Security &amp; Contact Information</h2>
               <p>AnimeVerse employs modern security protocols including HTTP Strict Transport Security (HSTS), Content Security Policies, TLS 1.3 encryption, and strict origin validation.</p>
               <p>If you have any questions regarding this Privacy Policy or our open-source indexing architecture, feel free to reach out:</p>
-              <div class="p-contact-box">
-                <p>General Inquiries: <a href="mailto:privacy@animeverse.app">privacy@animeverse.app</a></p>
-                <p>Website: <a href="https://watchanimeverse.dpdns.org" target="_blank" rel="noopener">watchanimeverse.dpdns.org</a></p>
+              <p>General inquiries: <a href="mailto:privacy@animeverse.app">privacy@animeverse.app</a><br>Website: <a href="https://watchanimeverse.dpdns.org" target="_blank" rel="noopener">watchanimeverse.dpdns.org</a></p>
+            </section>
+
+            <header class="legal-part" id="terms">
+              <img class="legal-art legal-art-terms" src="/brand/legal-terms.webp" width="640" height="700" alt="Luffy giving a thumbs-up and holding a Terms of Use scroll" loading="lazy" decoding="async">
+              <div>
+                <p class="legal-eyebrow">Terms of Use</p>
+                <h2 class="legal-part-title">Using AnimeVerse</h2>
+                <p class="legal-lead">What AnimeVerse is and isn't, and how copyright questions are handled.</p>
               </div>
-            </div>
-          </section>
+            </header>
+
+            <section class="legal-sec" id="disclaimer">
+              <h2><span class="legal-num">05</span>Non-Hosting Index &amp; Discovery Disclaimer</h2>
+              <p>AnimeVerse operates exclusively as an index and discovery directory for anime enthusiasts. It organizes metadata, scheduled broadcasting dates, community ratings, and official sub/dub availability.</p>
+              <div class="legal-note">
+                <b>Notice Regarding Media Files</b>
+                <p>AnimeVerse does <b>not</b> host, upload, scrape, encode, or store video media files, episodes, or audiovisual streams on any of its servers. All streams and video renditions delivered through our interfaces are supplied directly by decentralized, independent third-party servers. AnimeVerse has no affiliation with or control over external streaming hosts.</p>
+              </div>
+            </section>
+
+            <section class="legal-sec" id="dmca">
+              <h2><span class="legal-num">06</span>DMCA &amp; Copyright Inquiries</h2>
+              <p>AnimeVerse complies with the provisions of the Digital Millennium Copyright Act (17 U.S.C. &sect; 512) and international intellectual property laws.</p>
+              <p>Because AnimeVerse does not possess, store, or host any copyrighted audiovisual files, copyright owners seeking removal of hosted content should contact the actual hosting file server directly. However, if you are a copyright owner or authorized agent wishing to request removal of specific index links, please submit a formal request containing:</p>
+              <ul>
+                <li>Identification of the copyrighted work claimed to have been infringed.</li>
+                <li>The exact URL / link on AnimeVerse where the material is indexed.</li>
+                <li>Your contact information (name, address, email, telephone number).</li>
+                <li>A statement of good faith belief and statement of accuracy under penalty of perjury.</li>
+              </ul>
+              <p><b>DMCA agent contact:</b> <a href="mailto:dmca@animeverse.app">dmca@animeverse.app</a></p>
+            </section>
+          </div>
         </div>
-      </div>`;
+      </article>`;
     applyClientSeo({
       title: 'Privacy Policy & Terms of Service — AnimeVerse',
       description: 'AnimeVerse transparent legal and privacy policy: zero account tracking, 100% on-device decentralized storage, and non-hosting discovery standards.',
