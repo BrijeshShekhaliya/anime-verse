@@ -3879,7 +3879,7 @@
               <h2><span class="legal-num">04</span>Security &amp; Contact Information</h2>
               <p>AnimeVerse employs modern security protocols including HTTP Strict Transport Security (HSTS), Content Security Policies, TLS 1.3 encryption, and strict origin validation.</p>
               <p>If you have any questions regarding this Privacy Policy or our open-source indexing architecture, feel free to reach out:</p>
-              <p>General inquiries: <a href="mailto:privacy@animeverse.app">privacy@animeverse.app</a><br>Website: <a href="https://watchanimeverse.dpdns.org" target="_blank" rel="noopener">watchanimeverse.dpdns.org</a></p>
+              <p>General inquiries: <a href="mailto:animeverse.official.now@gmail.com">animeverse.official.now@gmail.com</a><br>Website: <a href="https://watchanimeverse.dpdns.org" target="_blank" rel="noopener">watchanimeverse.dpdns.org</a></p>
             </section>
 
             <header class="legal-part" id="terms">
@@ -3910,7 +3910,7 @@
                 <li>Your contact information (name, address, email, telephone number).</li>
                 <li>A statement of good faith belief and statement of accuracy under penalty of perjury.</li>
               </ul>
-              <p><b>DMCA agent contact:</b> <a href="mailto:dmca@animeverse.app">dmca@animeverse.app</a></p>
+              <p><b>DMCA agent contact:</b> <a href="mailto:animeverse.official.now@gmail.com">animeverse.official.now@gmail.com</a></p>
             </section>
           </div>
         </div>
