@@ -3,6 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <script>
+    // Opening animation (public/intro.js): only on the first visit in a tab.
+    // Not on reloads, page changes inside the site, tabs opened in the
+    // background, or within 30 minutes of the visitor last using the site.
+    (function () {
+      try {
+        var d = document.documentElement, ls = localStorage, ss = sessionStorage;
+        var last = +ls.getItem('av-active') || 0;
+        var mark = function () { try { ls.setItem('av-active', String(Date.now())); } catch (e) {} };
+        mark();
+        setInterval(function () { if (!document.hidden) mark(); }, 60000);
+        addEventListener('pagehide', mark);
+        if (ss.getItem('av-intro')) return;
+        ss.setItem('av-intro', '1');
+        if (Date.now() - last < 1800000 || document.visibilityState === 'hidden') return;
+        if (navigator.webdriver || /bot|crawl|spider|slurp|lighthouse|headless/i.test(navigator.userAgent)) return;
+        d.classList.add('av-intro', 'av-intro-cover');
+        var s = document.createElement('script');
+        s.src = '/intro.js?v=1';
+        s.async = true;
+        document.head.appendChild(s);
+        // Never leave the page covered if the intro can't load.
+        setTimeout(function () { if (!document.querySelector('.av-intro-layer')) d.classList.remove('av-intro', 'av-intro-cover'); }, 6000);
+      } catch (e) {}
+    })();
+  </script>
   <!--SEO_HEAD-->
   <meta name="theme-color" content="#000000">
   <!-- Google shows a favicon only if it's a multiple of 48px square, so every size here is. -->
@@ -17,7 +43,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=7.3">
+  <link rel="stylesheet" href="/styles.css?v=7.4">
   <link rel="stylesheet" href="/player.css?v=7.2">
 </head>
 <body>

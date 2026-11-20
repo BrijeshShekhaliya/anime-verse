@@ -116,6 +116,32 @@ body.is-scrolling .card, body.is-scrolling .cw, body.is-scrolling .ep { pointer-
 .w-anime { background: linear-gradient(180deg, #fff, #b9bec9); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .w-verse { background: linear-gradient(90deg, #ffc15e, #ff640a 55%, #ff3b2f); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
+/* ============ Opening animation (first visit in a tab; see public/intro.js) ============ */
+/* The head script covers the page in black from the first paint until intro.js takes over. */
+html.av-intro-cover::after { content: ""; position: fixed; inset: 0; z-index: 9998; background: var(--bg); }
+html.av-intro { overflow: hidden; }
+html.av-intro .topbar .brand { visibility: hidden; } /* the intro's logo lands in its place */
+.av-intro-layer { position: fixed; inset: 0; z-index: 9999; overflow: hidden; cursor: pointer; contain: strict; }
+.av-intro-bg { position: absolute; inset: 0; background: var(--bg); }
+.av-intro-center, .av-intro-ring { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.av-intro-ring { left: 0; top: 0; }
+.av-intro-ember, .av-intro-dot { position: absolute; border-radius: 50%; opacity: 0; will-change: transform, opacity; }
+.av-intro-dot { width: 3px; height: 3px; left: -1.5px; top: -1.5px; }
+.av-intro-lockup { position: absolute; left: 50%; top: 50%; width: max-content; will-change: transform; } /* never squeezed on narrow screens */
+.av-intro-lockup > *, .av-intro-lockup .brand-logo { flex: none; }
+.av-intro-logo { position: relative; z-index: 1; display: inline-flex; opacity: 0; will-change: transform, opacity; }
+.av-intro-glow {
+  position: absolute; left: 50%; top: 50%; width: 240%; height: 240%; margin: -120% 0 0 -120%; border-radius: 50%; opacity: 0; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 140, 40, 0.32), rgba(255, 100, 10, 0.16) 35%, rgba(255, 100, 10, 0.04) 70%, rgba(255, 100, 10, 0));
+}
+.av-intro-word { position: relative; display: inline-flex; opacity: 0; will-change: transform, opacity; }
+.av-intro-shine {
+  position: absolute; left: 0; top: 0; opacity: 0; pointer-events: none; background-repeat: no-repeat;
+  background-image: linear-gradient(108deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0));
+}
+.av-intro-shine-logo { right: 0; bottom: 0; -webkit-mask: url(/brand/logo-256.webp) center / contain no-repeat; mask: url(/brand/logo-256.webp) center / contain no-repeat; }
+.av-intro-shine-word { color: transparent; -webkit-background-clip: text; background-clip: text; }
+
 /* ============ Top bar ============ */
 .topbar {
   position: fixed; inset: 0 0 auto; z-index: 50;
