@@ -283,7 +283,10 @@ body.is-scrolling .card, body.is-scrolling .cw, body.is-scrolling .ep { pointer-
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 /* ============ Hero slider (the app's) ============ */
-.hero { position: relative; height: clamp(560px, 86vh, 860px); overflow: hidden; background: #050505; }
+/* The first row overlaps the hero's faded bottom edge (.rows margin-top), so the
+   slide dots and arrows share one line (--hero-ctrl-y above the bottom edge) that
+   clears that row's heading, and the slide text sits clear above them. */
+.hero { position: relative; height: clamp(560px, 86vh, 860px); overflow: hidden; background: #050505; --hero-ctrl-y: 74px; }
 .hero-slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 700ms ease, visibility 0s 700ms; }
 .hero-slide.active { opacity: 1; visibility: visible; transition: opacity 700ms ease; z-index: 1; }
 .hero-art { position: absolute; inset: 0; overflow: hidden; }
@@ -303,7 +306,7 @@ body.is-scrolling .card, body.is-scrolling .cw, body.is-scrolling .ep { pointer-
     linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, transparent 22%, transparent 55%, rgba(0, 0, 0, 0.7) 82%, #000 100%);
 }
 .hero-content {
-  position: absolute; left: var(--gutter); bottom: clamp(70px, 12vh, 120px); z-index: 2;
+  position: absolute; left: var(--gutter); bottom: clamp(112px, calc(12vh + 26px), 148px); z-index: 2;
   width: min(560px, calc(100% - 2 * var(--gutter)));
   display: flex; flex-direction: column; align-items: flex-start;
 }
@@ -329,7 +332,7 @@ body.is-scrolling .card, body.is-scrolling .cw, body.is-scrolling .ep { pointer-
 }
 .hero-actions { display: flex; gap: 10px; margin-top: 24px; }
 
-.hero-dots { position: absolute; z-index: 3; left: var(--gutter); bottom: 34px; display: flex; gap: 6px; }
+.hero-dots { position: absolute; z-index: 3; left: var(--gutter); bottom: calc(var(--hero-ctrl-y) - 3.5px); display: flex; align-items: center; gap: 6px; }
 .hero-dot { width: 7px; height: 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.3); overflow: hidden; transition: width 260ms var(--ease-out), background var(--fast); padding: 0; }
 .hero-dot:hover { background: rgba(255, 255, 255, 0.55); }
 .hero-dot span { display: block; width: 100%; height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(0); }
@@ -337,7 +340,7 @@ body.is-scrolling .card, body.is-scrolling .cw, body.is-scrolling .ep { pointer-
 .hero-dot.active span { animation: fill var(--hero-ms) linear forwards; }
 .hero.paused .hero-dot.active span { animation-play-state: paused; }
 @keyframes fill { to { transform: scaleX(1); } }
-.hero-arrows { position: absolute; z-index: 3; right: var(--gutter); bottom: 26px; display: flex; gap: 10px; }
+.hero-arrows { position: absolute; z-index: 3; right: var(--gutter); bottom: calc(var(--hero-ctrl-y) - 22px); display: flex; gap: 10px; }
 .hero-arrows button {
   width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
   background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff;
